@@ -25,7 +25,7 @@ def ftale(x):
 	##print("cd "+p)
 	command="/opt/rocm/bin/hipify-perl "+p+"/"+os.path.basename(x)+" > "+p+"/"+os.path.basename(x)+".hip"
 	os.system(command)
-	command="/opt/rocm/bin/hipcc -I /home/taccuser/cuda-samples/Common "+p+"/"+os.path.basename(x)+".hip"
+	command="/opt/rocm/bin/hipcc -I /home/taccuser/cuda-samples/Common -I /home/taccuser/cuda-samples/Common/GL -I /home/taccuser/cuda-samples/Common/UtilNPP -I /home/taccuser/cuda-samples/Common/data -I /home/taccuser/cuda-samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
 	os.system(command)
 	##print(command)
 	command="/opt/rocm/bin/hipcc -I /home/taccuser/cuda-samples/Common "+p+"/"+os.path.basename(x)+".hip -o "+p.rsplit('.', 1)[0]+".out"
