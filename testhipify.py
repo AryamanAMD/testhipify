@@ -38,6 +38,7 @@ def ftale(x):
 		#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
 		command="/opt/rocm/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
 		os.system(command)
+		os.system("cd "+p)
 
 		os.system("sed -n 's/checkCudaErrors/HIPCHECK/g' "+q+".hip")
 		
