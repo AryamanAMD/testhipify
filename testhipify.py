@@ -23,7 +23,7 @@ def ftale(x):
 	q=os.path.basename(x)
 	p=p.replace("\\","/")
 	os.system("cd "+p)
-	with open(q, 'r') as fp:
+	with open(p+"/"+q, 'r') as fp:
 		lines = fp.readlines()
 		for row in lines:
 			word = '#include <GL/glu.h>'
