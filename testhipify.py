@@ -25,7 +25,7 @@ def ftale(x):
 	with open(p+"/"+q, 'r') as fp:
 		lines = fp.readlines()
 		for row in lines:
-			word = '#include <GL'
+			word = '#include <GL/glu.h>'
 			if row.find(word) == 0:
 				flag=1
 			else:
