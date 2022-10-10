@@ -35,7 +35,7 @@ def ftale(x):
 	if flag==1:
 		print("GL Headers found")	
 	else:
-		os.system("sed 's/checkCudaErrors/HIPCHECK/g' "+p+"/"+q)
+		os.system("sed -n 's/checkCudaErrors/HIPCHECK/g' "+p+"/"+q)
 		command="/opt/rocm/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
 		os.system(command)
 		command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
