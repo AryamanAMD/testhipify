@@ -22,7 +22,8 @@ def ftale(x):
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
 	p=p.replace("\\","/")
-	with open(p+"/"+q, 'r') as fp:
+	os.system("cd "+p)
+	with open(q, 'r') as fp:
 		lines = fp.readlines()
 		for row in lines:
 			word = '#include <GL/glu.h>'
@@ -34,7 +35,6 @@ def ftale(x):
 	if flag==1:
 		print("GL Headers found")	
 	else:
-		os.system("cd "+p)
 		os.system("sed 's/checkCudaErrors/HIPCHECK/g' "+q)
 		command="/opt/rocm/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
 		os.system(command)
