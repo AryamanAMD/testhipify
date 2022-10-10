@@ -26,13 +26,25 @@ def ftale(x):
 		lines = fp.readlines()
 		for row in lines:
 			word = '#include <GL'
-			if row.find(word) == -1:
-				os.system("cd "+p)
-				os.system("sed 's/checkCudaErrors/HIPCHECK/g' "+q)
-				command="/opt/rocm/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
-				os.system(command)
-				command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
-				os.system(command)
+			if row.find(word) == 0:
+				flag=1
+			else:
+				flag=0	
+
+	if flag==1:
+		print("GL Headers found")	
+	else:
+		os.system("cd "+p)
+		os.system("sed 's/checkCudaErrors/HIPCHECK/g' "+q)
+		command="/opt/rocm/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
+		os.system(command)
+		command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
+		os.system(command)
+					
+		
+				
+							
+				
 	
 
 def fall(y):
