@@ -43,7 +43,7 @@ def ftale(x):
 		os.system(command)
 		textToSearch="checkCudaErrors"
 		textToReplace="HIPCHECK"
-		fileToSearch=x
+		fileToSearch=x+".hip"
 		tempFile=open(fileToSearch,'r+')
 		for line in fileinput.input(fileToSearch):
 			tempFile.write(line.replace(textToSearch,textToReplace))
