@@ -37,12 +37,15 @@ def ftale(x):
 	else:
 		#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
 		command="/opt/rocm/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
+		os.system("echo "+command)
 		os.system(command)
 		os.system("cd "+p)
-
+		os.system("echo cd "+p)
+		os.system("echo sed -n 's/checkCudaErrors/HIPCHECK/g' "+q+".hip")
 		os.system("sed -n 's/checkCudaErrors/HIPCHECK/g' "+q+".hip")
 		
 		command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
+		os.system("echo "+command)
 		os.system(command)
 					
 		
