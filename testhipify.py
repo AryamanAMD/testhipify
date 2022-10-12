@@ -1,6 +1,8 @@
 import os
 from fnmatch import fnmatch
 import argparse
+import sys
+import fileinput
 def getListOfFiles(dirName):
     listOfFile=os.listdir(dirName)
     allFiles=list()
@@ -39,10 +41,19 @@ def ftale(x):
 		command="/opt/rocm/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
 		os.system("echo "+command)
 		os.system(command)
-		os.system("cd "+p)
-		os.system("echo cd "+p)
-		os.system(r'echo sed -i.bak "s/checkCudaErrors/HIPCHECK/g" '+q)
+		textToSearch="checkCudaErrors"
+		textToReplace="HIPCHECK"
+		fileToSearch=p
+		tempFile=open(fileToSearch,'r+')
+		for line in fileinput.input(fileToSearch):
+			tempFile.write(line.replace(textToSearch,textToReplace))
+		tempFile.close()	
+
+		#os.system("cd "+p)
+		#os.system("echo cd "+p)
+		#os.system(r'echo sed -i.bak "s/checkCudaErrors/HIPCHECK/g" '+q)
 		#os.system('sed -i.bak ""{}"" '.format(s)+q)
+
 		
 		command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
 		os.system("echo "+command)
