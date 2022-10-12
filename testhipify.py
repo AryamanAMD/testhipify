@@ -38,7 +38,7 @@ def ftale(x):
 		print("GL Headers found")	
 	else:
 		#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
-		command="/opt/rocm/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
+		command="/opt/rocm-5.4.0-10890/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
 		os.system("echo "+command)
 		os.system(command)
 		textToSearch="checkCudaErrors"
@@ -54,8 +54,11 @@ def ftale(x):
 		#os.system(r'echo sed -i.bak "s/checkCudaErrors/HIPCHECK/g" '+q)
 		#os.system('sed -i.bak ""{}"" '.format(s)+q)
 
+        #/data/driver/testhipify/src/samples/Samples/
 		
-		command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
+		#command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
+		#/opt/rocm-5.4.0-10890/bin
+		command="/opt/rocm-5.4.0-10890/bin/hipcc -I /data/driver/testhipify/src/samples/Common -I /data/driver/testhipify/src/samples/Common/GL -I /data/driver/testhipify/src/samples/Common/UtilNPP -I /data/driver/testhipify/src/samples/Common/data -I /data/driver/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
 		os.system("echo "+command)
 		os.system(command)
 					
