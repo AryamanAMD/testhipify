@@ -1,6 +1,7 @@
 import os
 from fnmatch import fnmatch
 import argparse
+import subprocess
 def getListOfFiles(dirName):
     listOfFile=os.listdir(dirName)
     allFiles=list()
@@ -41,10 +42,11 @@ def ftale(x):
 		os.system(command)
 		os.system("cd "+p)
 		os.system("echo cd "+p)
-		s='"s/checkCudaErrors/HIPCHECK/g"'
-		os.system("echo "+s)
+		#s='"s/checkCudaErrors/HIPCHECK/g"'
+		#os.system("echo "+s)
 		#os.system('echo sed -i.bak \"s/checkCudaErrors/HIPCHECK/g\" '+q)
 		#os.system('sed -i.bak ""{}"" '.format(s)+q)
+		subprocess.Popen("echo sed -i.bak \"s/checkCudaErrors/HIPCHECK/g\" "+q)
 		
 		command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
 		os.system("echo "+command)
