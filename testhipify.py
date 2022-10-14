@@ -71,7 +71,7 @@ def ftale(x):
 		
 		#command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
 		#/opt/rocm-5.4.0-10890/bin
-		command="/opt/rocm-5.4.0-10890/bin/hipcc -I /data/driver/testhipify/src/samples/Common -I /data/driver/testhipify/src/samples/Common/GL -I /data/driver/testhipify/src/samples/Common/UtilNPP -I /data/driver/testhipify/src/samples/Common/data -I /data/driver/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
+		command="/opt/rocm-5.4.0-10890/bin/hipcc -I/data/driver/testhipify/src/samples/Common -I/data/driver/testhipify/src/samples/Common/GL -I/data/driver/testhipify/src/samples/Common/UtilNPP -I/data/driver/testhipify/src/samples/Common/data -I/data/driver/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
 		os.system("echo "+command)
 		os.system(command)
 					
