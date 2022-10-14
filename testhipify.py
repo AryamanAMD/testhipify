@@ -16,7 +16,19 @@ def getListOfFiles(dirName):
     return allFiles
 
 
+def prepend_line(file_name, line):
+	#line='#include "HIPCHECK.h"'
+    dummy_file = file_name + '.bak'
+    with open(file_name, 'r') as read_obj, open(dummy_file, 'w') as write_obj:
+        write_obj.write(line + '\n')
+        for line in read_obj:
+            write_obj.write(line)
+    os.remove(file_name)
+    os.rename(dummy_file, file_name)
+	
+    
 
+	
 
 
 def ftale(x):
@@ -41,6 +53,7 @@ def ftale(x):
 		command="/opt/rocm-5.4.0-10890/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
 		os.system("echo "+command)
 		os.system(command)
+		prepend_line(q,'#include "HIPCHECK.h"')
 		textToSearch="checkCudaErrors"
 		textToReplace="HIPCHECK"
 		fileToSearch=x+".hip"
