@@ -94,10 +94,9 @@ def fall(y):
 
 
 
-parser=argparse.ArgumentParser(description ='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]" \n To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
-parser.add_argument("-t", "--tale", help="Hipify Single Sample")
-parser.add_argument("-a", "--all", help="Hipify all Samples")
-parser.add_argument("-h", "--help", help="Instructions to make use of testhipify")
+parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.')
+parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
+parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
 args=parser.parse_args()
 if args.tale:
 	x=args.tale
