@@ -91,10 +91,10 @@ def ftale(x):
 	os.system(command)
 
     #hipcc  square.cpp -o square.out(done)
-	command='hipcc '+os.path.basename(x)+'.hip -o '+os.path.splitext(x)[0]+'.out'
+	command='hipcc '+p+'/'+os.path.basename(x)+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out'
 	os.system(command)
 	#/home/user/hip/bin/hipcc -use-staticlib  square.cpp -o square.out.static
-	command='/opt/rocm-5.4.0-10890/bin/hipcc -use-staticlib '+p+'/'+q+' -o '+os.path.splitext(x)[0]+'.out.static'
+	command='/opt/rocm-5.4.0-10890/bin/hipcc -use-staticlib '+p+'/'+q+' -o '+p+'/'+os.path.splitext(x)[0]+'.out.static'
 	os.system(command)
 	#./square.out
 	command='./'+os.path.splitext(x)[0]+'.out'
@@ -167,7 +167,7 @@ def rem(z):
 
 
 
-parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.')
+parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
 parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
