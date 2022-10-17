@@ -89,7 +89,7 @@ def fall(y):
 	file=open('samples_to_be_ignored.txt')
 	for elem in listOfFiles:
 		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
-			with open('samples_to_be_ignored.txt') as f:
+			with open('final_ignored_samples.txt') as f:
 				if elem in f.read():
 					continue
 				else:
@@ -99,21 +99,48 @@ def fall(y):
 
 
 def rem(z):
+	lines_seen = set()
 	path="/samples_to_be_ignored.txt"
 	isFile = os.path.isfile(path)
 	if isfile:
 		a=open("samples_to_be_ignored.txt","r+")
 		a.truncate(0)
+		b=open("final_ignored_samples.txt","r+")
+		b.truncate(0)
 	else:
 		a=open("samples_to_be_ignored.txt","w")
 	z=z.replace('"','')
+	ignore_list = ['<GL/', '<screen', '<drm.h>','FDTD3dGPU.h','d3',' <GLES3/']
 	listofFiles=getListOfFiles(z)
 	for elem in listofFiles:
 		if elem.endswith('.cu'):
 			with open(elem) as f:
 				for line in f:
-					if '<GL/' in line:
+					if not any(word in line for word in ignore_list):
 						a.write(elem+"\n")
+	"""
+	outfile = open("samples_to_be_ignored.txt", "w")
+	for line in open("samples_to_be_ignored.txt","r"):
+		if line not in lines_seen:
+			outfile.write(line)
+			lines_seen.add(line)
+			"""
+	a.close()
+	lines_seen = set()
+	outfile = open('final_ignored_samples.txt', "w")
+	infile = open('samples_to_be_ignored.txt', "r")
+	for line in infile:
+		if line not in lines_seen: # not a duplicate
+			outfile.write(line)
+			lines_seen.add(line)
+	outfile.close()		
+        
+    
+
+    		
+
+
+						
 
 
 
