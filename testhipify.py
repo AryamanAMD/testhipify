@@ -86,10 +86,10 @@ def ftale(x):
 def fall(y):
 	y=y.replace('"', '')
 	listOfFiles=getListOfFiles(y)
-	file=open('samples_to_be_ignored.txt')
+	file=open('final_ignored_samples.txt','r')
 	for elem in listOfFiles:
 		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
-			with open('final_ignored_samples.txt') as f:
+			with file as f:
 				if elem in f.read():
 					continue
 				else:
@@ -99,18 +99,16 @@ def fall(y):
 
 
 def rem(z):
-	lines_seen = set()
-	path="/samples_to_be_ignored.txt"
-	isFile = os.path.isfile(path)
-	if isfile:
-		a=open("samples_to_be_ignored.txt","r+")
-		a.truncate(0)
-		b=open("final_ignored_samples.txt","r+")
-		b.truncate(0)
-	else:
-		a=open("samples_to_be_ignored.txt","w")
+	
+	a=open("samples_to_be_ignored.txt","r+")
+	a.truncate(0)
+
+		
+	b=open("final_ignored_samples.txt", 'w')
+	b.close()	
 	z=z.replace('"','')
-	ignore_list = ['<GL/', '<screen', '<drm.h>','FDTD3dGPU.h','d3',' <GLES3/']
+	#ignore_list = ['<GL/', '<screen', '<drm.h>','FDTD3dGPU.h','d3',' <GLES3/']
+	ignore_list = ['<GL/']
 	listofFiles=getListOfFiles(z)
 	for elem in listofFiles:
 		if elem.endswith('.cu'):
@@ -118,13 +116,7 @@ def rem(z):
 				for line in f:
 					if not any(word in line for word in ignore_list):
 						a.write(elem+"\n")
-	"""
-	outfile = open("samples_to_be_ignored.txt", "w")
-	for line in open("samples_to_be_ignored.txt","r"):
-		if line not in lines_seen:
-			outfile.write(line)
-			lines_seen.add(line)
-			"""
+	
 	a.close()
 	lines_seen = set()
 	outfile = open('final_ignored_samples.txt', "w")
@@ -133,7 +125,8 @@ def rem(z):
 		if line not in lines_seen: # not a duplicate
 			outfile.write(line)
 			lines_seen.add(line)
-	outfile.close()		
+	outfile.close()	
+		
         
     
 
