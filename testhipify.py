@@ -1,8 +1,5 @@
-from genericpath import isfile
 import os
-from fnmatch import fnmatch
 import argparse
-import sys
 import fileinput
 def getListOfFiles(dirName):
     listOfFile=os.listdir(dirName)
@@ -86,7 +83,7 @@ def ftale(x):
 		
 		#command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
 		#/opt/rocm-5.4.0-10890/bin
-	command='/opt/rocm-5.4.0-10890/bin/hipcc -I/data/driver/testhipify/src/samples/Common -I/data/driver/testhipify/src/samples/Common/GL -I/data/driver/testhipify/src/samples/Common/UtilNPP -I/data/driver/testhipify/src/samples/Common/data -I/data/driver/testhipify/src/samples/Common/lib/x64 '+p+'/'+q+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out'
+	command='/opt/rocm-5.4.0-10890/bin/hipcc -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common/UtilNPP -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common/data -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common/lib/x64 '+p+'/'+q+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out'
 	print(command)
 	os.system(command)
 
