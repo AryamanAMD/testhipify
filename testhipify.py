@@ -1,3 +1,4 @@
+from genericpath import isfile
 import os
 from fnmatch import fnmatch
 import argparse
@@ -37,6 +38,7 @@ def ftale(x):
 	q=os.path.basename(x)
 	p=p.replace("\\","/")
 	os.system("cd "+p)
+	"""
 	with open(p+"/"+q, 'r') as fp:
 		lines = fp.readlines()
 		for row in lines:
@@ -48,19 +50,19 @@ def ftale(x):
 
 	if flag==1:
 		print("GL Headers found")	
-	else:
-		#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
-		command="/opt/rocm-5.4.0-10890/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
-		os.system("echo "+command)
-		os.system(command)
-		prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
-		textToSearch="checkCudaErrors"
-		textToReplace="HIPCHECK"
-		fileToSearch=x+".hip"
-		tempFile=open(fileToSearch,'r+')
-		for line in fileinput.input(fileToSearch):
-			tempFile.write(line.replace(textToSearch,textToReplace))
-		tempFile.close()	
+		"""
+	#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
+	command="/opt/rocm-5.4.0-10890/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
+	os.system("echo "+command)
+	os.system(command)
+	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
+	textToSearch="checkCudaErrors"
+	textToReplace="HIPCHECK"
+	fileToSearch=x+".hip"
+	tempFile=open(fileToSearch,'r+')
+	for line in fileinput.input(fileToSearch):
+		tempFile.write(line.replace(textToSearch,textToReplace))
+	tempFile.close()	
 
 		#os.system("cd "+p)
 		#os.system("echo cd "+p)
@@ -71,9 +73,9 @@ def ftale(x):
 		
 		#command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
 		#/opt/rocm-5.4.0-10890/bin
-		command="/opt/rocm-5.4.0-10890/bin/hipcc -I/data/driver/testhipify/src/samples/Common -I/data/driver/testhipify/src/samples/Common/GL -I/data/driver/testhipify/src/samples/Common/UtilNPP -I/data/driver/testhipify/src/samples/Common/data -I/data/driver/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
-		os.system("echo "+command)
-		os.system(command)
+	command="/opt/rocm-5.4.0-10890/bin/hipcc -I/data/driver/testhipify/src/samples/Common -I/data/driver/testhipify/src/samples/Common/GL -I/data/driver/testhipify/src/samples/Common/UtilNPP -I/data/driver/testhipify/src/samples/Common/data -I/data/driver/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
+	os.system("echo "+command)
+	os.system(command)
 					
 		
 				
@@ -84,9 +86,37 @@ def ftale(x):
 def fall(y):
 	y=y.replace('"', '')
 	listOfFiles=getListOfFiles(y)
+	file=open('samples_to_be_ignored.txt')
 	for elem in listOfFiles:
 		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
-			ftale(elem) 
+			with open('samples_to_be_ignored.txt') as f:
+				if elem in f.read():
+					continue
+				else:
+					ftale(elem)
+
+			
+
+
+def rem(z):
+	path="/samples_to_be_ignored.txt"
+	isFile = os.path.isfile(path)
+	if isfile:
+		a=open("samples_to_be_ignored.txt","r+")
+		a.truncate(0)
+	else:
+		a=open("samples_to_be_ignored.txt","w")
+	z=z.replace('"','')
+	listofFiles=getListOfFiles(z)
+	for elem in listofFiles:
+		if elem.endswith('.cu'):
+			with open(elem) as f:
+				for line in f:
+					if '<GL/' in line:
+						a.write(elem+"\n")
+
+
+
 				
 		
         	
@@ -95,6 +125,7 @@ def fall(y):
 
 
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.')
+parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
 args=parser.parse_args()
@@ -106,6 +137,9 @@ if args.all:
 	y=args.all
 	##print(y)
 	fall(y)
+if args.remove:
+	z=args.remove
+	rem(z)
 
 
 

@@ -1,0 +1,7 @@
+C:\Users\aryamish\OneDrive\Documents\testhipify\src\samples\Samples\2_Concepts_and_Techniques\particles\particleSystem_cuda.cu
+C:\Users\aryamish\OneDrive\Documents\testhipify\src\samples\Samples\5_Domain_Specific\nbody\bodysystemcuda.cu
+C:\Users\aryamish\OneDrive\Documents\testhipify\src\samples\Samples\5_Domain_Specific\nbody_opengles\bodysystemcuda.cu
+C:\Users\aryamish\OneDrive\Documents\testhipify\src\samples\Samples\5_Domain_Specific\nbody_opengles\bodysystemcuda.cu
+C:\Users\aryamish\OneDrive\Documents\testhipify\src\samples\Samples\5_Domain_Specific\nbody_screen\bodysystemcuda.cu
+C:\Users\aryamish\OneDrive\Documents\testhipify\src\samples\Samples\5_Domain_Specific\nbody_screen\bodysystemcuda.cu
+C:\Users\aryamish\OneDrive\Documents\testhipify\src\samples\Samples\5_Domain_Specific\simpleGL\simpleGL.cu
