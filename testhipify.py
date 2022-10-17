@@ -88,9 +88,9 @@ def ftale(x):
 	os.system(command)
 
     #hipcc  square.cpp -o square.out(done)
-	command='hipcc '+p+'/'+os.path.basename(x)+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out'
-	print(command)
-	os.system(command)
+	#command='hipcc '+p+'/'+os.path.basename(x)+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out'
+	#print(command)
+	#os.system(command)
 	#/home/user/hip/bin/hipcc -use-staticlib  square.cpp -o square.out.static
 	#command='/opt/rocm-5.4.0-10890/bin/hipcc -use-staticlib '+p+'/'+q+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out.static'
 	#print(command)
