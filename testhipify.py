@@ -86,10 +86,9 @@ def ftale(x):
 def fall(y):
 	y=y.replace('"', '')
 	listOfFiles=getListOfFiles(y)
-	file=open('final_ignored_samples.txt','r')
 	for elem in listOfFiles:
 		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
-			with file as f:
+			with open('final_ignored_samples.txt','r') as f:
 				if elem in f.read():
 					continue
 				else:
