@@ -66,9 +66,15 @@ def ftale(x):
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch,textToReplace))
-		tempFile.write(line.replace(textToSearch1,textToReplace1))
-		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()	
+	tempFile=open(fileToSearch,'r+')
+	for line in fileinput.input(fileToSearch):
+		tempFile.write(line.replace(textToSearch1,textToReplace1))
+	tempFile.close()
+	tempFile=open(fileToSearch,'r+')
+	for line in fileinput.input(fileToSearch):
+		tempFile.write(line.replace(textToSearch2,textToReplace2))	
+	tempFile.close()
 	
 
 		#os.system("cd "+p)
