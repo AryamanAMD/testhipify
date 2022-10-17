@@ -52,7 +52,7 @@ def ftale(x):
 	command="/opt/rocm-5.4.0-10890/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
 	os.system("echo "+command)
 	os.system(command)
-	prepend_line(p+"/"+q+".hip",'#include "data/driver/testhipify/src/samples/Common/HIPCHECK.h"')
+	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
 	textToSearch="checkCudaErrors"
 	textToReplace="HIPCHECK"
 	fileToSearch=x+".hip"
@@ -92,13 +92,13 @@ def ftale(x):
 	print(command)
 	os.system(command)
 	#/home/user/hip/bin/hipcc -use-staticlib  square.cpp -o square.out.static
-	command='/opt/rocm-5.4.0-10890/bin/hipcc -use-staticlib '+p+'/'+q+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out.static'
-	print(command)
-	os.system(command)
+	#command='/opt/rocm-5.4.0-10890/bin/hipcc -use-staticlib '+p+'/'+q+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out.static'
+	#print(command)
+	#os.system(command)
 	#./square.out
-	command='./'+os.path.splitext(x)[0]+'.out'
-	print(command)
-	os.system(command)
+	#command='./'+os.path.splitext(x)[0]+'.out'
+	#print(command)
+	#os.system(command)
 
 					
 		
