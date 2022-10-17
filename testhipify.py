@@ -90,7 +90,7 @@ def fall(y):
 		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
 			with open('final_ignored_samples.txt','r') as f:
 				if elem in f.read():
-					continue
+					print("Ignoring this sample "+elem)
 				else:
 					ftale(elem)
 
@@ -107,13 +107,13 @@ def rem(z):
 	b.close()	
 	z=z.replace('"','')
 	#ignore_list = ['<GL/', '<screen', '<drm.h>','FDTD3dGPU.h','d3',' <GLES3/']
-	ignore_list = ['<GL/']
+	ignore_list = ['<GL/','<screen/screen.h>', '<drm.h>','FDTD3dGPU.h','d3',' <GLES3/']
 	listofFiles=getListOfFiles(z)
 	for elem in listofFiles:
 		if elem.endswith('.cu'):
 			with open(elem) as f:
 				for line in f:
-					if not any(word in line for word in ignore_list):
+					if any(word in line for word in ignore_list):
 						a.write(elem+"\n")
 	
 	a.close()
