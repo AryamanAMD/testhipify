@@ -63,6 +63,13 @@ def ftale(x):
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch,textToReplace))
 	tempFile.close()	
+	textToSearch="hipProfiler"
+	textToReplace="roctracer"
+	fileToSearch=x+".hip"
+	tempFile=open(fileToSearch,'r+')
+	for line in fileinput.input(fileToSearch):
+		tempFile.write(line.replace(textToSearch,textToReplace))
+	tempFile.close()
 
 		#os.system("cd "+p)
 		#os.system("echo cd "+p)
