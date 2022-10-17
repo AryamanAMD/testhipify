@@ -107,7 +107,7 @@ def rem(z):
 	b.close()	
 	z=z.replace('"','')
 	#ignore_list = ['<GL/', '<screen', '<drm.h>','FDTD3dGPU.h','<d312',' <GLES3/']
-	ignore_list = ['<GL/','<screen/screen.h>', '<drm.h>','FDTD3dGPU.h','d3',' <GLES3/','<EGL/egl.h>',]
+	ignore_list = ['<GL/','<screen/screen.h>', '<drm.h>','"FDTD3dGPU.h"','<d3d12.h>',' <GLES3/gl31.h>','<EGL/egl.h>','<GLFW/glfw3.h>','"cudla.h"']
 	listofFiles=getListOfFiles(z)
 	for elem in listofFiles:
 		if elem.endswith('.cu'):
