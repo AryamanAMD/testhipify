@@ -52,7 +52,7 @@ def ftale(x):
 	command="/opt/rocm-5.4.0-10890/bin/hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
 	os.system("echo "+command)
 	os.system(command)
-	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
+	prepend_line(p+"/"+q+".hip",'#include <common/HIPCHECK.h>')
 	textToSearch="checkCudaErrors"
 	textToReplace="HIPCHECK"
 	fileToSearch=x+".hip"
