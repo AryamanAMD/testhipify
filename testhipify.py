@@ -55,7 +55,7 @@ def ftale(x):
 	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
 	textToSearch="checkCudaErrors"
 	textToReplace="HIPCHECK"
-	fileToSearch=x+".hip"
+	fileToSearch=q+".hip"
 	textToSearch1="hipProfilerStart"
 	textToReplace1="roctracer_start"
 	textToSearch2="hipProfilerStop"
