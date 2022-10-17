@@ -59,17 +59,17 @@ def ftale(x):
 	textToSearch="checkCudaErrors"
 	textToReplace="HIPCHECK"
 	fileToSearch=x+".hip"
+	textToSearch1="hipProfilerStart"
+	textToReplace1="roctracer_start"
+	textToSearch2="hipProfilerStop"
+	textToReplace2="roctracer_stop"
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch,textToReplace))
+		tempFile.write(line.replace(textToSearch1,textToReplace1))
+		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()	
-	textToSearch="hipProfiler"
-	textToReplace="roctracer"
-	fileToSearch=x+".hip"
-	tempFile=open(fileToSearch,'r+')
-	for line in fileinput.input(fileToSearch):
-		tempFile.write(line.replace(textToSearch,textToReplace))
-	tempFile.close()
+	
 
 		#os.system("cd "+p)
 		#os.system("echo cd "+p)
