@@ -76,6 +76,7 @@ def ftale(x):
 	command='hipcc -I src/samples/Common '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out'
 	print(command)
 	os.system(command)
+	command='git apply --ignore-whitespace src/patches/*.patch'
 	command='hipcc -use-staticlib '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out.static'
 	print(command)
 	os.system(command)
