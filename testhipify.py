@@ -73,7 +73,7 @@ def ftale(x):
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()
-	command='git apply src/patches/*.patch'
+	command='git apply --reject --whitespace=fix src/patches/*.patch'
 	print(command)
 	os.system(command)
 	command='hipcc -I src/samples/Common '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out'
