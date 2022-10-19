@@ -57,9 +57,9 @@ def ftale(x):
 	textToReplace="HIPCHECK"
 	fileToSearch=p+"/"+q+".hip"
 	textToSearch1="hipProfilerStart"
-	textToReplace1="roctracer_start"
+	textToReplace1="rocprofiler_start"
 	textToSearch2="hipProfilerStop"
-	textToReplace2="roctracer_stop"
+	textToReplace2="rocprofiler_stop"
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch,textToReplace))
