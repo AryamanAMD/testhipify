@@ -72,11 +72,10 @@ def ftale(x):
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()
-
-	command='hipcc -I src/samples/Common '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out'
+	command='git apply src/patches/*.patch'
 	print(command)
 	os.system(command)
-	command='git apply src/patches/*.patch'
+	command='hipcc -I src/samples/Common '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out'
 	print(command)
 	os.system(command)
 	command='hipcc -use-staticlib '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out.static'
