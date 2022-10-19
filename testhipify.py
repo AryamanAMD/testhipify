@@ -72,14 +72,14 @@ def ftale(x):
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()
-	
-	command='hipcc -I /testhipify/src/samples/Common '+q+'.hip -o '+os.path.splitext(x)[0]+'.out'
+
+	command='hipcc -I /testhipify/src/samples/Common '+p+'/'+q+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out'
 	print(command)
 	os.system(command)
-	command='hipcc -use-staticlib '+q+'.hip -o '+os.path.splitext(x)[0]+'.out.static'
+	command='hipcc -use-staticlib '+p+'/'+q+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out.static'
 	print(command)
 	os.system(command)
-	command='./'+os.path.splitext(x)[0]+'.out'
+	command='./'+p+'/'+os.path.splitext(x)[0]+'.out'
 	print(command)
 	os.system(command)
 	
