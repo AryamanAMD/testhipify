@@ -99,6 +99,7 @@ def ftale(x):
 	#command='./'+os.path.splitext(x)[0]+'.out'
 	#print(command)
 	#os.system(command)
+	#command2='hipcc -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common asyncAPI.cu.hip -o asynAPI.out'
 
 					
 		
