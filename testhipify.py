@@ -83,9 +83,9 @@ def ftale(x):
 		
 		#command="/opt/rocm/bin/hipcc -I /home/taccuser/testhipify/src/samples/Common -I /home/taccuser/testhipify/src/samples/Common/GL -I /home/taccuser/testhipify/src/samples/Common/UtilNPP -I /home/taccuser/testhipify/src/samples/Common/data -I /home/taccuser/testhipify/src/samples/Common/lib/x64 "+p+"/"+os.path.basename(x)+".hip"
 		#/opt/rocm-5.4.0-10890/bin
-	command='/opt/rocm-5.4.0-10890/bin/hipcc -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common/UtilNPP -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common/data -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common/lib/x64 '+p+'/'+q+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out'
-	print(command)
-	os.system(command)
+	#command='/opt/rocm-5.4.0-10890/bin/hipcc -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common/UtilNPP -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common/data -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common/lib/x64 '+p+'/'+q+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out'
+	#print(command)
+	#os.system(command)
 
     #hipcc  square.cpp -o square.out(done)
 	#command='hipcc '+p+'/'+os.path.basename(x)+'.hip -o '+p+'/'+os.path.splitext(x)[0]+'.out'
