@@ -78,7 +78,7 @@ def ftale(x):
 	command='hipcc -I src/samples/Common '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out'
 	print(command)
 	os.system(command)
-	command='hipcc -use-staticlib '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out.static'
+	command='hipcc -I src/samples/Common -use-staticlib '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out.static'
 	print(command)
 	os.system(command)
 	command='./'+os.path.splitext(x)[0]+'.out'
