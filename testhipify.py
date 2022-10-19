@@ -73,6 +73,18 @@ def ftale(x):
 		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()
 	
+	command='hipcc -I /testhipify/src/samples/Common '+q+'.hip -o '+os.path.splitext(x)[0]+'.out'
+	print(command)
+	os.system(command)
+	command='hipcc -use-staticlib '+q+'.hip -o '+os.path.splitext(x)[0]+'.out.static'
+	print(command)
+	os.system(command)
+	command='./'+os.path.splitext(x)[0]+'.out'
+	print(command)
+	os.system(command)
+	
+
+	
 
 		#os.system("cd "+p)
 		#os.system("echo cd "+p)
@@ -100,7 +112,8 @@ def ftale(x):
 	#print(command)
 	#os.system(command)
 	#command2='hipcc -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common asyncAPI.cu.hip -o asynAPI.out'
-
+    
+	
 					
 		
 				
