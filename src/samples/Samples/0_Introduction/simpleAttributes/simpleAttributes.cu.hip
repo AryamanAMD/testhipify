@@ -215,8 +215,3 @@ void runTest(int argc, char **argv) {
 
   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-%f (ms)\n", sdkGetTimerValue(&timer));
-  sdkDeleteTimer(&timer);
-
-  exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
-}

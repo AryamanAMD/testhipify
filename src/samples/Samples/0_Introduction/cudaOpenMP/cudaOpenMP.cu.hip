@@ -160,5 +160,3 @@ int main(int argc, char *argv[]) {
 
   exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-  exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
-}

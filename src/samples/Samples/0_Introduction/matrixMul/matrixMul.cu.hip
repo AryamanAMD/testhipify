@@ -354,11 +354,3 @@ int main(int argc, char **argv) {
 
   exit(matrix_result);
 }
-sB.x, dimsB.y);
-
-  checkCudaErrors(rocprofiler_group_start());
-  int matrix_result = MatrixMultiply(argc, argv, block_size, dimsA, dimsB);
-  checkCudaErrors(rocprofiler_group_stop());
-
-  exit(matrix_result);
-}

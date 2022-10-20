@@ -312,10 +312,3 @@ void runTest(int argc, char **argv) {
   HIPCHECK(hipEventDestroy(start));
   HIPCHECK(hipEventDestroy(stop));
 }
-dataPL));
-  checkCudaErrors(hipFreeArray(d_idataArray));
-  checkCudaErrors(hipFree(d_odata));
-
-  checkCudaErrors(hipEventDestroy(start));
-  checkCudaErrors(hipEventDestroy(stop));
-}
