@@ -1,3 +1,4 @@
+#include "rocprofiler.h"
 #include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
@@ -106,7 +107,7 @@ int main(int argc, char *argv[]) {
   float gpu_time = 0.0f;
 
   // asynchronously issue work to the GPU (all to stream 0)
-  HIPCHECK(roctracer_start());
+  HIPCHECK(rocprofiler_group_start());
   sdkStartTimer(&timer);
   hipEventRecord(start, 0);
   hipMemcpyAsync(d_a, a, nbytes, hipMemcpyHostToDevice, 0);
@@ -114,7 +115,7 @@ int main(int argc, char *argv[]) {
   hipMemcpyAsync(a, d_a, nbytes, hipMemcpyDeviceToHost, 0);
   hipEventRecord(stop, 0);
   sdkStopTimer(&timer);
-  HIPCHECK(roctracer_stop());
+  HIPCHECK(rocprofiler_group_stop());
 
   // have CPU do some work while waiting for stage 1 to finish
   unsigned long int counter = 0;
