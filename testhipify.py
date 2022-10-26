@@ -25,11 +25,16 @@ def prepend_line(file_name, line):
     os.rename(dummy_file, file_name)
 	
     
-
+def ftale(x):
+	generate(x)
+	apply_patches()
+	compilation_1(x)
+	compilation_2(x)
+	runsample(x)
 	
 
 
-def ftale(x):
+def generate(x):
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
@@ -58,9 +63,9 @@ def ftale(x):
 	textToReplace="HIPCHECK"
 	fileToSearch=p+"/"+q+".hip"
 	textToSearch1="hipProfilerStart"
-	textToReplace1="rocprofiler_group_start"
+	textToReplace1="rocprofiler_start"
 	textToSearch2="hipProfilerStop"
-	textToReplace2="rocprofiler_group_stop"
+	textToReplace2="rocprofiler_stop"
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch,textToReplace))
@@ -73,15 +78,32 @@ def ftale(x):
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()
+
+def apply_patches():
 	command='git apply --reject --whitespace=fix src/patches/*.patch'
 	print(command)
 	os.system(command)
+
+	
+def compilation_1(x):
+	x=x.replace('"', '')
+	p=os.path.dirname(x)
+	q=os.path.basename(x)
+	p=p.replace("\\","/")
 	command='hipcc -I src/samples/Common '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out'
 	print(command)
 	os.system(command)
+
+def compilation_2(x):
+	x=x.replace('"', '')
+	p=os.path.dirname(x)
+	q=os.path.basename(x)
+	p=p.replace("\\","/")
 	command='hipcc -I src/samples/Common -use-staticlib '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out.static'
 	print(command)
 	os.system(command)
+
+def runsample(x):	
 	command='./'+os.path.splitext(x)[0]+'.out'
 	print(command)
 	os.system(command)
@@ -139,7 +161,8 @@ def fall(y):
 
 
 def rem(z):
-	
+	print("This script automates sample exclusion.Please backup any paths provided by you to avoid loss or overwriting.")
+	input("Press Enter to continue...")
 	a=open("samples_to_be_ignored.txt","r+")
 	a.truncate(0)
 
@@ -188,6 +211,10 @@ parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid an
 parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
+parser.add_argument("-b", "--generate", help='Generate .hip files')
+parser.add_argument("-c", "--compile1", help='Compile .hip files')
+parser.add_argument("-d", "--compile2", help='Compile .hip files again')
+parser.add_argument("-e", "--execute", help='Execute .out files')
 args=parser.parse_args()
 if args.tale:
 	x=args.tale
@@ -200,6 +227,20 @@ if args.all:
 if args.remove:
 	z=args.remove
 	rem(z)
+if args.generate:
+	a=args.generate
+	generate(a)
+if args.compile1:
+	b=args.compile1
+	compilation_1(b)
+if args.compile2:
+	c=args.compile2
+	compilation_2(c)
+if args.execute:
+	d=args.execute
+	runsample(d)			
+
+
 
 
 
