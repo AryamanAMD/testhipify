@@ -259,7 +259,7 @@ parser.add_argument("-f", "--generate_all", help='Generate all .hip files')
 parser.add_argument("-g", "--compile1_all", help='Compile all .hip files')
 parser.add_argument("-i", "--compile2_all", help='Compile all .hip files with static libraries')
 parser.add_argument("-j", "--execute_all", help='Execute all .out files')
-parser.add_argument("-p", "--patch", help='Apply all patches in src/patches')
+parser.add_argument("-p", "--patch", help='Apply all patches in src/patches',action='store_true')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
 
