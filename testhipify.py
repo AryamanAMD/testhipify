@@ -32,7 +32,49 @@ def ftale(x):
 	compilation_2(x)
 	runsample(x)
 	
+def generate_all(y):
+	y=y.replace('"', '')
+	listOfFiles=getListOfFiles(y)
+	for elem in listOfFiles:
+		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
+			with open('final_ignored_samples.txt','r') as f:
+				if elem in f.read():
+					print("Ignoring this sample "+elem)
+				else:
+					generate(elem)
 
+def compilation_1_all(y):
+	y=y.replace('"', '')
+	listOfFiles=getListOfFiles(y)
+	for elem in listOfFiles:
+		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
+			with open('final_ignored_samples.txt','r') as f:
+				if elem in f.read():
+					print("Ignoring this sample "+elem)
+				else:
+					compilation_1(elem)	
+
+def compilation_2_all(y):
+	y=y.replace('"', '')
+	listOfFiles=getListOfFiles(y)
+	for elem in listOfFiles:
+		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
+			with open('final_ignored_samples.txt','r') as f:
+				if elem in f.read():
+					print("Ignoring this sample "+elem)
+				else:
+					compilation_2(elem)		
+
+def runsample_all(y):
+	y=y.replace('"', '')
+	listOfFiles=getListOfFiles(y)
+	for elem in listOfFiles:
+		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
+			with open('final_ignored_samples.txt','r') as f:
+				if elem in f.read():
+					print("Ignoring this sample "+elem)
+				else:
+					runsample(elem)														
 
 def generate(x):
 	x=x.replace('"', '')
@@ -208,13 +250,22 @@ def rem(z):
 
 
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
-parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
-parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
 parser.add_argument("-b", "--generate", help='Generate .hip files')
 parser.add_argument("-c", "--compile1", help='Compile .hip files')
-parser.add_argument("-d", "--compile2", help='Compile .hip files again')
+parser.add_argument("-d", "--compile2", help='Compile .hip files with static libraries')
 parser.add_argument("-e", "--execute", help='Execute .out files')
+parser.add_argument("-f", "--generate_all", help='Generate all .hip files')
+parser.add_argument("-g", "--compile1_all", help='Compile all .hip files')
+parser.add_argument("-h", "--compile2_all", help='Compile all .hip files with static libraries')
+parser.add_argument("-i", "--execute_all", help='Execute all .out files')
+parser.add_argument("-p", "--patch", help='Apply all patches in src/patches')
+parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
+parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
+
+
+
+
 args=parser.parse_args()
 if args.tale:
 	x=args.tale
@@ -230,6 +281,8 @@ if args.remove:
 if args.generate:
 	a=args.generate
 	generate(a)
+if args.patch:
+	apply_patches()	
 if args.compile1:
 	b=args.compile1
 	compilation_1(b)
@@ -238,7 +291,19 @@ if args.compile2:
 	compilation_2(c)
 if args.execute:
 	d=args.execute
-	runsample(d)			
+	runsample(d)	
+if args.generate_all:
+	a=args.generate_all
+	generate_all(a)
+if args.compile1_all:
+	b=args.compile1_all
+	compilation_1_all(b)
+if args.compile2_all:
+	c=args.compile2_all
+	compilation_2_all(c)
+if args.execute_all:
+	d=args.execute_all
+	runsample_all(d)			
 
 
 
