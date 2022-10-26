@@ -122,7 +122,7 @@ def generate(x):
 	tempFile.close()
 
 def apply_patches():
-	command='git apply --reject --whitespace=fix src/patches/*.patch'
+	command='git apply src/patches/*.patch'
 	print(command)
 	os.system(command)
 
