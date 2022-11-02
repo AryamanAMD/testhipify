@@ -23,6 +23,78 @@ def prepend_line(file_name, line):
             write_obj.write(line)
     os.remove(file_name)
     os.rename(dummy_file, file_name)
+
+
+def parenthesis_check(file_name):
+	string=''
+	p=os.path.dirname(file_name)
+	#f = open("a.cu.hip", "w")
+	file=open(file_name,'r')
+	file2=open(file_name,'r')
+	while 1:
+		char=file.read(1)
+		if not char:
+			break
+		if char=='{' or char=='}':
+			string+=char
+	print(string)
+	result=check(string)
+	print(result)
+	if result==1:
+		#for line in file2:
+			#print(line)
+		lines = file2.readlines()
+		lines = lines[:-1]	
+		for elem in reversed(lines):
+			if '}\n' not in elem:
+				lines = lines[:-1]	
+			else:
+				break	
+				
+		print(lines)	
+		with open(p+'/a.cu.hip','w') as fp:
+			for item in lines:
+				fp.write(item)
+		file.close()
+		file2.close()
+		os.remove(file_name)
+		os.rename(p+'/a.cu.hip', file_name)
+
+			
+		
+
+		
+
+
+		
+
+
+        		
+
+
+open_list = ["{"]
+close_list = ["}"]
+def check(myStr):
+    stack = []
+    for i in myStr:
+        if i in open_list:
+            stack.append(i)
+        elif i in close_list:
+            pos = close_list.index(i)
+            if ((len(stack) > 0) and
+                (open_list[pos] == stack[len(stack)-1])):
+                stack.pop()
+            else:
+                return 1
+    if len(stack) == 0:
+        return 0
+    else:
+        return 1
+
+
+
+
+
 	
     
 def ftale(x):
@@ -120,6 +192,7 @@ def generate(x):
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()
+	parenthesis_check(x)
 
 def apply_patches():
 	command='git apply --reject --whitespace=fix src/patches/*.patch'
@@ -259,6 +332,7 @@ parser.add_argument("-f", "--generate_all", help='Generate all .hip files')
 parser.add_argument("-g", "--compile1_all", help='Compile all .hip files')
 parser.add_argument("-i", "--compile2_all", help='Compile all .hip files with static libraries')
 parser.add_argument("-j", "--execute_all", help='Execute all .out files')
+parser.add_argument("-k", "--parenthesis_check", help='Remove last parts from cu.hip files which are out of bounds.')
 parser.add_argument("-p", "--patch", help='Apply all patches in src/patches',action='store_true')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
@@ -303,7 +377,10 @@ if args.compile2_all:
 	compilation_2_all(c)
 if args.execute_all:
 	d=args.execute_all
-	runsample_all(d)			
+	runsample_all(d)
+if args.parenthesis_check:
+	e=args.parenthesis_check
+	parenthesis_check(e)				
 
 
 
