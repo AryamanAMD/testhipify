@@ -1,0 +1,9 @@
+diff a/src/samples/Samples/0_Introduction/clock/clock.cu.hip b/src/samples/Samples/0_Introduction/clock/clock.cu.hip	(rejected hunks)
+@@ -154,7 +154,3 @@ int main(int argc, char **argv) {
+ 
+   return EXIT_SUCCESS;
+ }
+- = %Lf\n", avgElapsedClocks);
+-
+-  return EXIT_SUCCESS;
+-}

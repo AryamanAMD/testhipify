@@ -1,0 +1,9 @@
+diff a/src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu.hip b/src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu.hip	(rejected hunks)
+@@ -309,7 +309,3 @@ int main(int argc, char **argv) {
+              ? EXIT_SUCCESS
+              : EXIT_FAILURE;
+ }
+-_count[1] == 0 && error_count[2] == 0)
+-             ? EXIT_SUCCESS
+-             : EXIT_FAILURE;
+-}

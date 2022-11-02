@@ -1,0 +1,17 @@
+diff a/src/samples/Samples/0_Introduction/simpleIPC/simpleIPC.cu.hip b/src/samples/Samples/0_Introduction/simpleIPC/simpleIPC.cu.hip	(rejected hunks)
+@@ -330,15 +330,3 @@ int main(int argc, char **argv) {
+   return EXIT_SUCCESS;
+ #endif
+ }
+-__arm__) || defined(__aarch64__)
+-  printf("Not supported on ARM\n");
+-  return EXIT_WAIVED;
+-#else
+-  if (argc == 1) {
+-    parentProcess(argv[0]);
+-  } else {
+-    childProcess(atoi(argv[1]));
+-  }
+-  return EXIT_SUCCESS;
+-#endif
+-}

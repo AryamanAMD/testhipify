@@ -296,3 +296,8 @@ void runTest(int argc, char **argv) {
   free(imagePath);
   free(refPath);
 }
+e(dData));
+  checkCudaErrors(hipFreeArray(cuArray));
+  free(imagePath);
+  free(refPath);
+}

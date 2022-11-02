@@ -1,0 +1,9 @@
+diff a/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.cu.hip b/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.cu.hip	(rejected hunks)
+@@ -269,7 +269,3 @@ int main(int argc, char **argv) {
+ 
+   exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
+-Errors(hipFreeArray(cu_3darray));
+-
+-  exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
+-}

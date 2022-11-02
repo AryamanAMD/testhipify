@@ -1,0 +1,9 @@
+diff a/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.cu.hip b/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.cu.hip	(rejected hunks)
+@@ -217,7 +217,3 @@ int main(int argc, char **argv) {
+ 
+   exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
+-hipFreeArray(cu_3darray));
+-
+-  exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
+-}

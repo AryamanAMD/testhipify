@@ -188,3 +188,10 @@ int main(int argc, const char *argv[]) {
 
   exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+tFree(hOutput));
+  checkCudaErrors(hipHostFree(hInput));
+
+  checkCudaErrors(hipDeviceSynchronize());
+
+  exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
+}

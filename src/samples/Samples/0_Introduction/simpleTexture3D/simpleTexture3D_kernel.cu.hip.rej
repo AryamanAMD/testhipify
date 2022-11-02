@@ -1,0 +1,6 @@
+diff a/src/samples/Samples/0_Introduction/simpleTexture3D/simpleTexture3D_kernel.cu.hip b/src/samples/Samples/0_Introduction/simpleTexture3D/simpleTexture3D_kernel.cu.hip	(rejected hunks)
+@@ -141,4 +141,3 @@ void cleanupCuda() {
+ #endif  // #ifndef _SIMPLETEXTURE3D_KERNEL_CU_
+ 
+ 
+-#endif  // #ifndef _SIMPLETEXTURE3D_KERNEL_CU_

@@ -1,0 +1,15 @@
+diff a/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.cu.hip b/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.cu.hip	(rejected hunks)
+@@ -247,11 +247,4 @@ int main(int argc, char **argv) {
+   }
+ 
+   exit(errorNorm / refNorm < 1.e-6f ? EXIT_SUCCESS : EXIT_FAILURE);
+-}
+-HostFree(b));
+-    checkCudaErrors(hipHostFree(c));
+-#endif
+-  }
+-
+-  exit(errorNorm / refNorm < 1.e-6f ? EXIT_SUCCESS : EXIT_FAILURE);
+-}
++}
+\ No newline at end of file

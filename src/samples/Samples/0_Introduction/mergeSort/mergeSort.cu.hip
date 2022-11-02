@@ -530,4 +530,10 @@ extern "C" void mergeSort(uint *d_DstKey, uint *d_DstVal, uint *d_BufKey,
     oval = t;
   }
 }
-
+key;
+    okey = t;
+    t = ival;
+    ival = oval;
+    oval = t;
+  }
+}

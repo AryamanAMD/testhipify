@@ -343,3 +343,5 @@ int main(int argc, char **argv) {
          testResult ? "OK" : "ERROR!");
   exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+S : EXIT_FAILURE);
+}

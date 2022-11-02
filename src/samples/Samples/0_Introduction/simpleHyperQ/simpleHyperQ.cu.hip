@@ -232,3 +232,8 @@ int main(int argc, char **argv) {
 
   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+pHostFree(a);
+  hipFree(d_a);
+
+  exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
+}

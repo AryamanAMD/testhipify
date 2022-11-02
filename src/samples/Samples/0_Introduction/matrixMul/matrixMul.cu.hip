@@ -348,9 +348,17 @@ int main(int argc, char **argv) {
   printf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y,
          dimsB.x, dimsB.y);
 
-  HIPCHECK(rocprofiler_group_start());
+  HIPCHECK(rocprofiler_start());
   int matrix_result = MatrixMultiply(argc, argv, block_size, dimsA, dimsB);
-  HIPCHECK(rocprofiler_group_stop());
+  HIPCHECK(rocprofiler_stop());
+
+  exit(matrix_result);
+}
+sB.x, dimsB.y);
+
+  checkCudaErrors(rocprofiler_start());
+  int matrix_result = MatrixMultiply(argc, argv, block_size, dimsA, dimsB);
+  checkCudaErrors(rocprofiler_stop());
 
   exit(matrix_result);
 }

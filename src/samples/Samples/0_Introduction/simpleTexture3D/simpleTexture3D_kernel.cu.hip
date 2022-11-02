@@ -141,3 +141,4 @@ void cleanupCuda() {
 #endif  // #ifndef _SIMPLETEXTURE3D_KERNEL_CU_
 
 
+#endif  // #ifndef _SIMPLETEXTURE3D_KERNEL_CU_

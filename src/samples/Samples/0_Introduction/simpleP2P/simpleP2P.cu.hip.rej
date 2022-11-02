@@ -1,0 +1,20 @@
+diff a/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.cu.hip b/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.cu.hip	(rejected hunks)
+@@ -261,18 +261,3 @@ int main(int argc, char **argv) {
+     exit(EXIT_SUCCESS);
+   }
+ }
+-(g1));
+-  checkCudaErrors(hipHostFree(h0));
+-
+-  for (int i = 0; i < gpu_n; i++) {
+-    checkCudaErrors(hipSetDevice(i));
+-  }
+-
+-  if (error_count != 0) {
+-    printf("Test failed!\n");
+-    exit(EXIT_FAILURE);
+-  } else {
+-    printf("Test passed\n");
+-    exit(EXIT_SUCCESS);
+-  }
+-}

@@ -1,0 +1,7 @@
+diff a/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.cu.hip b/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.cu.hip	(rejected hunks)
+@@ -74,5 +74,3 @@ int main(int argc, char **argv) {
+ 
+   return EXIT_SUCCESS;
+ }
+-IT_SUCCESS;
+-}

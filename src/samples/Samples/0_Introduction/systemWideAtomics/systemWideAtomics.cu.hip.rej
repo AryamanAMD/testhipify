@@ -1,0 +1,7 @@
+diff a/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip b/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip	(rejected hunks)
+@@ -343,5 +343,3 @@ int main(int argc, char **argv) {
+          testResult ? "OK" : "ERROR!");
+   exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
+-S : EXIT_FAILURE);
+-}

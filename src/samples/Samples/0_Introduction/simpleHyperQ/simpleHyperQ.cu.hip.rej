@@ -1,0 +1,10 @@
+diff a/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.cu.hip b/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.cu.hip	(rejected hunks)
+@@ -232,8 +232,3 @@ int main(int argc, char **argv) {
+ 
+   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
+-pHostFree(a);
+-  hipFree(d_a);
+-
+-  exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
+-}
