@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -276,12 +274,6 @@ void runTest(int argc, char **argv) {
 
   if (h_img1 != NULL) free(h_img1);
 
-  if (dispOut != NULL) free(dispOut);
-
-  sdkDeleteTimer(&timer);
-
-  exit((checkSum == cpuCheckSum) ? EXIT_SUCCESS : EXIT_FAILURE);
-}
   if (dispOut != NULL) free(dispOut);
 
   sdkDeleteTimer(&timer);

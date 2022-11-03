@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -234,16 +232,6 @@ int main(int argc, char **argv) {
 
   int ret1 = basicStreamOrderedAllocation(dev, nelem, a, b, c);
   int ret2 = streamOrderedAllocationPostSync(dev, nelem, a, b, c);
-
-  /* Memory clean up */
-  free(a);
-  free(b);
-  free(c);
-
-  return ((ret1 == EXIT_SUCCESS && ret2 == EXIT_SUCCESS) ? EXIT_SUCCESS
-                                                         : EXIT_FAILURE);
-}
-ocationPostSync(dev, nelem, a, b, c);
 
   /* Memory clean up */
   free(a);

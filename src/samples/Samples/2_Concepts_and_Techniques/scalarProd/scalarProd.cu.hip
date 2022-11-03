@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -168,8 +166,5 @@ int main(int argc, char **argv) {
 
   printf("L1 error: %E\n", L1norm);
   printf((L1norm < 1e-6) ? "Test passed\n" : "Test failed!\n");
-  exit(L1norm < 1e-6 ? EXIT_SUCCESS : EXIT_FAILURE);
-}
- : "Test failed!\n");
   exit(L1norm < 1e-6 ? EXIT_SUCCESS : EXIT_FAILURE);
 }

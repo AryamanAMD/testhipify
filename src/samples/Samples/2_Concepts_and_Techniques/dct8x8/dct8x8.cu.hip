@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -671,7 +669,3 @@ finalize
     printf("Test failed!\n");
     exit(EXIT_FAILURE);
   }
-
-  printf("Test passed\n");
-  exit(EXIT_SUCCESS);
-}

@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -245,10 +243,6 @@ int main(int argc, char **argv) {
 
   free(h_data);
   HIPCHECK(hipFree(d_data));
-
-  exit(EXIT_SUCCESS);
-}
-rrors(hipFree(d_data));
 
   exit(EXIT_SUCCESS);
 }

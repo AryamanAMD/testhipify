@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -135,6 +133,4 @@ void SineWaveSimulation::stepSimulation(float time, hipStream_t stream) {
   sinewave<<<m_blocks, m_threads, 0, stream>>>(m_heightMap, m_width, m_height,
                                                time);
   getLastCudaError("Failed to launch CUDA simulation");
-}
-or("Failed to launch CUDA simulation");
 }

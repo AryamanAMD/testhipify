@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -133,6 +131,4 @@ void resizeBGRplanarBatch(
     resizeBGRplanarBatchCore(dpSrc, nSrcPitch, nSrcWidth, nSrcHeight,
         dpDst, nDstPitch, nDstWidth, nDstHeight, nBatchSize, stream,
         whSameResizeRatio, cropX, cropY, cropW, cropH);
-}
-pW, cropH);
 }

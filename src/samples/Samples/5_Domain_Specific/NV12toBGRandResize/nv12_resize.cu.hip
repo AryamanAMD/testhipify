@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -111,6 +109,4 @@ void resizeNV12Batch(uint8_t *dpSrc, int nSrcPitch, int nSrcWidth,
 
   HIPCHECK(hipDestroyTextureObject(texLuma));
   HIPCHECK(hipDestroyTextureObject(texChroma));
-}
-extureObject(texChroma));
 }

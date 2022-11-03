@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -313,5 +311,3 @@ extern "C" void copyInvViewMatrix(float *invViewMatrix, size_t sizeofMatrix) {
 #endif  // #ifndef _VOLUMERENDER_KERNEL_CU_
 trix, invViewMatrix, sizeofMatrix));
 }
-
-#endif  // #ifndef _VOLUMERENDER_KERNEL_CU_

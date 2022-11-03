@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -164,6 +162,4 @@ extern "C" void histogram256(uint *d_Histogram, void *d_Data, uint byteCount) {
   mergeHistogram256Kernel<<<HISTOGRAM256_BIN_COUNT, MERGE_THREADBLOCK_SIZE>>>(
       d_Histogram, d_PartialHistograms, PARTIAL_HISTOGRAM256_COUNT);
   getLastCudaError("mergeHistogram256Kernel() execution failed\n");
-}
-failed\n");
 }

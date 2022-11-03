@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -960,16 +958,6 @@ void printHelp(void) {
   printf("--dtoh\tMeasure device to host transfers\n");
   printf("--dtod\tMeasure device to device transfers\n");
 #if CUDART_VERSION >= 2020
-  printf("--wc\tAllocate pinned memory as write-combined\n");
-#endif
-  printf("--cputiming\tForce CPU-based timing always\n");
-
-  printf("Range mode options\n");
-  printf("--start=[SIZE]\tStarting transfer size in bytes\n");
-  printf("--end=[SIZE]\tEnding transfer size in bytes\n");
-  printf("--increment=[SIZE]\tIncrement size in bytes\n");
-}
-ION >= 2020
   printf("--wc\tAllocate pinned memory as write-combined\n");
 #endif
   printf("--cputiming\tForce CPU-based timing always\n");

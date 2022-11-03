@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -268,6 +266,4 @@ extern "C" size_t scanExclusiveLarge(uint *d_Dst, uint *d_Src, uint batchSize,
   getLastCudaError("uniformUpdate() execution FAILED\n");
 
   return THREADBLOCK_SIZE;
-}
-BLOCK_SIZE;
 }

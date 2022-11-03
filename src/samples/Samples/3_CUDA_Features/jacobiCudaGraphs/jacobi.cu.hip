@@ -405,4 +405,3 @@ double JacobiMethodGpu(const float *A, const double *b,
       break;
     }
   }
- }

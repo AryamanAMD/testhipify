@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -179,12 +177,6 @@ void processResultSmallMatrix(const InputData &input,
 
   // save result in matlab format
   writeTridiagSymMatlab(filename, input.a, input.b + 1, eigenvalues, mat_size);
-
-  freePtr(left);
-  freePtr(left_count);
-  freePtr(eigenvalues);
-}
- input.b + 1, eigenvalues, mat_size);
 
   freePtr(left);
   freePtr(left_count);

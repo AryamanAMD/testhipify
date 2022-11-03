@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -225,10 +223,6 @@ extern "C" void MonteCarloGPU(TOptionPlan *plan, hipStream_t stream) {
   HIPCHECK(hipMemcpyAsync(h_CallValue, plan->d_CallValue,
                                   plan->optionCount * sizeof(__TOptionValue),
                                   hipMemcpyDeviceToHost, stream));
-
-  // cudaDeviceSynchronize();
-}
-                         hipMemcpyDeviceToHost, stream));
 
   // cudaDeviceSynchronize();
 }

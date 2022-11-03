@@ -147,9 +147,3 @@ void calcDepth(float4 *pos,
 
   thrust::sequence(d_indices, d_indices + numParticles);
 }
-
-void sortParticles(float *sortKeys, uint *indices, uint numParticles) {
-  thrust::sort_by_key(thrust::device_ptr<float>(sortKeys),
-                      thrust::device_ptr<float>(sortKeys + numParticles),
-                      thrust::device_ptr<uint>(indices));
-}

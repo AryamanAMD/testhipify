@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -266,6 +264,3 @@ extern "C" double bilateralFilterRGBA(uint *dDest, int width, int height,
 viceToDevice));
     }
   }
-
-  return ((dKernelTime / 1000.) / (double)iterations);
-}

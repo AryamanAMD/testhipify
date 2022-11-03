@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -411,20 +409,5 @@ int main(int argc, char **argv) {
   HIPCHECK(hipFree(outputVec_d));
   HIPCHECK(hipFree(result_d));
   HIPCHECK(hipHostFree(inputVec_h));
-  return EXIT_SUCCESS;
-}
-zeof(double)));
-
-  init_input(inputVec_h, size);
-
-  cudaGraphsManual(inputVec_h, inputVec_d, outputVec_d, result_d, size,
-                   maxBlocks);
-  cudaGraphsUsingStreamCapture(inputVec_h, inputVec_d, outputVec_d, result_d,
-                               size, maxBlocks);
-
-  checkCudaErrors(hipFree(inputVec_d));
-  checkCudaErrors(hipFree(outputVec_d));
-  checkCudaErrors(hipFree(result_d));
-  checkCudaErrors(hipHostFree(inputVec_h));
   return EXIT_SUCCESS;
 }

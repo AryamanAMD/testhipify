@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -210,11 +208,6 @@ void runTest(int argc, char **argv) {
 
   sdkStopTimer(&timer);
   printf("Processing time: %f (ms)\n", sdkGetTimerValue(&timer));
-  sdkDeleteTimer(&timer);
-
-  exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
-}
-%f (ms)\n", sdkGetTimerValue(&timer));
   sdkDeleteTimer(&timer);
 
   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);

@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -195,13 +193,6 @@ int main(int argc, char **argv) {
   HIPCHECK(hipEventElapsedTime(&ms_hi, ev_start_hi, ev_end_hi));
 
   printf("elapsed time of kernels launched to LOW priority stream: %.3lf ms\n",
-         ms_low);
-  printf("elapsed time of kernels launched to HI  priority stream: %.3lf ms\n",
-         ms_hi);
-
-  exit(EXIT_SUCCESS);
-}
-iority stream: %.3lf ms\n",
          ms_low);
   printf("elapsed time of kernels launched to HI  priority stream: %.3lf ms\n",
          ms_hi);

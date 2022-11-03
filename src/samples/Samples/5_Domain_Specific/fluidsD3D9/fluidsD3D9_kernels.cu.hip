@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -332,6 +330,4 @@ extern "C" void advectParticles(Vertex *p, cData *v, int dx, int dy, float dt,
 
   advectParticles_k<<<grid, tids>>>(p, v, dx, dy, dt, TILEY / TIDSY, tPitch);
   getLastCudaError("advectParticles_k failed.");
-}
-ectParticles_k failed.");
 }

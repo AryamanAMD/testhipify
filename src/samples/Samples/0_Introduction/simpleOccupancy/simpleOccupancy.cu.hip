@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -244,9 +242,3 @@ int main() {
 }
 rn -1;
   }
-
-  std::cout << std::endl;
-  std::cout << "Test PASSED\n" << std::endl;
-
-  return 0;
-}

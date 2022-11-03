@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -208,6 +206,4 @@ extern "C" void sobolGPU(int n_vectors, int n_dimensions,
   // Execute GPU kernel
   sobolGPU_kernel<<<dimGrid, dimBlock>>>(n_vectors, n_dimensions, d_directions,
                                          d_output);
-}
- d_output);
 }

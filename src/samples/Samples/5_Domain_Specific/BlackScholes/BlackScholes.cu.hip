@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -241,11 +239,6 @@ int main(int argc, char **argv) {
 
   printf(
       "\nNOTE: The CUDA Samples are not meant for performance measurements. "
-      "Results may vary when GPU Boost is enabled.\n\n");
-  printf("Test passed\n");
-  exit(EXIT_SUCCESS);
-}
-ements. "
       "Results may vary when GPU Boost is enabled.\n\n");
   printf("Test passed\n");
   exit(EXIT_SUCCESS);

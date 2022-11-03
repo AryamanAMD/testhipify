@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -169,8 +167,5 @@ int main(int argc, char *argv[]) {
   free(h_Kernel);
 
   printf("L2 norm: %E\n", L2norm);
-  printf(L2norm < 1e-6 ? "Test passed\n" : "Test failed!\n");
-}
-orm);
   printf(L2norm < 1e-6 ? "Test passed\n" : "Test failed!\n");
 }

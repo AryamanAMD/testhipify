@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -319,9 +317,5 @@ extern "C" void spProcess2D(void *d_Dst, void *d_SrcA, void *d_SrcB, uint DY,
 #if (USE_TEXTURE)
   HIPCHECK(hipDestroyTextureObject(texComplexA));
   HIPCHECK(hipDestroyTextureObject(texComplexB));
-#endif
-}
-ct(texComplexA));
-  checkCudaErrors(hipDestroyTextureObject(texComplexB));
 #endif
 }

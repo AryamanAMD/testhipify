@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -187,13 +185,6 @@ int main(int argc, const char *argv[]) {
   HIPCHECK(hipHostFree(hInput));
 
   HIPCHECK(hipDeviceSynchronize());
-
-  exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
-}
-tFree(hOutput));
-  checkCudaErrors(hipHostFree(hInput));
-
-  checkCudaErrors(hipDeviceSynchronize());
 
   exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }

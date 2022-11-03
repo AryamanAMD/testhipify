@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -256,9 +254,4 @@ CudaErrors(hipStreamDestroy(stream2));
   printf("PASSED\n");
 
   return EXIT_SUCCESS;
-}
-
-int main(int argc, char **argv) {
-  int ret = memPoolP2PCopy();
-  return ret;
 }

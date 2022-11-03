@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -239,6 +237,3 @@ int main(int argc, char **argv) {
 ice(i));
     checkCudaErrors(hipHostFree(plan[i].h_Data));
   }
-
-  exit((diff < 1e-5) ? EXIT_SUCCESS : EXIT_FAILURE);
-}

@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -211,12 +209,6 @@ int main(int argc, char **argv) {
   }
 
   printf("%s\n", success ? "Success" : "Failure");
-
-  free(workloads);
-
-  exit(success ? EXIT_SUCCESS : EXIT_FAILURE);
-}
-ccess" : "Failure");
 
   free(workloads);
 
