@@ -197,7 +197,7 @@ def generate(x):
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()
-	parenthesis_check(x)
+	parenthesis_check(x+".hip")
 
 def apply_patches():
 	command='git apply --reject --whitespace=fix src/patches/*.patch'
@@ -206,7 +206,6 @@ def apply_patches():
 
 	
 def compilation_1(x):
-	parenthesis_check(x)
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
@@ -216,7 +215,6 @@ def compilation_1(x):
 	os.system(command)
 
 def compilation_2(x):
-	parenthesis_check(x)
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
