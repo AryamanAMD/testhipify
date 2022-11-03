@@ -172,7 +172,7 @@ def generate(x):
 		print("GL Headers found")	
 		"""
 	#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
-	command="hipify-perl "+p+"/"+q+" > "+p+"/"+q+".hip"
+	command="hipify-clang "+x
 	print(command)
 	os.system(command)
 	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
