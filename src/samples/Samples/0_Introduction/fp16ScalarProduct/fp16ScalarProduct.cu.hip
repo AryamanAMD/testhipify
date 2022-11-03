@@ -216,3 +216,8 @@ int main(int argc, char *argv[]) {
 
   return EXIT_SUCCESS;
 }
+ee(devResults));
+  checkCudaErrors(hipHostFree(results));
+
+  return EXIT_SUCCESS;
+}

@@ -408,3 +408,18 @@ int main(int argc, char **argv) {
   printf("================================\n");
   printf("Sample complete.\n");
 }
+e);
+  cleanupMemory(device);
+
+  physicalMemoryReuseSingleStream(bytes, device);
+  cleanupMemory(device);
+
+  simultaneousStreams(bytes, device);
+  cleanupMemory(device);
+
+  unfreedAllocations(bytes, device);
+  cleanupMemory(device);
+
+  printf("================================\n");
+  printf("Sample complete.\n");
+}

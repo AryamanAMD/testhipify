@@ -114,3 +114,7 @@ int main(int argc, char **argv)
 
     return bValid ? EXIT_SUCCESS: EXIT_FAILURE;
 }
+(h_d_ptr));
+
+    return bValid ? EXIT_SUCCESS: EXIT_FAILURE;
+}

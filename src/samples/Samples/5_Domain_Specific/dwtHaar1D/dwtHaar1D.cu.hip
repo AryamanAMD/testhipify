@@ -393,3 +393,7 @@ bool getLevels(unsigned int len, unsigned int *levels) {
       retval = true;
       break;
     }
+  }
+
+  return retval;
+}

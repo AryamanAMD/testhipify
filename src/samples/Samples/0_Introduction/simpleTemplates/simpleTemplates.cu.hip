@@ -265,3 +265,6 @@ void runTest(int argc, char **argv, int len) {
   HIPCHECK(hipFree(d_idata));
   HIPCHECK(hipFree(d_odata));
 }
+_idata));
+  checkCudaErrors(hipFree(d_odata));
+}

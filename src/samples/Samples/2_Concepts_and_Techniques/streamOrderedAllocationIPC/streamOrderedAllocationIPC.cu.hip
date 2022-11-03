@@ -450,3 +450,6 @@ d(_WIN32) || defined(WIN64) || defined(_WIN64)
   } else {
     childProcess(atoi(argv[1]));
   }
+  return EXIT_SUCCESS;
+#endif
+}

@@ -160,3 +160,9 @@ int main(int argc, const char **argv) {
 
   return EXIT_SUCCESS;
 }
+s(hipFree(d_inputArr));
+  checkCudaErrors(hipFree(d_numOfOdds));
+  checkCudaErrors(hipFree(d_sumOfOddEvenElems));
+
+  return EXIT_SUCCESS;
+}

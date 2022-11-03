@@ -465,3 +465,10 @@ bool runTest(int argc, char **argv) {
 
   return bTestResult;
 }
+   free(h_odata);
+    hipFree(d_idata);
+    hipFree(d_odata);
+  }
+
+  return bTestResult;
+}

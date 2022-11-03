@@ -227,3 +227,7 @@ extern "C" void MonteCarloGPU(TOptionPlan *plan, hipStream_t stream) {
 
   // hipDeviceSynchronize();
 }
+                          hipMemcpyDeviceToHost, stream));
+
+  // hipDeviceSynchronize();
+}

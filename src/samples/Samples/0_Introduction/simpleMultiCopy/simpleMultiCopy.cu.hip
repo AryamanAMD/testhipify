@@ -377,3 +377,7 @@ bool test() {
     for (int i = 0; i < N; ++i) {
       passed &= (h_data_out[j][i] == 1);
     }
+  }
+
+  return passed;
+}

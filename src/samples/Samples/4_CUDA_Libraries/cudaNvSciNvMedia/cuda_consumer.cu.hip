@@ -429,3 +429,10 @@ void runCudaOperation(Blit2DTest *ctx, cudaResources &cudaResObj,
   yuvToGrayscaleCudaKernelNonNvSci(cudaResObj, deviceId, ctx->widthSurface,
                                    ctx->heightSurface);
 }
+], hipMemcpyHostToDevice));
+  }
+  // run cuda kernel over surface object of the LUMA surface part to extract
+  // grayscale.
+  yuvToGrayscaleCudaKernelNonNvSci(cudaResObj, deviceId, ctx->widthSurface,
+                                   ctx->heightSurface);
+}

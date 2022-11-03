@@ -217,3 +217,7 @@ int main(int argc, char **argv) {
 
   exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+hipFreeArray(cu_3darray));
+
+  exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
+}

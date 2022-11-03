@@ -247,3 +247,7 @@ int main(int argc, char **argv) {
 
   exit(EXIT_SUCCESS);
 }
+rrors(hipFree(d_data));
+
+  exit(EXIT_SUCCESS);
+}

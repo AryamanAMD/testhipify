@@ -216,3 +216,13 @@ void ComputeFlowCUDA(const float *I0, const float *I1, int width, int height,
   HIPCHECK(hipFree(d_u));
   HIPCHECK(hipFree(d_v));
 }
+du1));
+  checkCudaErrors(hipFree(d_dv1));
+  checkCudaErrors(hipFree(d_Ix));
+  checkCudaErrors(hipFree(d_Iy));
+  checkCudaErrors(hipFree(d_Iz));
+  checkCudaErrors(hipFree(d_nu));
+  checkCudaErrors(hipFree(d_nv));
+  checkCudaErrors(hipFree(d_u));
+  checkCudaErrors(hipFree(d_v));
+}

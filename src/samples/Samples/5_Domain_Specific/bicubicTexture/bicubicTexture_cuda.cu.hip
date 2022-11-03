@@ -126,3 +126,11 @@ extern "C" void render(int width, int height, float tx, float ty, float scale,
 
   getLastCudaError("kernel failed");
 }
+
+#endif
+
+
+  getLastCudaError("kernel failed");
+}
+
+#endif

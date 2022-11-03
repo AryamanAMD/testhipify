@@ -163,3 +163,8 @@ void runTest(int argc, const char **argv) {
     exit(EXIT_FAILURE);
   }
 }
+" << endl;
+
+    exit(EXIT_FAILURE);
+  }
+}

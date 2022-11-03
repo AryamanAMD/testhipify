@@ -164,3 +164,5 @@ extern "C" void histogram256(uint *d_Histogram, void *d_Data, uint byteCount) {
       d_Histogram, d_PartialHistograms, PARTIAL_HISTOGRAM256_COUNT);
   getLastCudaError("mergeHistogram256Kernel() execution failed\n");
 }
+failed\n");
+}

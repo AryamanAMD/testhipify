@@ -134,3 +134,6 @@ void runTest(int argc, char **argv) {
   HIPCHECK(hipHostFree(hOData));
   HIPCHECK(hipFree(dOData));
 }
+ostFree(hOData));
+  checkCudaErrors(hipFree(dOData));
+}

@@ -256,3 +256,9 @@ int runNormVecByDotProductAWBarrier(int argc, char **argv, int deviceId) {
   HIPCHECK(hipHostFree(vecB));
   return matches == size;
 }
+eckCudaErrors(hipFree(d_partialResults));
+
+  checkCudaErrors(hipHostFree(vecA));
+  checkCudaErrors(hipHostFree(vecB));
+  return matches == size;
+}

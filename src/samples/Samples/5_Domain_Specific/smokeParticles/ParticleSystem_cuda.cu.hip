@@ -149,3 +149,9 @@ void sortParticles(float *sortKeys, uint *indices, uint numParticles) {
                       thrust::device_ptr<float>(sortKeys + numParticles),
                       thrust::device_ptr<uint>(indices));
 }
+
+}  // extern "C"
+ices));
+}
+
+}  // extern "C"

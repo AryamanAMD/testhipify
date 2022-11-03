@@ -167,3 +167,40 @@ int main(int argc, char **argv)
         HIPCHECK(allocateCompressible((void **)&z, size, false));
         compressibleZbuf = 0;
     }
+    else
+    {
+        HIPCHECK(allocateCompressible((void **)&z, size, true));
+        compressibleZbuf = 1;
+    }
+
+    printf("Running saxpy on %zu bytes of Compressible memory\n", size);
+
+    const float a = 1.0f;
+    const float init_val = 1.0f;
+    launchSaxpy(a, x, y, z, n, init_val, compressibleZbuf);
+ 
+    HIPCHECK(freeCompressible(x, size, true));
+    HIPCHECK(freeCompressible(y, size, true));
+    HIPCHECK(freeCompressible(z, size, true));
+
+    printf("Running saxpy on %zu bytes of Non-Compressible memory\n", size);
+    // Allocating non-compressible memory
+    HIPCHECK(allocateCompressible((void **)&x, size, false));
+    HIPCHECK(allocateCompressible((void **)&y, size, false));
+    HIPCHECK(allocateCompressible((void **)&z, size, false));
+
+    launchSaxpy(a, x, y, z, n, init_val, compressibleZbuf);
+
+    HIPCHECK(freeCompressible(x, size, false));
+    HIPCHECK(freeCompressible(y, size, false));
+    HIPCHECK(freeCompressible(z, size, false));
+
+    printf("\nNOTE: The CUDA Samples are not meant for performance measurements. "
+      "Results may vary when GPU Boost is enabled.\n");
+    return EXIT_SUCCESS;
+}ompressible(z, size, false));
+
+    printf("\nNOTE: The CUDA Samples are not meant for performance measurements. "
+      "Results may vary when GPU Boost is enabled.\n");
+    return EXIT_SUCCESS;
+}

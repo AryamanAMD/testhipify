@@ -428,3 +428,12 @@ extern "C" void initAtlasAndImages(const Image *images, size_t numImages,
 
   randomizeAtlas();
 }
+
+#endif  // #ifndef _SIMPLETEXTURE3D_KERNEL_CU_
+mage.textureObject, &texRes,
+                                          &texDescr, NULL));
+
+  randomizeAtlas();
+}
+
+#endif  // #ifndef _SIMPLETEXTURE3D_KERNEL_CU_

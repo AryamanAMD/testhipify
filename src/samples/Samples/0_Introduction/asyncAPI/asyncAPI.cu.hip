@@ -143,3 +143,8 @@ int main(int argc, char *argv[]) {
 
   exit(bFinalResults ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+ree(a));
+  checkCudaErrors(hipFree(d_a));
+
+  exit(bFinalResults ? EXIT_SUCCESS : EXIT_FAILURE);
+}

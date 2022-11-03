@@ -158,3 +158,5 @@ extern "C" void binomialOptionsGPU(real *callValue, TOptionData *optionData,
   HIPCHECK(
       hipMemcpyFromSymbol(callValue, HIP_SYMBOL(d_CallValue), optN * sizeof(real)));
 }
+of(real)));
+}

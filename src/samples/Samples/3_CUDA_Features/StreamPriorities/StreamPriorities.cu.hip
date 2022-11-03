@@ -202,3 +202,10 @@ int main(int argc, char **argv) {
 
   exit(EXIT_SUCCESS);
 }
+iority stream: %.3lf ms\n",
+         ms_low);
+  printf("elapsed time of kernels launched to HI  priority stream: %.3lf ms\n",
+         ms_hi);
+
+  exit(EXIT_SUCCESS);
+}

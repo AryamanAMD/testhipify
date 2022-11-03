@@ -493,3 +493,7 @@ int main(int argc, char **argv) {
           (sqrt(r1) < tol) ? "PASSED" : "FAILED");
   exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+(stdout, "&&&& conjugateGradientMultiBlockCG %s\n",
+          (sqrt(r1) < tol) ? "PASSED" : "FAILED");
+  exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
+}

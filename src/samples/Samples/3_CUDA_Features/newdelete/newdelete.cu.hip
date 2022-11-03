@@ -310,3 +310,5 @@ int main(int argc, char **argv) {
 
   exit(test_passed == 3 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+st_passed == 3 ? EXIT_SUCCESS : EXIT_FAILURE);
+}

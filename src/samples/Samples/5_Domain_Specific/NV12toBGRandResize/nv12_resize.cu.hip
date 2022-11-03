@@ -113,3 +113,5 @@ void resizeNV12Batch(uint8_t *dpSrc, int nSrcPitch, int nSrcWidth,
   HIPCHECK(hipDestroyTextureObject(texLuma));
   HIPCHECK(hipDestroyTextureObject(texChroma));
 }
+extureObject(texChroma));
+}

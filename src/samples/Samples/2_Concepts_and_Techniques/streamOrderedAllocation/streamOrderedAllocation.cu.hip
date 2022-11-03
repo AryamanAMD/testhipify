@@ -244,3 +244,13 @@ int main(int argc, char **argv) {
   return ((ret1 == EXIT_SUCCESS && ret2 == EXIT_SUCCESS) ? EXIT_SUCCESS
                                                          : EXIT_FAILURE);
 }
+ocationPostSync(dev, nelem, a, b, c);
+
+  /* Memory clean up */
+  free(a);
+  free(b);
+  free(c);
+
+  return ((ret1 == EXIT_SUCCESS && ret2 == EXIT_SUCCESS) ? EXIT_SUCCESS
+                                                         : EXIT_FAILURE);
+}

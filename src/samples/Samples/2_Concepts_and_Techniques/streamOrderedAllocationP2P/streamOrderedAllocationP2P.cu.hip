@@ -253,3 +253,13 @@ int main(int argc, char **argv) {
   int ret = memPoolP2PCopy();
   return ret;
 }
+CudaErrors(hipStreamDestroy(stream2));
+  printf("PASSED\n");
+
+  return EXIT_SUCCESS;
+}
+
+int main(int argc, char **argv) {
+  int ret = memPoolP2PCopy();
+  return ret;
+}

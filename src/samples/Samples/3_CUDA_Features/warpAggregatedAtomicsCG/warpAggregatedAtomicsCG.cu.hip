@@ -328,3 +328,9 @@ int main(int argc, char **argv) {
   free(filtered_data);
   free(host_filtered_data);
 }
+eckCudaErrors(hipFree(d_filtered_data));
+  checkCudaErrors(hipFree(d_nres));
+  free(data_to_filter);
+  free(filtered_data);
+  free(host_filtered_data);
+}

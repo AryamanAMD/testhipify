@@ -400,3 +400,8 @@ double JacobiMethodGpu(const float *A, const double *b,
       printf("GPU error : %.3e\n", sum);
       break;
     }
+  }
+
+  checkCudaErrors(hipFree(d_sum));
+  return sum;
+}

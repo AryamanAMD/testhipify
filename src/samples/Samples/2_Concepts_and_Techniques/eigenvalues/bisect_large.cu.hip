@@ -373,3 +373,18 @@ e, eigenvals, mat_size, tolerance) == true) {
     } else {
       bCompareResult = false;
     }
+
+    free(ref_path);
+    free(reference);
+  }
+
+  freePtr(eigenvals);
+  freePtr(lambda_mult);
+  freePtr(pos_mult);
+  freePtr(blocks_mult_sum);
+  freePtr(left_one);
+  freePtr(right_one);
+  freePtr(pos_one);
+
+  return bCompareResult;
+}

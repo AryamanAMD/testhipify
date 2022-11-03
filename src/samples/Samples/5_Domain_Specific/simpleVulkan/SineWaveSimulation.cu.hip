@@ -135,3 +135,5 @@ void SineWaveSimulation::stepSimulation(float time, hipStream_t stream) {
                                                time);
   getLastCudaError("Failed to launch CUDA simulation");
 }
+or("Failed to launch CUDA simulation");
+}

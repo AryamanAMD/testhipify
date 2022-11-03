@@ -787,3 +787,7 @@ int main(int argc, char **argv) {
   /* Return zero if test passed, one otherwise */
   return rms > ERROR_THRESHOLD;
 }
+!\n");
+  /* Return zero if test passed, one otherwise */
+  return rms > ERROR_THRESHOLD;
+}

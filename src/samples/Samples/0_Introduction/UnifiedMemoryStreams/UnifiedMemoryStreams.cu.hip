@@ -346,3 +346,10 @@ cuBlas handles
     hipStreamDestroy(streams[i]);
     hipblasDestroy(handles[i]);
   }
+
+  // Free TaskList
+  std::vector<Task<double> >().swap(TaskList);
+
+  printf("All Done!\n");
+  exit(EXIT_SUCCESS);
+}

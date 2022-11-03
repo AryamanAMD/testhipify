@@ -112,3 +112,4 @@ extern "C" hipError_t CUDA_MallocArray(uchar4 **h_Src, int imageW,
 }
 
 extern "C" hipError_t CUDA_FreeArray() { return hipFreeArray(a_Src); }
+rc); }

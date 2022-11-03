@@ -838,3 +838,10 @@ int main(int argc, char **argv)
 
     return 0;
 }
+ors(hipFree((void*)A));
+    checkCudaErrors(hipFree((void*)B));
+    checkCudaErrors(hipFree((void*)C));
+    checkCudaErrors(hipFree((void*)D));
+
+    return 0;
+}

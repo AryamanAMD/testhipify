@@ -215,3 +215,9 @@ int main(int argc, char **argv) {
 
   exit(success ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+ccess" : "Failure");
+
+  free(workloads);
+
+  exit(success ? EXIT_SUCCESS : EXIT_FAILURE);
+}

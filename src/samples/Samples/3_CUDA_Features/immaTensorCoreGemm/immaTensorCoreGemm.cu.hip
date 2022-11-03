@@ -656,3 +656,9 @@ int main(int argc, char **argv) {
 
   return EXIT_SUCCESS;
 }
+void *>(B)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
+
+  return EXIT_SUCCESS;
+}

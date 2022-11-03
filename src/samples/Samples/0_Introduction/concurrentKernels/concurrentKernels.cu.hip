@@ -229,3 +229,10 @@ int main(int argc, char **argv) {
   printf("Test passed\n");
   exit(EXIT_SUCCESS);
 }
+Test failed!\n");
+    exit(EXIT_FAILURE);
+  }
+
+  printf("Test passed\n");
+  exit(EXIT_SUCCESS);
+}

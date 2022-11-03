@@ -1082,3 +1082,5 @@ int main(int argc, char **argv)
 
     exit((bResults[0] && bResults[1]) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
+ ? EXIT_SUCCESS : EXIT_FAILURE);
+}

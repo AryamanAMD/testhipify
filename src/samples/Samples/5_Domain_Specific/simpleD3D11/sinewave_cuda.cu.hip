@@ -132,3 +132,8 @@ void RunSineWaveKernel(hipExternalSemaphore_t &extSemaphore, uint64_t &key, unsi
     cudaReleaseSync(extSemaphore, key, streamToRun);
     t += 0.01f;
 }
+
+, streamToRun);
+    t += 0.01f;
+}
+

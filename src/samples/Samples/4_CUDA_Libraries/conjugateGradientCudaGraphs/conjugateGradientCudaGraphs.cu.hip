@@ -433,3 +433,23 @@ rors(hipsparseDestroySpMat(matA));
   if (vecAx) {
     checkCudaErrors(hipsparseDestroyDnVec(vecAx));
   }
+  if (vecp) {
+    checkCudaErrors(hipsparseDestroyDnVec(vecp));
+  }
+
+  checkCudaErrors(hipHostFree(I));
+  checkCudaErrors(hipHostFree(J));
+  checkCudaErrors(hipHostFree(val));
+  checkCudaErrors(hipHostFree(x));
+  free(rhs);
+  checkCudaErrors(hipFree(d_col));
+  checkCudaErrors(hipFree(d_row));
+  checkCudaErrors(hipFree(d_val));
+  checkCudaErrors(hipFree(d_x));
+  checkCudaErrors(hipFree(d_r));
+  checkCudaErrors(hipFree(d_p));
+  checkCudaErrors(hipFree(d_Ax));
+
+  printf("Test Summary:  Error amount = %f\n", err);
+  exit((k <= max_iter) ? 0 : 1);
+}

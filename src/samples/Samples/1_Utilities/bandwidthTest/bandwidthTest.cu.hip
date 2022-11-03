@@ -969,3 +969,13 @@ void printHelp(void) {
   printf("--end=[SIZE]\tEnding transfer size in bytes\n");
   printf("--increment=[SIZE]\tIncrement size in bytes\n");
 }
+ION >= 2020
+  printf("--wc\tAllocate pinned memory as write-combined\n");
+#endif
+  printf("--cputiming\tForce CPU-based timing always\n");
+
+  printf("Range mode options\n");
+  printf("--start=[SIZE]\tStarting transfer size in bytes\n");
+  printf("--end=[SIZE]\tEnding transfer size in bytes\n");
+  printf("--increment=[SIZE]\tIncrement size in bytes\n");
+}
