@@ -153,5 +153,3 @@ void sortParticles(float *sortKeys, uint *indices, uint numParticles) {
 }  // extern "C"
 ices));
 }
-
-}  // extern "C"

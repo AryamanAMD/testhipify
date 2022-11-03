@@ -166,5 +166,3 @@ void runTest(int argc, char **argv) {
 
   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-tResult ? EXIT_SUCCESS : EXIT_FAILURE);
-}

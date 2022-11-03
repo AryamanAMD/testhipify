@@ -497,5 +497,3 @@ ned int), height, hipMemcpyDeviceToDevice));
 
   return ((dKernelTime / 1000.) / (double)iterations);
 }
-
-#endif  // #ifndef _BOXFILTER_KERNEL_H_

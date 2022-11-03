@@ -182,9 +182,3 @@ void processResultSmallMatrix(const InputData &input,
   freePtr(left_count);
   freePtr(eigenvalues);
 }
- input.b + 1, eigenvalues, mat_size);
-
-  freePtr(left);
-  freePtr(left_count);
-  freePtr(eigenvalues);
-}

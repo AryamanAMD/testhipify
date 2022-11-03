@@ -584,10 +584,3 @@ int main(int argc, char *argv[]) {
 
   exit(EXIT_SUCCESS);
 }
-rt on %d elements with seed %d, on %s\n", size, seed,
-         properties.name);
-
-  run_qsort(size, seed, debug, loop, verbose);
-
-  exit(EXIT_SUCCESS);
-}

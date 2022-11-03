@@ -282,9 +282,3 @@ void runTest(int argc, char **argv) {
 
   exit((checkSum == cpuCheckSum) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-  if (dispOut != NULL) free(dispOut);
-
-  sdkDeleteTimer(&timer);
-
-  exit((checkSum == cpuCheckSum) ? EXIT_SUCCESS : EXIT_FAILURE);
-}

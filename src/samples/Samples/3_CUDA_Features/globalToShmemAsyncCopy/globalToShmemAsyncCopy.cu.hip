@@ -1072,10 +1072,3 @@ int main(int argc, char **argv) {
 
   exit(matrix_result);
 }
-rintf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y, dimsB.x,
-         dimsB.y);
-
-  int matrix_result = MatrixMultiply(argc, argv, dimsA, dimsB, selected_kernel);
-
-  exit(matrix_result);
-}

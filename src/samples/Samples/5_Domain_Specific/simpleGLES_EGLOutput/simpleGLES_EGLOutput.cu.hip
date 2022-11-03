@@ -572,5 +572,3 @@ int main(int argc, char **argv) {
 
   exit(g_TotalErrors == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-S : EXIT_FAILURE);
-}

@@ -469,6 +469,3 @@ bool runTest(int argc, char **argv) {
     hipFree(d_idata);
     hipFree(d_odata);
   }
-
-  return bTestResult;
-}

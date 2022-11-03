@@ -136,4 +136,3 @@ void RunSineWaveKernel(hipExternalSemaphore_t &extSemaphore, uint64_t &key, unsi
 , streamToRun);
     t += 0.01f;
 }
-

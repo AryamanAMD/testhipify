@@ -290,4 +290,3 @@ static __global__ void ComplexPointwiseMulAndScale(Complex *a, const Complex *b,
 i = threadID; i < size; i += numThreads) {
     a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
   }
-}

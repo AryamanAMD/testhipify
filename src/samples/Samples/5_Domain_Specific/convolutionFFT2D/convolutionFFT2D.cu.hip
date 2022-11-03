@@ -319,7 +319,3 @@ extern "C" void spProcess2D(void *d_Dst, void *d_SrcA, void *d_SrcB, uint DY,
   HIPCHECK(hipDestroyTextureObject(texComplexB));
 #endif
 }
-ct(texComplexA));
-  checkCudaErrors(hipDestroyTextureObject(texComplexB));
-#endif
-}

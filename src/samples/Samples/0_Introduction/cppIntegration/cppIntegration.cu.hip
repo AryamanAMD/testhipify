@@ -173,8 +173,3 @@ extern "C" bool runTest(const int argc, const char **argv, char *data,
 
   return success;
 }
-ee(reference);
-  free(reference2);
-
-  return success;
-}

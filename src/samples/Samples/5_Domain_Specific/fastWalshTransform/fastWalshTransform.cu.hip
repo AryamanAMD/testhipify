@@ -169,6 +169,3 @@ int main(int argc, char *argv[]) {
   printf("L2 norm: %E\n", L2norm);
   printf(L2norm < 1e-6 ? "Test passed\n" : "Test failed!\n");
 }
-orm);
-  printf(L2norm < 1e-6 ? "Test passed\n" : "Test failed!\n");
-}

@@ -206,5 +206,3 @@ extern "C" void histogram64(uint *d_Histogram, void *d_Data, uint byteCount) {
       d_Histogram, d_PartialHistograms, histogramCount);
   getLastCudaError("mergeHistogram64() execution failed\n");
 }
-failed\n");
-}

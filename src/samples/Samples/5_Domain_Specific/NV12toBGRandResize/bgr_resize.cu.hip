@@ -135,5 +135,3 @@ void resizeBGRplanarBatch(
         dpDst, nDstPitch, nDstWidth, nDstHeight, nBatchSize, stream,
         whSameResizeRatio, cropX, cropY, cropW, cropH);
 }
-pW, cropH);
-}

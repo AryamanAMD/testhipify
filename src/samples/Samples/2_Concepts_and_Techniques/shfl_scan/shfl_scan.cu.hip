@@ -422,12 +422,3 @@ int main(int argc, char *argv[]) {
 ing test.\n");
     exit(EXIT_WAIVED);
   }
-
-  bool bTestResult = true;
-  bool simpleTest = shuffle_simple_test(argc, argv);
-  bool intTest = shuffle_integral_image_test();
-
-  bTestResult = simpleTest & intTest;
-
-  exit((bTestResult) ? EXIT_SUCCESS : EXIT_FAILURE);
-}

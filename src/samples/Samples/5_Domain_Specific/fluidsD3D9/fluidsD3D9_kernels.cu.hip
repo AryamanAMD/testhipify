@@ -334,5 +334,3 @@ extern "C" void advectParticles(Vertex *p, cData *v, int dx, int dy, float dt,
   advectParticles_k<<<grid, tids>>>(p, v, dx, dy, dt, TILEY / TIDSY, tPitch);
   getLastCudaError("advectParticles_k failed.");
 }
-ectParticles_k failed.");
-}

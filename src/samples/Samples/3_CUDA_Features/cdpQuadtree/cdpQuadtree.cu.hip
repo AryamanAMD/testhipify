@@ -743,7 +743,3 @@ int main(int argc, char **argv) {
 
   return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-ops.warpSize);
-
-  return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
-}

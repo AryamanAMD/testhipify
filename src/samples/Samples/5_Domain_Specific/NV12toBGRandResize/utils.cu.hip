@@ -153,5 +153,3 @@ void dumpYUV(unsigned char *d_nv12, int size, char *folder, char *tag) {
   free(nv12Data);
   delete nv12File;
 }
-ile;
-}

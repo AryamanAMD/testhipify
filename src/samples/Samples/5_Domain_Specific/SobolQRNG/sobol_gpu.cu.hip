@@ -208,5 +208,3 @@ extern "C" void sobolGPU(int n_vectors, int n_dimensions,
   sobolGPU_kernel<<<dimGrid, dimBlock>>>(n_vectors, n_dimensions, d_directions,
                                          d_output);
 }
- d_output);
-}

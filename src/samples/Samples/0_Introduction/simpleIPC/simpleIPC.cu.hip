@@ -339,6 +339,3 @@ __arm__) || defined(__aarch64__)
   } else {
     childProcess(atoi(argv[1]));
   }
-  return EXIT_SUCCESS;
-#endif
-}

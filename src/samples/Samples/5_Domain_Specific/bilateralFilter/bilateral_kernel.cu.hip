@@ -265,6 +265,3 @@ extern "C" double bilateralFilterRGBA(uint *dDest, int width, int height,
 emcpyDeviceToDevice));
     }
   }
-
-  return ((dKernelTime / 1000.) / (double)iterations);
-}

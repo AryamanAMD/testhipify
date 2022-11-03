@@ -361,5 +361,3 @@ extern "C" void advectParticles(GLuint vbo, cData *v, int dx, int dy,
   hipGraphicsUnmapResources(1, &cuda_vbo_resource, 0);
   getLastCudaError("hipGraphicsUnmapResources failed");
 }
-getLastCudaError("hipGraphicsUnmapResources failed");
-}
