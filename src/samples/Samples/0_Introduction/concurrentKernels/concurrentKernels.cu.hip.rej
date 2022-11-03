@@ -1,0 +1,8 @@
+diff a/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.cu.hip b/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.cu.hip	(rejected hunks)
+@@ -229,6 +229,3 @@ int main(int argc, char **argv) {
+   printf("Test passed\n");
+   exit(EXIT_SUCCESS);
+ }
+-Test failed!\n");
+-    exit(EXIT_FAILURE);
+-  }

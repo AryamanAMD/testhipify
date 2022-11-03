@@ -1,0 +1,11 @@
+diff --git a/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.cu.hip b/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.cu.hip
+index a3e16c1..5431f8b 100644
+--- a/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.cu.hip
++++ b/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.cu.hip
+@@ -229,6 +229,3 @@ int main(int argc, char **argv) {
+   printf("Test passed\n");
+   exit(EXIT_SUCCESS);
+ }
+-Test failed!\n");
+-    exit(EXIT_FAILURE);
+-  }
