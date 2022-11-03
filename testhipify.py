@@ -203,8 +203,8 @@ def generate(x):
 	command="hipify-clang -Isrc/samples/Common "+x
 	print(command)
 	os.system(command)
-	#prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
-	#prepend_line(p+"/"+q+".hip",'#include "rocprofiler.h"')
+	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
+	prepend_line(p+"/"+q+".hip",'#include "rocprofiler.h"')
 	textToSearch="checkCudaErrors"
 	textToReplace="HIPCHECK"
 	fileToSearch=p+"/"+q+".hip"
