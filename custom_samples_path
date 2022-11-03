@@ -1,0 +1,4 @@
+src/samples/Samples/5_Domain_Specific/simpleD3D10Texture/texture_cube.cu
+src/samples/Samples/5_Domain_Specific/MonteCarloMultiGPU/MonteCarlo_kernel.cu
+src/samples/Samples/5_Domain_Specific/simpleVulkanMMAP/MonteCarloPi.cu
+
