@@ -27,6 +27,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#include <hip/hip_runtime.h>
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -317,5 +319,9 @@ extern "C" void spProcess2D(void *d_Dst, void *d_SrcA, void *d_SrcB, uint DY,
 #if (USE_TEXTURE)
   HIPCHECK(hipDestroyTextureObject(texComplexA));
   HIPCHECK(hipDestroyTextureObject(texComplexB));
+#endif
+}
+ct(texComplexA));
+  checkCudaErrors(hipDestroyTextureObject(texComplexB));
 #endif
 }

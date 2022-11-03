@@ -37,6 +37,8 @@
  * See supplied whitepaper for more explanations.
  */
 
+
+#include <hip/hip_runtime.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -112,3 +114,4 @@ extern "C" hipError_t CUDA_MallocArray(uchar4 **h_Src, int imageW,
 }
 
 extern "C" hipError_t CUDA_FreeArray() { return hipFreeArray(a_Src); }
+rc); }

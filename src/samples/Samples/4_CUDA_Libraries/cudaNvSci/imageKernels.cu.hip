@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -120,4 +119,6 @@ void rotateKernel(hipTextureObject_t &texObj, const float angle,
 
   transformKernel<<<dimGrid, dimBlock, 0, stream>>>(d_outputData, imageWidth,
                                                     imageHeight, angle, texObj);
+}
+geHeight, angle, texObj);
 }

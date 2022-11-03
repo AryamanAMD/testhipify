@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -47,7 +46,7 @@
 #include <hip/hip_runtime_api.h>
 
 // includes, project
-#include <helper_cuda.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+#include <helper_cuda.h>  // includes cuda.h and cuda_runtime_api.h
 //#include "HIPCHECK"
 
 #define BIN_COUNT 256

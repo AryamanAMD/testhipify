@@ -33,6 +33,8 @@
  * See supplied whitepaper for more explanations.
  */
 
+
+#include <hip/hip_runtime.h>
 #include <helper_functions.h>  // helper functions for string parsing
 #include <helper_cuda.h>  // helper functions CUDA error checking and initialization
 
@@ -239,6 +241,11 @@ int main(int argc, char **argv) {
 
   printf(
       "\nNOTE: The CUDA Samples are not meant for performance measurements. "
+      "Results may vary when GPU Boost is enabled.\n\n");
+  printf("Test passed\n");
+  exit(EXIT_SUCCESS);
+}
+ements. "
       "Results may vary when GPU Boost is enabled.\n\n");
   printf("Test passed\n");
   exit(EXIT_SUCCESS);

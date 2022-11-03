@@ -1,5 +1,9 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -424,13 +428,6 @@ extern "C" void initAtlasAndImages(const Image *images, size_t numImages,
   texDescr.readMode = hipReadModeElementType;
 
   HIPCHECK(hipCreateTextureObject(&atlasImage.textureObject, &texRes,
-                                          &texDescr, NULL));
-
-  randomizeAtlas();
-}
-
-#endif  // #ifndef _SIMPLETEXTURE3D_KERNEL_CU_
-mage.textureObject, &texRes,
                                           &texDescr, NULL));
 
   randomizeAtlas();

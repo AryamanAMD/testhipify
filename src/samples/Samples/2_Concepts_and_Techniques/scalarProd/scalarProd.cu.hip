@@ -32,6 +32,8 @@
  * given set of input vector pairs
  */
 
+
+#include <hip/hip_runtime.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -166,5 +168,8 @@ int main(int argc, char **argv) {
 
   printf("L1 error: %E\n", L1norm);
   printf((L1norm < 1e-6) ? "Test passed\n" : "Test failed!\n");
+  exit(L1norm < 1e-6 ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+ : "Test failed!\n");
   exit(L1norm < 1e-6 ? EXIT_SUCCESS : EXIT_FAILURE);
 }

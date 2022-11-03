@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -152,7 +151,7 @@ int main(int argc, char **argv) {
       PadData(h_signal, &h_padded_signal, SIGNAL_SIZE, h_filter_kernel,
               &h_padded_filter_kernel, FILTER_KERNEL_SIZE);
 
-  // hipfftCreate() - Create an empty plan
+  // cufftCreate() - Create an empty plan
   hipfftResult result;
   hipfftHandle plan_input;
   HIPCHECK(hipfftCreate(&plan_input));
@@ -165,7 +164,7 @@ int main(int argc, char **argv) {
     printf("No such board was found. Waiving sample.\n");
     exit(EXIT_WAIVED);
   } else if (result != HIPFFT_SUCCESS) {
-    printf("cufftXtSetGPUs failed\n");
+    printf("hipfftXtSetGPUs failed\n");
     exit(EXIT_FAILURE);
   }
 
@@ -181,7 +180,7 @@ int main(int argc, char **argv) {
   size_t *worksize;
   worksize = (size_t *)malloc(sizeof(size_t) * nGPUs);
 
-  // hipfftMakePlan1d() - Create the plan
+  // cufftMakePlan1d() - Create the plan
   HIPCHECK(
       hipfftMakePlan1d(plan_input, new_size, HIPFFT_C2C, 1, worksize));
 
@@ -233,7 +232,7 @@ int main(int argc, char **argv) {
                       1.0f / new_size, nGPUs);
 
   // cufftXtExecDescriptorC2C() - Execute inverse  FFT on data on multiple GPUs
-  printf("Transforming signal back hipfftExecC2C\n");
+  printf("Transforming signal back cufftExecC2C\n");
   HIPCHECK(cufftXtExecDescriptorC2C(plan_input, d_out_signal,
                                            d_out_signal, HIPFFT_BACKWARD));
 
@@ -273,7 +272,7 @@ int main(int argc, char **argv) {
   HIPCHECK(cufftXtFree(d_out_signal));
   HIPCHECK(cufftXtFree(d_out_filter_kernel));
 
-  // hipfftDestroy() - Destroy FFT plan
+  // cufftDestroy() - Destroy FFT plan
   HIPCHECK(hipfftDestroy(plan_input));
 
   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -405,3 +404,4 @@ t threadID = blockIdx.x * blockDim.x + threadIdx.x;
   for (int i = threadID; i < size; i += numThreads) {
     a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
   }
+}

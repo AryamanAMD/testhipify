@@ -40,6 +40,8 @@
  * Victor Podlozhnyuk (vpodlozhnyuk@nvidia.com)
  */
 
+
+#include <hip/hip_runtime.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -167,5 +169,8 @@ int main(int argc, char *argv[]) {
   free(h_Kernel);
 
   printf("L2 norm: %E\n", L2norm);
+  printf(L2norm < 1e-6 ? "Test passed\n" : "Test failed!\n");
+}
+orm);
   printf(L2norm < 1e-6 ? "Test passed\n" : "Test failed!\n");
 }

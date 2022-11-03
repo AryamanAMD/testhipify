@@ -309,3 +309,7 @@ int main(int argc, char **argv) {
              ? EXIT_SUCCESS
              : EXIT_FAILURE;
 }
+_count[1] == 0 && error_count[2] == 0)
+             ? EXIT_SUCCESS
+             : EXIT_FAILURE;
+}

@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +30,7 @@
 // Implements interlace NV12 frames batch resize
 
 #include <hip/hip_runtime.h>
-#include <hip/hip_runtime.h>
+
 #include "resize_convert.h"
 
 __global__ static void resizeNV12BatchKernel(hipTextureObject_t texSrcLuma,
@@ -112,4 +111,6 @@ void resizeNV12Batch(uint8_t *dpSrc, int nSrcPitch, int nSrcWidth,
 
   HIPCHECK(hipDestroyTextureObject(texLuma));
   HIPCHECK(hipDestroyTextureObject(texChroma));
+}
+extureObject(texChroma));
 }

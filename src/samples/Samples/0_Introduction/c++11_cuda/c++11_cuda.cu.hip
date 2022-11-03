@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +27,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#include <hip/hip_runtime.h>
 #include <thrust/device_ptr.h>
 #include <thrust/count.h>
 #include <thrust/execution_policy.h>
@@ -138,6 +139,10 @@ int main(int argc, char **argv) {
 
   HIPCHECK(hipFree(d_count));
   HIPCHECK(hipFree(d_text));
+
+  return EXIT_SUCCESS;
+}
+rors(hipFree(d_text));
 
   return EXIT_SUCCESS;
 }

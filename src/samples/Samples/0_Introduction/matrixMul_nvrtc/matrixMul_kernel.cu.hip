@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,6 +48,8 @@
  * wA is A's width and wB is B's width
  */
 
+
+#include <hip/hip_runtime.h>
 #include <hip/hip_cooperative_groups.h>
 
 template <int BLOCK_SIZE>

@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +27,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#include <hip/hip_runtime.h>
 #include <helper_cuda.h>
 #include <helper_timer.h>
 #include "commonDefs.hpp"
@@ -706,3 +707,14 @@ int main(int argc, char **argv) {
   if (checkCmdLineFlag(argc, (const char **)argv, "verbose")) {
     verboseResults = 1;
   }
+
+  int device_id = findCudaDevice(argc, (const char **)argv);
+
+  matrixMultiplyPerfRunner(reportAsBandwidth, print_launch_transfer_results,
+                           print_std_deviation, device_id);
+
+  printf(
+      "\nNOTE: The CUDA Samples are not meant for performance measurements. "
+      "Results may vary when GPU Boost is enabled.\n");
+  exit(EXIT_SUCCESS);
+}

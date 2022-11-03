@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -67,8 +66,8 @@ static __global__ void quasirandomGeneratorKernel(float *d_Output,
 // Table initialization routine
 extern "C" void initTableGPU(
     unsigned int tableCPU[QRNG_DIMENSIONS][QRNG_RESOLUTION]) {
-  HIPCHECK(hipMemcpyToSymbol(HIP_SYMBOL(
-      c_Table), tableCPU,
+  HIP_SYMBOL(c_Table)(hipMemcpyToSymbol(
+      c_Table, tableCPU,
       QRNG_DIMENSIONS * QRNG_RESOLUTION * sizeof(unsigned int)));
 }
 
@@ -178,5 +177,4 @@ extern "C" void inverseCNDgpu(float *d_Output, unsigned int *d_Input,
   getLastCudaError("inverseCNDKernel() execution failed.\n");
 }
 
-#endif
 #endif

@@ -86,6 +86,8 @@ decomposition.
 #endif
 
 // includes, system
+
+#include <hip/hip_runtime.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -394,3 +396,6 @@ bool getLevels(unsigned int len, unsigned int *levels) {
       break;
     }
   }
+
+  return retval;
+}

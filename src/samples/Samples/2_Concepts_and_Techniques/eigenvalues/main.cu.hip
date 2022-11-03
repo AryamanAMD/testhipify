@@ -32,6 +32,8 @@
  */
 
 // includes, system
+
+#include <hip/hip_runtime.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -322,6 +324,10 @@ bool runTest(int argc, char **argv) {
   }
 
   cleanupInputData(input);
+
+  return bCompareResult;
+}
+tData(input);
 
   return bCompareResult;
 }

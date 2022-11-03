@@ -1,5 +1,9 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -664,10 +668,5 @@ extern "C" void ThrustScanWrapper(unsigned int *output, unsigned int *input,
                                   unsigned int numElements) {
   thrust::exclusive_scan(thrust::device_ptr<unsigned int>(input),
                          thrust::device_ptr<unsigned int>(input + numElements),
-                         thrust::device_ptr<unsigned int>(output));
-}
-
-#endif
-nts),
                          thrust::device_ptr<unsigned int>(output));
 }

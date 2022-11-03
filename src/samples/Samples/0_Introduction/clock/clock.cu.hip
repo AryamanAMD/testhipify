@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -151,6 +150,10 @@ int main(int argc, char **argv) {
 
   avgElapsedClocks = avgElapsedClocks / NUM_BLOCKS;
   printf("Average clocks/block = %Lf\n", avgElapsedClocks);
+
+  return EXIT_SUCCESS;
+}
+ = %Lf\n", avgElapsedClocks);
 
   return EXIT_SUCCESS;
 }

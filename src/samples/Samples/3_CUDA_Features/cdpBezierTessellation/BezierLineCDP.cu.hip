@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +27,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#include <hip/hip_runtime.h>
 #include <stdio.h>
 #include <hip/hip_runtime_api.h>
 #include <helper_cuda.h>
@@ -205,6 +206,10 @@ int main(int argc, char **argv) {
                   BLOCK_DIM>>>(bLines_d, N_LINES);
   HIPCHECK(hipFree(bLines_d));
   delete[] bLines_h;
+
+  exit(EXIT_SUCCESS);
+}
+lete[] bLines_h;
 
   exit(EXIT_SUCCESS);
 }

@@ -1,5 +1,9 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -130,9 +134,5 @@ void RunSineWaveKernel(hipExternalSemaphore_t &extSemaphore, uint64_t &key, unsi
     getLastCudaError("sinewave_gen_kernel execution failed.\n");
 
     cudaReleaseSync(extSemaphore, key, streamToRun);
-    t += 0.01f;
-}
-
-, streamToRun);
     t += 0.01f;
 }

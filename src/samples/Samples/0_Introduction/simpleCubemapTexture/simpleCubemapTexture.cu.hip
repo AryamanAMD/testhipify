@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -173,8 +172,8 @@ int main(int argc, char **argv) {
   hipChannelFormatDesc channelDesc =
       hipCreateChannelDesc(32, 0, 0, 0, hipChannelFormatKindFloat);
   hipArray *cu_3darray;
-  //    HIPCHECK(hipMalloc3DArray( &cu_3darray, &channelDesc,
-  //    make_hipExtent(width, height, num_layers), hipArrayLayered ));
+  //    HIPCHECK(cudaMalloc3DArray( &cu_3darray, &channelDesc,
+  //    make_cudaExtent(width, height, num_layers), cudaArrayLayered ));
   HIPCHECK(hipMalloc3DArray(&cu_3darray, &channelDesc,
                                     make_hipExtent(width, width, num_faces),
                                     hipArrayCubemap));
@@ -266,6 +265,10 @@ int main(int argc, char **argv) {
   HIPCHECK(hipDestroyTextureObject(tex));
   HIPCHECK(hipFree(d_data));
   HIPCHECK(hipFreeArray(cu_3darray));
+
+  exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+Errors(hipFreeArray(cu_3darray));
 
   exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }

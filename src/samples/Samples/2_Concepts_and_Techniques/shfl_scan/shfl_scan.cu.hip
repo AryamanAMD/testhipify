@@ -1,5 +1,9 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -419,6 +423,3 @@ int main(int argc, char *argv[]) {
 
   exit((bTestResult) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-ing test.\n");
-    exit(EXIT_WAIVED);
-  }

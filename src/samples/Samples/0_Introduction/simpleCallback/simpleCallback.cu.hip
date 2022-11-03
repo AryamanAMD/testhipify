@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,6 +42,8 @@
  */
 
 // System includes
+
+#include <hip/hip_runtime.h>
 #include <stdio.h>
 
 // helper functions and utilities to work with CUDA
@@ -210,6 +211,12 @@ int main(int argc, char **argv) {
   }
 
   printf("%s\n", success ? "Success" : "Failure");
+
+  free(workloads);
+
+  exit(success ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+ccess" : "Failure");
 
   free(workloads);
 

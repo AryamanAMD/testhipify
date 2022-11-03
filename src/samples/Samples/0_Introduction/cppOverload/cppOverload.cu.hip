@@ -32,6 +32,8 @@
 #define DIV_UP(a, b) (((a) + (b) - 1) / (b))
 
 // Includes, system
+
+#include <hip/hip_runtime.h>
 #include <stdio.h>
 #include <helper_cuda.h>
 #include <helper_string.h>
@@ -185,6 +187,13 @@ int main(int argc, const char *argv[]) {
   HIPCHECK(hipHostFree(hInput));
 
   HIPCHECK(hipDeviceSynchronize());
+
+  exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+tFree(hOutput));
+  checkCudaErrors(hipHostFree(hInput));
+
+  checkCudaErrors(hipDeviceSynchronize());
 
   exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }

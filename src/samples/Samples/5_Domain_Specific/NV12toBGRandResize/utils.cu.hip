@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,7 +34,7 @@
 #include <iostream>
 
 #include <hip/hip_runtime.h>
-#include <hip/hip_runtime.h>
+
 
 #include "resize_convert.h"
 #include "utils.h"
@@ -152,4 +151,6 @@ void dumpYUV(unsigned char *d_nv12, int size, char *folder, char *tag) {
 
   free(nv12Data);
   delete nv12File;
+}
+ile;
 }

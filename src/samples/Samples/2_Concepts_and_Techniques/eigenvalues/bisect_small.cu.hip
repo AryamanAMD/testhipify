@@ -30,6 +30,8 @@
 /* Computation of eigenvalues of a small symmetric, tridiagonal matrix */
 
 // includes, system
+
+#include <hip/hip_runtime.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -177,6 +179,12 @@ void processResultSmallMatrix(const InputData &input,
 
   // save result in matlab format
   writeTridiagSymMatlab(filename, input.a, input.b + 1, eigenvalues, mat_size);
+
+  freePtr(left);
+  freePtr(left_count);
+  freePtr(eigenvalues);
+}
+ input.b + 1, eigenvalues, mat_size);
 
   freePtr(left);
   freePtr(left_count);

@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -164,7 +163,7 @@ int main(int argc, char **argv) {
     h_f[i].y = 0.0f;
   }
 
-  // hipfftCreate() - Create an empty plan
+  // cufftCreate() - Create an empty plan
   hipfftResult result;
   hipfftHandle planComplex;
   result = hipfftCreate(&planComplex);
@@ -181,7 +180,7 @@ int main(int argc, char **argv) {
     printf("No such board was found. Waiving sample.\n");
     exit(EXIT_WAIVED);
   } else if (result != HIPFFT_SUCCESS) {
-    printf("cufftXtSetGPUs failed\n");
+    printf("hipfftXtSetGPUs failed\n");
     exit(EXIT_FAILURE);
   }
 
@@ -197,7 +196,7 @@ int main(int argc, char **argv) {
   size_t *worksize;
   worksize = (size_t *)malloc(sizeof(size_t) * nGPUs);
 
-  // hipfftMakePlan2d() - Create the plan
+  // cufftMakePlan2d() - Create the plan
   result = hipfftMakePlan2d(planComplex, N, N, HIPFFT_C2C, worksize);
   if (result != HIPFFT_SUCCESS) {
     printf("*MakePlan* failed\n");
@@ -324,7 +323,7 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  // hipfftDestroy() - Destroy FFT plan
+  // cufftDestroy() - Destroy FFT plan
   result = hipfftDestroy(planComplex);
   if (result != HIPFFT_SUCCESS) {
     printf("hipfftDestroy failed: code %d\n", (int)result);
@@ -383,3 +382,4 @@ __global__ void solvePoisson(hipfftComplex *ft, hipfftComplex *ft_k, float *k,
 }
 x].y * 1 / k2;
   }
+}

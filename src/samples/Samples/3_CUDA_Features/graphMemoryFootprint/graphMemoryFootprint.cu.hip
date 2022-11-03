@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,6 +28,8 @@
  */
 
 // System includes
+
+#include <hip/hip_runtime.h>
 #include <assert.h>
 #include <stdio.h>
 
@@ -394,6 +395,21 @@ int main(int argc, char **argv) {
   }
 
   virtualAddressReuseSingleGraph(bytes, device);
+  cleanupMemory(device);
+
+  physicalMemoryReuseSingleStream(bytes, device);
+  cleanupMemory(device);
+
+  simultaneousStreams(bytes, device);
+  cleanupMemory(device);
+
+  unfreedAllocations(bytes, device);
+  cleanupMemory(device);
+
+  printf("================================\n");
+  printf("Sample complete.\n");
+}
+e);
   cleanupMemory(device);
 
   physicalMemoryReuseSingleStream(bytes, device);

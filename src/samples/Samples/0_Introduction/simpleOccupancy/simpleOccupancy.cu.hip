@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,6 +27,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#include <hip/hip_runtime.h>
 #include <iostream>
 #include <helper_cuda.h>  // helper functions for CUDA error check
 
@@ -89,7 +90,7 @@ static double reportPotentialOccupancy(void *kernel, int blockSize,
 ////////////////////////////////////////////////////////////////////////////////
 // Occupancy-based launch configurator
 //
-// The launch configurator, hipOccupancyMaxPotentialBlockSize and
+// The launch configurator, cudaOccupancyMaxPotentialBlockSize and
 // cudaOccupancyMaxPotentialBlockSizeVariableSMem, suggests a block
 // size that achieves the best theoretical occupancy. It also returns
 // the minimum number of blocks needed to achieve the occupancy on the
@@ -243,3 +244,9 @@ int main() {
 }
 rn -1;
   }
+
+  std::cout << std::endl;
+  std::cout << "Test PASSED\n" << std::endl;
+
+  return 0;
+}

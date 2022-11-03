@@ -1,5 +1,9 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -429,5 +433,3 @@ void runCudaOperation(Blit2DTest *ctx, cudaResources &cudaResObj,
   yuvToGrayscaleCudaKernelNonNvSci(cudaResObj, deviceId, ctx->widthSurface,
                                    ctx->heightSurface);
 }
-], hipMemcpyHostToDevice));
-  }

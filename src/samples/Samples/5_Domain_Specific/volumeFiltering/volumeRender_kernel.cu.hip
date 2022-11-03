@@ -1,5 +1,9 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -566,10 +570,5 @@ void VolumeRender_render(dim3 gridSize, dim3 blockSize, uint *d_output,
 
 void VolumeRender_copyInvViewMatrix(float *invViewMatrix, size_t sizeofMatrix) {
   HIPCHECK(
-      hipMemcpyToSymbol(HIP_SYMBOL(c_invViewMatrix), invViewMatrix, sizeofMatrix));
-}
-
-#endif  // #ifndef _VOLUMERENDER_KERNEL_CU_
-heckCudaErrors(
       hipMemcpyToSymbol(HIP_SYMBOL(c_invViewMatrix), invViewMatrix, sizeofMatrix));
 }

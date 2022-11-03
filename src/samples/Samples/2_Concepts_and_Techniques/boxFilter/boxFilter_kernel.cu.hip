@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -497,3 +496,5 @@ ned int), height, hipMemcpyDeviceToDevice));
 
   return ((dKernelTime / 1000.) / (double)iterations);
 }
+
+#endif  // #ifndef _BOXFILTER_KERNEL_H_

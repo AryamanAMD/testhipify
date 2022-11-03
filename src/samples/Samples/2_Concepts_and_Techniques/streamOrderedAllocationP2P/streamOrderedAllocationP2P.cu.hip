@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,7 +29,7 @@
 
 /*
  * This sample demonstrates peer-to-peer access of stream ordered memory
- * allocated with hipMallocAsync and cudaMemPool family of APIs through simple
+ * allocated with cudaMallocAsync and cudaMemPool family of APIs through simple
  * kernel which does peer-to-peer to access & scales vector elements.
  */
 
@@ -49,7 +48,7 @@
 #include <helper_cuda.h>
 #include <helper_functions.h>
 
-// Simple kernel to demonstrate copying hipMallocAsync memory via P2P to peer
+// Simple kernel to demonstrate copying cudaMallocAsync memory via P2P to peer
 // device
 __global__ void copyP2PAndScale(const int *src, int *dst, int N) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;
@@ -257,4 +256,9 @@ CudaErrors(hipStreamDestroy(stream2));
   printf("PASSED\n");
 
   return EXIT_SUCCESS;
+}
+
+int main(int argc, char **argv) {
+  int ret = memPoolP2PCopy();
+  return ret;
 }

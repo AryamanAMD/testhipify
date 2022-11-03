@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +31,7 @@
 // Implements BGR 3 progressive planars frames batch resize
 
 #include <hip/hip_runtime.h>
-#include <hip/hip_runtime.h>
+
 #include "resize_convert.h"
 
 __global__ void resizeBGRplanarBatchKernel(hipTextureObject_t texSrc,
@@ -134,4 +133,6 @@ void resizeBGRplanarBatch(
     resizeBGRplanarBatchCore(dpSrc, nSrcPitch, nSrcWidth, nSrcHeight,
         dpDst, nDstPitch, nDstWidth, nDstHeight, nBatchSize, stream,
         whSameResizeRatio, cropX, cropY, cropW, cropH);
+}
+pW, cropH);
 }

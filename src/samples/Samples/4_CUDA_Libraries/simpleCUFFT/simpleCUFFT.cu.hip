@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -138,7 +137,7 @@ void runTest(int argc, char **argv) {
   printf("Temporary buffer size %li bytes\n", workSize);
 
   // Transform signal and kernel
-  printf("Transforming signal hipfftExecC2C\n");
+  printf("Transforming signal cufftExecC2C\n");
   HIPCHECK(hipfftExecC2C(plan, reinterpret_cast<hipfftComplex *>(d_signal),
                                reinterpret_cast<hipfftComplex *>(d_signal),
                                HIPFFT_FORWARD));
@@ -155,7 +154,7 @@ void runTest(int argc, char **argv) {
   getLastCudaError("Kernel execution failed [ ComplexPointwiseMulAndScale ]");
 
   // Transform signal back
-  printf("Transforming signal back hipfftExecC2C\n");
+  printf("Transforming signal back cufftExecC2C\n");
   HIPCHECK(hipfftExecC2C(plan, reinterpret_cast<hipfftComplex *>(d_signal),
                                reinterpret_cast<hipfftComplex *>(d_signal),
                                HIPFFT_BACKWARD));
@@ -290,3 +289,4 @@ static __global__ void ComplexPointwiseMulAndScale(Complex *a, const Complex *b,
 i = threadID; i < size; i += numThreads) {
     a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
   }
+}

@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -342,4 +341,6 @@ int main(int argc, char **argv) {
   printf("systemWideAtomics completed, returned %s \n",
          testResult ? "OK" : "ERROR!");
   exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+S : EXIT_FAILURE);
 }

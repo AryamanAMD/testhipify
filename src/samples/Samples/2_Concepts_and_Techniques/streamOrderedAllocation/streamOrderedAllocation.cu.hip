@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,10 +29,10 @@
 
 /*
  * This sample demonstrates stream ordered memory allocation on a GPU using
- * hipMallocAsync and cudaMemPool family of APIs.
+ * cudaMallocAsync and cudaMemPool family of APIs.
  *
  * basicStreamOrderedAllocation(): demonstrates stream ordered allocation using
- * hipMallocAsync/hipFreeAsync APIs with default settings.
+ * cudaMallocAsync/cudaFreeAsync APIs with default settings.
  *
  * streamOrderedAllocationPostSync(): demonstrates if there's a synchronization
  * in between allocations, then setting the release threshold on the pool will
@@ -136,7 +135,7 @@ int streamOrderedAllocationPostSync(const int dev, const int nelem,
 
   HIPCHECK(hipDeviceGetDefaultMemPool(&memPool, dev));
   uint64_t thresholdVal = ULONG_MAX;
-  // set high release threshold on the default pool so that hipFreeAsync will
+  // set high release threshold on the default pool so that cudaFreeAsync will
   // not actually release memory to the system. By default, the release
   // threshold for a memory pool is set to zero. This implies that the CUDA
   // driver is allowed to release a memory chunk back to the system as long as
@@ -235,6 +234,16 @@ int main(int argc, char **argv) {
 
   int ret1 = basicStreamOrderedAllocation(dev, nelem, a, b, c);
   int ret2 = streamOrderedAllocationPostSync(dev, nelem, a, b, c);
+
+  /* Memory clean up */
+  free(a);
+  free(b);
+  free(c);
+
+  return ((ret1 == EXIT_SUCCESS && ret2 == EXIT_SUCCESS) ? EXIT_SUCCESS
+                                                         : EXIT_FAILURE);
+}
+ocationPostSync(dev, nelem, a, b, c);
 
   /* Memory clean up */
   free(a);

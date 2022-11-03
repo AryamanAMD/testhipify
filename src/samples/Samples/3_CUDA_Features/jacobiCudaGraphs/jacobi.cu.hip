@@ -1,5 +1,9 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -395,9 +399,10 @@ double JacobiMethodGpu(const float *A, const double *b,
   return sum;
 }
     hipMemcpyDeviceToHost, stream));
-      checkCudaErrors(hipStreamSynchronize(stream));
+      HIPCHECK(hipStreamSynchronize(stream));
       printf("GPU iterations : %d\n", k + 1);
       printf("GPU error : %.3e\n", sum);
       break;
     }
   }
+ }

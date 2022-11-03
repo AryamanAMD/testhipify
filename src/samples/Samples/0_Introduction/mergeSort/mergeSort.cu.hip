@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -36,6 +35,8 @@
  * Victor Podlozhnyuk 09/24/2009
  */
 
+
+#include <hip/hip_runtime.h>
 #include <assert.h>
 #include <hip/hip_cooperative_groups.h>
 
@@ -536,3 +537,4 @@ key;
     ival = oval;
     oval = t;
   }
+}

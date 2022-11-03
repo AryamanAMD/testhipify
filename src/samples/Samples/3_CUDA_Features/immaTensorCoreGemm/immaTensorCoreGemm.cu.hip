@@ -1,6 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -653,6 +652,12 @@ int main(int argc, char **argv) {
   HIPCHECK(hipFree(reinterpret_cast<void *>(B)));
   HIPCHECK(hipFree(reinterpret_cast<void *>(C)));
   HIPCHECK(hipFree(reinterpret_cast<void *>(D)));
+
+  return EXIT_SUCCESS;
+}
+void *>(B)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
 
   return EXIT_SUCCESS;
 }
