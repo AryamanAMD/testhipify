@@ -37,9 +37,9 @@ def parenthesis_check(file_name):
 			break
 		if char=='{' or char=='}':
 			string+=char
-	print(string)
+	#print(string)
 	result=check(string)
-	print(result)
+	#print(result)
 	if result==1:
 		#for line in file2:
 			#print(line)
@@ -51,7 +51,7 @@ def parenthesis_check(file_name):
 			else:
 				break	
 				
-		print(lines)	
+		#print(lines)	
 		with open(p+'/a.cu.hip','w') as fp:
 			for item in lines:
 				fp.write(item)
