@@ -61,7 +61,16 @@ def parenthesis_check(file_name):
 		os.rename(p+'/a.cu.hip', file_name)
 
 			
-		
+def parenthesis_check_all(y):
+	y=y.replace('"', '')
+	listOfFiles=getListOfFiles(y)
+	for elem in listOfFiles:
+		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
+			with open('final_ignored_samples.txt','r') as f:
+				if elem in f.read():
+					print("Ignoring this sample "+elem)
+				else:
+					parenthesis_check(elem)			
 
 		
 
@@ -335,6 +344,7 @@ parser.add_argument("-g", "--compile1_all", help='Compile all .hip files')
 parser.add_argument("-i", "--compile2_all", help='Compile all .hip files with static libraries')
 parser.add_argument("-j", "--execute_all", help='Execute all .out files')
 parser.add_argument("-k", "--parenthesis_check", help='Remove last parts from cu.hip files which are out of bounds.')
+parser.add_argument("-l", "--parenthesis_check_all", help='Remove all last parts from cu.hip files which are out of bounds.')
 parser.add_argument("-p", "--patch", help='Apply all patches in src/patches',action='store_true')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
@@ -382,7 +392,10 @@ if args.execute_all:
 	runsample_all(d)
 if args.parenthesis_check:
 	e=args.parenthesis_check
-	parenthesis_check(e)				
+	parenthesis_check(e)
+if args.parenthesis_check_all:
+	f=args.parenthesis_check_all
+	parenthesis_check_all(f)					
 
 
 
