@@ -104,7 +104,6 @@ def check(myStr):
     
 def ftale(x):
 	generate(x)
-	apply_patches()
 	compilation_1(x)
 	compilation_2(x)
 	runsample(x)
