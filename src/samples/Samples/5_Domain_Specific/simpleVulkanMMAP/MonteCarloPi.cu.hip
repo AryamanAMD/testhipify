@@ -308,4 +308,3 @@ void MonteCarloPiSimulation::cleanupSimulationAllocations() {
     m_xyVector = nullptr;
     m_pointsInsideCircle = nullptr;
   }
-}

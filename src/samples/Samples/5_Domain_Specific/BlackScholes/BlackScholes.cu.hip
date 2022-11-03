@@ -243,8 +243,3 @@ int main(int argc, char **argv) {
   printf("Test passed\n");
   exit(EXIT_SUCCESS);
 }
-ements. "
-      "Results may vary when GPU Boost is enabled.\n\n");
-  printf("Test passed\n");
-  exit(EXIT_SUCCESS);
-}

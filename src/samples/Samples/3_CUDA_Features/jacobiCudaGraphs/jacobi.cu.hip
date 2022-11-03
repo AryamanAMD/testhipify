@@ -401,7 +401,3 @@ double JacobiMethodGpu(const float *A, const double *b,
       break;
     }
   }
-
-  checkCudaErrors(hipFree(d_sum));
-  return sum;
-}

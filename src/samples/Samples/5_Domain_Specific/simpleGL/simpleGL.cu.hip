@@ -591,4 +591,3 @@ MapFlagsWriteDiscard));
 
         SDK_CHECK_ERROR_GL();
     }
-}

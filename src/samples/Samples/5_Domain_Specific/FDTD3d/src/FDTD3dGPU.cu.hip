@@ -269,7 +269,3 @@ CudaErrors(hipEventDestroy(profileStart));
   if (profileEnd) {
     checkCudaErrors(hipEventDestroy(profileEnd));
   }
-
-#endif
-  return true;
-}

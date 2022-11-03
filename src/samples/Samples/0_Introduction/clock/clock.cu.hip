@@ -154,7 +154,3 @@ int main(int argc, char **argv) {
 
   return EXIT_SUCCESS;
 }
- = %Lf\n", avgElapsedClocks);
-
-  return EXIT_SUCCESS;
-}

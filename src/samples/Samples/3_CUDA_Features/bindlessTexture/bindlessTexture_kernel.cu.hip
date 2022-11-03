@@ -435,5 +435,3 @@ mage.textureObject, &texRes,
 
   randomizeAtlas();
 }
-
-#endif  // #ifndef _SIMPLETEXTURE3D_KERNEL_CU_

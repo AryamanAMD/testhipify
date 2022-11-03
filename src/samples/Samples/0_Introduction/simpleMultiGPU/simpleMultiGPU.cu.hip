@@ -240,6 +240,3 @@ int main(int argc, char **argv) {
 ice(i));
     checkCudaErrors(hipHostFree(plan[i].h_Data));
   }
-
-  exit((diff < 1e-5) ? EXIT_SUCCESS : EXIT_FAILURE);
-}

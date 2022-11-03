@@ -325,7 +325,3 @@ bool runTest(int argc, char **argv) {
 
   return bCompareResult;
 }
-tData(input);
-
-  return bCompareResult;
-}

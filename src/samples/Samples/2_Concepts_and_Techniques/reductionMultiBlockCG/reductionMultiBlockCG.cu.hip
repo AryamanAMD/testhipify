@@ -387,9 +387,3 @@ bool runTest(int argc, char **argv, int device) {
 
   return bTestPassed;
 }
-ta);
-  hipFree(d_idata);
-  hipFree(d_odata);
-
-  return bTestPassed;
-}

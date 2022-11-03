@@ -346,5 +346,3 @@ __device__ __host__ float getAngle(const Ray ray, float2 location,
   float2 dir = location - make_float2(ray.origin.x, ray.origin.y);
   return atanf((height - ray.origin.z) / length(dir));
 }
-origin.z) / length(dir));
-}

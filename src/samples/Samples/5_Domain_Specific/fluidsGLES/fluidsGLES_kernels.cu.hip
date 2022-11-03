@@ -357,7 +357,3 @@ extern "C" void advectParticles(GLuint vbo, cData *v, int dx, int dy,
 
   HIPCHECK(hipGraphicsUnmapResources(1, &cuda_vbo_resource, 0));
 }
-;
-
-  checkCudaErrors(hipGraphicsUnmapResources(1, &cuda_vbo_resource, 0));
-}

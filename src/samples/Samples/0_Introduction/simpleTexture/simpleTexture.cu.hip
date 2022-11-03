@@ -252,7 +252,3 @@ void runTest(int argc, char **argv) {
   free(imagePath);
   free(refPath);
 }
-aErrors(hipFreeArray(cuArray));
-  free(imagePath);
-  free(refPath);
-}

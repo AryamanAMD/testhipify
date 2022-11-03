@@ -268,5 +268,3 @@ extern "C" size_t scanExclusiveLarge(uint *d_Dst, uint *d_Src, uint batchSize,
 
   return THREADBLOCK_SIZE;
 }
-BLOCK_SIZE;
-}

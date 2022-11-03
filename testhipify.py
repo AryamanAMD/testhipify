@@ -65,12 +65,8 @@ def parenthesis_check_all(y):
 	y=y.replace('"', '')
 	listOfFiles=getListOfFiles(y)
 	for elem in listOfFiles:
-		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
-			with open('final_ignored_samples.txt','r') as f:
-				if elem in f.read():
-					print("Ignoring this sample "+elem)
-				else:
-					parenthesis_check(elem)			
+		if elem.endswith('.cu.hip'):  ##or elem.endswith('.cpp') 
+			parenthesis_check(elem)			
 
 		
 

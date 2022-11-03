@@ -208,7 +208,3 @@ int main(int argc, char **argv) {
 
   exit(EXIT_SUCCESS);
 }
-lete[] bLines_h;
-
-  exit(EXIT_SUCCESS);
-}

@@ -794,15 +794,3 @@ int main(int argc, char **argv) {
           (sqrt(r1) < tol) ? "PASSED" : "FAILED");
   exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-G_CODE
-  free(Ax_cpu);
-  free(r_cpu);
-  free(p_cpu);
-  free(x_cpu);
-#endif
-
-  printf("Test Summary:  Error amount = %f \n", err);
-  fprintf(stdout, "&&&& conjugateGradientMultiDeviceCG %s\n",
-          (sqrt(r1) < tol) ? "PASSED" : "FAILED");
-  exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
-}

@@ -215,5 +215,3 @@ int main(int argc, char **argv) {
 
   printf(bTestResult ? "Test passed\n" : "Test failed!\n");
 }
-tf(bTestResult ? "Test passed\n" : "Test failed!\n");
-}

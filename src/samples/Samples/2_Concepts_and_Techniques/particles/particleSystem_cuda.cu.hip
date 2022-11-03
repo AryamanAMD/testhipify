@@ -207,5 +207,3 @@ void sortParticles(uint *dGridParticleHash, uint *dGridParticleIndex,
 articles),
       thrust::device_ptr<uint>(dGridParticleIndex));
 }
-
-}  // extern "C"

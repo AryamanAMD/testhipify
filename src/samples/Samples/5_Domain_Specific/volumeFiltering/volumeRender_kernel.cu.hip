@@ -573,5 +573,3 @@ void VolumeRender_copyInvViewMatrix(float *invViewMatrix, size_t sizeofMatrix) {
 heckCudaErrors(
       hipMemcpyToSymbol(HIP_SYMBOL(c_invViewMatrix), invViewMatrix, sizeofMatrix));
 }
-
-#endif  // #ifndef _VOLUMERENDER_KERNEL_CU_

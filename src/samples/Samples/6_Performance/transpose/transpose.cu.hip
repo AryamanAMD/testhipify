@@ -618,7 +618,3 @@ ccess) {
     printf("Test failed!\n");
     exit(EXIT_FAILURE);
   }
-
-  printf("Test passed\n");
-  exit(EXIT_SUCCESS);
-}

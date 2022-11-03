@@ -258,8 +258,3 @@ CudaErrors(hipStreamDestroy(stream2));
 
   return EXIT_SUCCESS;
 }
-
-int main(int argc, char **argv) {
-  int ret = memPoolP2PCopy();
-  return ret;
-}
