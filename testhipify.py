@@ -201,6 +201,7 @@ def apply_patches():
 
 	
 def compilation_1(x):
+	parenthesis_check(x)
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
@@ -210,6 +211,7 @@ def compilation_1(x):
 	os.system(command)
 
 def compilation_2(x):
+	parenthesis_check(x)
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
