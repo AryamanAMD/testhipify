@@ -14,6 +14,7 @@ def getListOfFiles(dirName):
     return allFiles
 
 
+"""
 def prepend_line(file_name, line):
 	#line='#include "HIPCHECK.h"'
     dummy_file = file_name + '.bak'
@@ -23,6 +24,33 @@ def prepend_line(file_name, line):
             write_obj.write(line)
     os.remove(file_name)
     os.rename(dummy_file, file_name)
+	"""
+
+def prepend_line(file_name, line):
+	p=os.path.dirname(file_name)
+	file=open(file_name,'r')
+	lines = file.readlines()
+	for elem in lines:
+		if elem in '#include<stdio.h>\n':
+			index=lines.index(elem)
+			lines.insert(index+1,line)
+	with open(p+'/'+'a.cu.hip','w') as fp:
+		for item in lines:
+			fp.write(item)
+	file.close()
+	os.remove(file_name)
+	os.rename(p+'/a.cu.hip', file_name)	
+			
+					
+				
+
+
+
+
+
+
+
+
 
 
 def parenthesis_check(file_name):
@@ -175,8 +203,8 @@ def generate(x):
 	command="hipify-clang -Isrc/samples/Common "+x
 	print(command)
 	os.system(command)
-	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
-	prepend_line(p+"/"+q+".hip",'#include "rocprofiler.h"')
+	#prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
+	#prepend_line(p+"/"+q+".hip",'#include "rocprofiler.h"')
 	textToSearch="checkCudaErrors"
 	textToReplace="HIPCHECK"
 	fileToSearch=p+"/"+q+".hip"
