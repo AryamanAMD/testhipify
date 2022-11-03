@@ -120,7 +120,7 @@ int main(int argc, char **argv) {
 
   HIPCHECK(hipGetDeviceProperties(&deviceProp, cuda_device));
 
-  if ((deviceProp.concurrentKernels == 0)) {
+  if (deviceProp.concurrentKernels == 0) {
     printf("> GPU does not support concurrent kernel execution\n");
     printf("  CUDA kernel runs will be serialized\n");
   }
