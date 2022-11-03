@@ -1,9 +1,0 @@
-diff a/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu.hip b/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu.hip	(rejected hunks)
-@@ -252,7 +252,3 @@ void runTest(int argc, char **argv) {
-   free(imagePath);
-   free(refPath);
- }
--aErrors(hipFreeArray(cuArray));
--  free(imagePath);
--  free(refPath);
--}

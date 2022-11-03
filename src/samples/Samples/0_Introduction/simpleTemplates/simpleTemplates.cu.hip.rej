@@ -1,8 +1,0 @@
-diff a/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.cu.hip b/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.cu.hip	(rejected hunks)
-@@ -265,6 +265,3 @@ void runTest(int argc, char **argv, int len) {
-   HIPCHECK(hipFree(d_idata));
-   HIPCHECK(hipFree(d_odata));
- }
--_idata));
--  checkCudaErrors(hipFree(d_odata));
--}

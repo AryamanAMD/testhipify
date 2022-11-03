@@ -1,7 +1,0 @@
-diff a/src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip b/src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip	(rejected hunks)
-@@ -160,5 +160,3 @@ int main(int argc, char *argv[]) {
- 
-   exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
- }
--  exit(bResult ? EXIT_SUCCESS : EXIT_FAILURE);
--}

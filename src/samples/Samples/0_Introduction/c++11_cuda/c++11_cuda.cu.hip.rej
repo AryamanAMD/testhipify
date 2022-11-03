@@ -1,9 +1,0 @@
-diff a/src/samples/Samples/0_Introduction/c++11_cuda/c++11_cuda.cu.hip b/src/samples/Samples/0_Introduction/c++11_cuda/c++11_cuda.cu.hip	(rejected hunks)
-@@ -141,7 +141,3 @@ int main(int argc, char **argv) {
- 
-   return EXIT_SUCCESS;
- }
--rors(hipFree(d_text));
--
--  return EXIT_SUCCESS;
--}
