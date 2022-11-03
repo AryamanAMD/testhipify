@@ -202,8 +202,3 @@ void sortParticles(uint *dGridParticleHash, uint *dGridParticleIndex,
       thrust::device_ptr<uint>(dGridParticleHash + numParticles),
       thrust::device_ptr<uint>(dGridParticleIndex));
 }
-
-}  // extern "C"
-articles),
-      thrust::device_ptr<uint>(dGridParticleIndex));
-}

@@ -167,8 +167,3 @@ int main(int argc, char **argv)
         HIPCHECK(allocateCompressible((void **)&z, size, false));
         compressibleZbuf = 0;
     }
-    else
-    {
-        HIPCHECK(allocateCompressible((void **)&z, size, true));
-        compressibleZbuf = 1;
-    }

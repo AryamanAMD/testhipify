@@ -381,5 +381,3 @@ __global__ void solvePoisson(hipfftComplex *ft, hipfftComplex *ft_k, float *k,
     ft_k[index].y = -ft[index].y * 1 / k2;
   }
 }
-x].y * 1 / k2;
-  }

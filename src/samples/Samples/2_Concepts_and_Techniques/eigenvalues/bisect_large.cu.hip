@@ -373,7 +373,3 @@ e, eigenvals, mat_size, tolerance) == true) {
     } else {
       bCompareResult = false;
     }
-
-    free(ref_path);
-    free(reference);
-  }

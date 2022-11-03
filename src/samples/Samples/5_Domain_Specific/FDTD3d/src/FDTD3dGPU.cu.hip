@@ -265,7 +265,3 @@ bool fdtdGPU(float *output, const float *input, const float *coeff,
 }
 CudaErrors(hipEventDestroy(profileStart));
   }
-
-  if (profileEnd) {
-    checkCudaErrors(hipEventDestroy(profileEnd));
-  }

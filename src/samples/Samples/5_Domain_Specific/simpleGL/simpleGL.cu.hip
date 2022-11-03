@@ -587,7 +587,3 @@ void checkResultCuda(int argc, char **argv, const GLuint &vbo)
         SDK_CHECK_ERROR_GL();
     }
 }
-MapFlagsWriteDiscard));
-
-        SDK_CHECK_ERROR_GL();
-    }

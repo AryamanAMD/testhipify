@@ -433,6 +433,3 @@ rors(hipsparseDestroySpMat(matA));
   if (vecAx) {
     checkCudaErrors(hipsparseDestroyDnVec(vecAx));
   }
-  if (vecp) {
-    checkCudaErrors(hipsparseDestroyDnVec(vecp));
-  }

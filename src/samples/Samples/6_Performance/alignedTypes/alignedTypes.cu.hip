@@ -315,5 +315,3 @@ int main(int argc, char **argv) {
   printf("Test passed\n");
   exit(EXIT_SUCCESS);
 }
-XIT_FAILURE);
-  }

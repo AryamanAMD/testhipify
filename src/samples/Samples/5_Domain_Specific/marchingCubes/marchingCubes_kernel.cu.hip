@@ -666,8 +666,3 @@ extern "C" void ThrustScanWrapper(unsigned int *output, unsigned int *input,
                          thrust::device_ptr<unsigned int>(input + numElements),
                          thrust::device_ptr<unsigned int>(output));
 }
-
-#endif
-nts),
-                         thrust::device_ptr<unsigned int>(output));
-}

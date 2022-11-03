@@ -458,12 +458,3 @@ int main(int argc, char **argv) {
     printf("Waiving execution as driver does not support Graph Memory Nodes\n");
     exit(EXIT_WAIVED);
   }
-
-  hipDeviceGetAttribute(&deviceSupportsMemoryPools,
-                         hipDeviceAttributeMemoryPoolsSupported, device);
-  if (!deviceSupportsMemoryPools) {
-    printf("Waiving execution as device does not support Memory Pools\n");
-    exit(EXIT_WAIVED);
-  } else {
-    printf("Setting up sample.\n");
-  }

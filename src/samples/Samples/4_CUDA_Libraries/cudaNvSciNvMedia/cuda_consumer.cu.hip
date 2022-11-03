@@ -429,5 +429,3 @@ void runCudaOperation(Blit2DTest *ctx, cudaResources &cudaResObj,
   yuvToGrayscaleCudaKernelNonNvSci(cudaResObj, deviceId, ctx->widthSurface,
                                    ctx->heightSurface);
 }
-], hipMemcpyHostToDevice));
-  }

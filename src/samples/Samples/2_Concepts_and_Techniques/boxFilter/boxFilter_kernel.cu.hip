@@ -494,6 +494,3 @@ extern "C" double boxFilterRGBA(unsigned int *d_src, unsigned int *d_temp,
 ned int), height, hipMemcpyDeviceToDevice));
     }
   }
-
-  return ((dKernelTime / 1000.) / (double)iterations);
-}
