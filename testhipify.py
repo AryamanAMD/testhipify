@@ -172,7 +172,7 @@ def generate(x):
 		print("GL Headers found")	
 		"""
 	#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
-	command="hipify-clang "+x
+	command="hipify-clang -Isrc/samples/Common "+x
 	print(command)
 	os.system(command)
 	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
@@ -196,7 +196,7 @@ def generate(x):
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()
-	parenthesis_check(x+".hip")
+	#parenthesis_check(x+".hip")
 
 def apply_patches():
 	command='git apply --reject --whitespace=fix src/patches/*.patch'
