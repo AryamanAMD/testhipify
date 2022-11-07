@@ -343,7 +343,20 @@ def rem(z):
 		if line not in lines_seen: # not a duplicate
 			outfile.write(line)
 			lines_seen.add(line)
-	outfile.close()	
+	outfile.close()
+	with open('final_ignored_samples.txt') as fp:
+		data1 = fp.read()	
+	with open('custom_samples_path') as fp:
+		data2 = fp.read()
+		data2 = data2.replace('/', '\\')
+	data1 += data2	
+	with open ('final_ignored_samples.txt', 'a') as fp:
+		fp.write(data1)
+    
+
+
+
+   
 		
         
     
