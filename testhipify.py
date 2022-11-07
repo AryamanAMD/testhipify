@@ -189,7 +189,6 @@ def runsample_all(y):
 					runsample(elem)														
 
 def generate(x):
-
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
@@ -209,7 +208,7 @@ def generate(x):
 		print("GL Headers found")	
 		"""
 	#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
-	command="hipify-clang -Isrc/samples/Common "+x
+	command="hipify-clang -Isrc/samples/Common "+x+" > "+x+".hip"
 	print(command)
 	os.system(command)
 	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"\n')
