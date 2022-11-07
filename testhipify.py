@@ -189,7 +189,7 @@ def runsample_all(y):
 					runsample(elem)														
 
 def generate(x):
-	if(os.path.isfile(x+".hip")):
+	if(os.path.isfile(x+".hip")==True):
 		os.system('rm -rf '+x+".hip")
 
 	x=x.replace('"', '')
