@@ -21,3 +21,7 @@ src\samples\Samples\5_Domain_Specific\simpleGLES\simpleGLES.cu
 src\samples\Samples\5_Domain_Specific\simpleGLES_EGLOutput\simpleGLES_EGLOutput.cu
 src\samples\Samples\5_Domain_Specific\simpleGLES_screen\simpleGLES_screen.cu
 src\samples\Samples\5_Domain_Specific\vulkanImageCUDA\vulkanImageCUDA.cu
+src\samples\Samples\5_Domain_Specific\simpleD3D10Texture\texture_cube.cu
+src\samples\Samples\5_Domain_Specific\MonteCarloMultiGPU\MonteCarlo_kernel.cu
+src\samples\Samples\5_Domain_Specific\simpleVulkanMMAP\MonteCarloPi.cu
+src\samples\Samples\5_Domain_Specific\simpleD3D12\sinewave_cuda.cu
