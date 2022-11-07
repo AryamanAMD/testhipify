@@ -28,6 +28,8 @@
 // System includes
 #include <assert.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 // CUDA runtime
 #include <hip/hip_runtime.h>

@@ -37,6 +37,8 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 // CUDA runtime
 #include <hip/hip_runtime.h>

@@ -33,6 +33,8 @@
 #define _MATRIXMUL_KERNEL_H_
 
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 #define AS(i, j) As[i][j]
 #define BS(i, j) Bs[i][j]

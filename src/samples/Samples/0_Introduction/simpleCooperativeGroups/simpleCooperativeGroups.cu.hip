@@ -41,6 +41,8 @@
 
 #include <hip/hip_runtime.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <hip/hip_cooperative_groups.h>
 
 using namespace cooperative_groups;

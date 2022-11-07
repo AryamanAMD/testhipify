@@ -35,6 +35,8 @@
 
 // includes, C string library
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <string.h>
 

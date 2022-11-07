@@ -32,6 +32,8 @@
 #include <hip/hip_runtime.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <hip/hip_cooperative_groups.h>
 
 namespace cg = cooperative_groups;

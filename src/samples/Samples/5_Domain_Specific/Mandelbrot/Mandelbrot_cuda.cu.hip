@@ -28,6 +28,8 @@
 
 #include <hip/hip_runtime.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include "helper_cuda.h"
 #include "Mandelbrot_kernel.h"
 #include "Mandelbrot_kernel.cuh"

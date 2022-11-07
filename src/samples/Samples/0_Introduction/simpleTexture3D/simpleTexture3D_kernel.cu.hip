@@ -30,6 +30,8 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
 

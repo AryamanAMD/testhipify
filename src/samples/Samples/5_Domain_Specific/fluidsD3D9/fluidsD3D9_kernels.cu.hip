@@ -26,6 +26,8 @@
  */
 
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <hip/hip_runtime.h>
 #include <builtin_types.h>

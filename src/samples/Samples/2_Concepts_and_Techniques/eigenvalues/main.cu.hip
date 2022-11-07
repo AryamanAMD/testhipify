@@ -34,6 +34,8 @@
 #include <hip/hip_runtime.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
 #include <float.h>

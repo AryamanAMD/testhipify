@@ -34,6 +34,8 @@
 // System includes
 #include <assert.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <iostream>
 #include <map>
 #include <set>

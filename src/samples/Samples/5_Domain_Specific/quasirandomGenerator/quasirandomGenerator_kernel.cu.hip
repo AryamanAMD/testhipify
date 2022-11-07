@@ -29,6 +29,8 @@
 #define QUASIRANDOMGENERATOR_KERNEL_CUH
 
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <helper_cuda.h>
 #include "quasirandomGenerator_common.h"

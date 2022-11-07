@@ -40,6 +40,8 @@
 // System includes
 #include <assert.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <climits>
 
 // CUDA runtime

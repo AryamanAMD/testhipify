@@ -29,6 +29,8 @@
 #include <hip/hip_runtime.h>
 #include <assert.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <string.h>
 #include <hip/hip_cooperative_groups.h>

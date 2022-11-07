@@ -34,6 +34,8 @@
  */
 
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 // For the CUDA runtime routines (prefixed with "cuda_")
 #include <hip/hip_runtime.h>

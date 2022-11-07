@@ -33,6 +33,8 @@
 
 #include <hip/hip_runtime.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <helper_cuda.h>
 #include <helper_string.h>
 #include <helper_math.h>

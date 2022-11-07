@@ -28,6 +28,8 @@
 
 #include <hip/hip_runtime.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <hip/hip_runtime_api.h>
 #include <helper_cuda.h>
 #include <string.h>

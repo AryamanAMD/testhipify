@@ -32,6 +32,8 @@
 // compression.
 
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <hip/hip_runtime.h>
 #define CUDA_DRIVER_API
 #include "helper_cuda.h"

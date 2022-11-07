@@ -33,10 +33,8 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
-
-
-
-
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 // CUDA includes
 #include <hip/hip_runtime.h>

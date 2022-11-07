@@ -36,7 +36,8 @@
 
 // includes, system
 #include <stdio.h>
-
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 // includes CUDA Runtime
 #include <hip/hip_runtime.h>
