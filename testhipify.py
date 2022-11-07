@@ -348,8 +348,7 @@ def rem(z):
 		data1 = fp.read()	
 	with open('custom_samples_path') as fp:
 		data2 = fp.read()
-		data2 = data2.replace('/', '\\')
-	data1 += data2	
+	data1 += data2
 	with open ('final_ignored_samples.txt', 'a') as fp:
 		fp.write(data1)
     
