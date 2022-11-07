@@ -1,6 +1,7 @@
 import os
 import argparse
 import fileinput
+import os.path
 def getListOfFiles(dirName):
     listOfFile=os.listdir(dirName)
     allFiles=list()
@@ -27,28 +28,35 @@ def prepend_line(file_name, line):
 	"""
 
 def prepend_line(file_name, line):
-	p=os.path.dirname(file_name)
-	file=open(file_name,'r')
-	lines = file.readlines()
-	for elem in lines:
-		if elem in '#include<stdio.h>\n':
-			index=lines.index(elem)
-			lines.insert(index+1,line)
-	with open(p+'/'+'a.cu.hip','w') as fp:
-		for item in lines:
-			fp.write(item)
+	result=check_for_word(file_name,line)
+	if result==0:
+		p=os.path.dirname(file_name)
+		file=open(file_name,'r')
+		lines = file.readlines()
+		for elem in lines:
+			if elem == '#include <stdio.h>\n':
+				index=lines.index(elem)
+				lines.insert(index+1,line)
+		with open(p+'/'+'a.cu.hip','w') as fp:
+			for item in lines:
+				fp.write(item)
+		file.close()
+		os.remove(file_name)
+		os.rename(p+'/a.cu.hip', file_name)
+	
+
+def check_for_word(file_name,word):
+	file = open(file_name, 'r')
+	linelist = file.readlines()
 	file.close()
-	os.remove(file_name)
-	os.rename(p+'/a.cu.hip', file_name)	
-			
-					
-				
+	for line in linelist:
+		if str(word) in line:
+			return 1
+		else:
+			return 0
+		 
 
-
-
-
-
-
+         	
 
 
 
@@ -181,6 +189,9 @@ def runsample_all(y):
 					runsample(elem)														
 
 def generate(x):
+	if(os.path.isfile(x+".hip")):
+		os.system('rm -rf '+x+".hip")
+
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
@@ -203,8 +214,8 @@ def generate(x):
 	command="hipify-clang -Isrc/samples/Common "+x
 	print(command)
 	os.system(command)
-	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"')
-	prepend_line(p+"/"+q+".hip",'#include "rocprofiler.h"')
+	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"\n')
+	prepend_line(p+"/"+q+".hip",'#include "rocprofiler.h"\n')
 	textToSearch="checkCudaErrors"
 	textToReplace="HIPCHECK"
 	fileToSearch=p+"/"+q+".hip"
