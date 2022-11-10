@@ -26,10 +26,10 @@
  */
 
 ////////////////////////////////////////////////////////////////////////////////
-// These are hip Helper functions for initialization and error checking
+// These are CUDA Helper functions for initialization and error checking
 
-#ifndef COMMON_HELPER_hip_H_
-#define COMMON_HELPER_hip_H_
+#ifndef COMMON_HELPER_CUDA_H_
+#define COMMON_HELPER_CUDA_H_
 
 #pragma once
 
@@ -46,29 +46,29 @@
 #endif
 
 // Note, it is required that your SDK sample to include the proper header
-// files, please refer the hip examples for examples of the needed hip
-// headers, which may change depending on which hip functions are used.
+// files, please refer the CUDA examples for examples of the needed CUDA
+// headers, which may change depending on which CUDA functions are used.
 
-// hip Runtime error messages
+// CUDA Runtime error messages
 #ifdef __DRIVER_TYPES_H__
-static const char *_hipGetErrorEnum(hipError_t error) {
+static const char *_cudaGetErrorEnum(hipError_t error) {
   return hipGetErrorName(error);
 }
 #endif
 
-#ifdef hip_DRIVER_API
-// hip Driver API errors
-static const char *_hipGetErrorEnum(hipError_t error) {
+#ifdef CUDA_DRIVER_API
+// CUDA Driver API errors
+static const char *_cudaGetErrorEnum(hipError_t error) {
   static char unknown[] = "<unknown>";
   const char *ret = NULL;
-  hipGetErrorName(error, &ret);
+  cuGetErrorName(error, &ret);
   return ret ? ret : unknown;
 }
 #endif
 
 #ifdef CUBLAS_API_H_
 // cuBLAS API errors
-static const char *_hipGetErrorEnum(hipblasStatus_t error) {
+static const char *_cudaGetErrorEnum(hipblasStatus_t error) {
   switch (error) {
     case HIPBLAS_STATUS_SUCCESS:
       return "HIPBLAS_STATUS_SUCCESS";
@@ -107,7 +107,7 @@ static const char *_hipGetErrorEnum(hipblasStatus_t error) {
 
 #ifdef _CUFFT_H_
 // cuFFT API errors
-static const char *_hipGetErrorEnum(hipfftResult error) {
+static const char *_cudaGetErrorEnum(hipfftResult error) {
   switch (error) {
     case HIPFFT_SUCCESS:
       return "HIPFFT_SUCCESS";
@@ -167,7 +167,7 @@ static const char *_hipGetErrorEnum(hipfftResult error) {
 
 #ifdef CUSPARSEAPI
 // cuSPARSE API errors
-static const char *_hipGetErrorEnum(hipsparseStatus_t error) {
+static const char *_cudaGetErrorEnum(hipsparseStatus_t error) {
   switch (error) {
     case HIPSPARSE_STATUS_SUCCESS:
       return "HIPSPARSE_STATUS_SUCCESS";
@@ -203,7 +203,7 @@ static const char *_hipGetErrorEnum(hipsparseStatus_t error) {
 
 #ifdef CUSOLVER_COMMON_H_
 // cuSOLVER API errors
-static const char *_hipGetErrorEnum(cusolverStatus_t error) {
+static const char *_cudaGetErrorEnum(cusolverStatus_t error) {
   switch (error) {
     case CUSOLVER_STATUS_SUCCESS:
       return "CUSOLVER_STATUS_SUCCESS";
@@ -237,7 +237,7 @@ static const char *_hipGetErrorEnum(cusolverStatus_t error) {
 
 #ifdef CURAND_H_
 // cuRAND API errors
-static const char *_hipGetErrorEnum(hiprandStatus_t error) {
+static const char *_cudaGetErrorEnum(hiprandStatus_t error) {
   switch (error) {
     case HIPRAND_STATUS_SUCCESS:
       return "HIPRAND_STATUS_SUCCESS";
@@ -285,7 +285,7 @@ static const char *_hipGetErrorEnum(hiprandStatus_t error) {
 
 #ifdef NVJPEGAPI
 // nvJPEG API errors
-static const char *_hipGetErrorEnum(nvjpegStatus_t error) {
+static const char *_cudaGetErrorEnum(nvjpegStatus_t error) {
   switch (error) {
     case NVJPEG_STATUS_SUCCESS:
       return "NVJPEG_STATUS_SUCCESS";
@@ -321,7 +321,7 @@ static const char *_hipGetErrorEnum(nvjpegStatus_t error) {
 
 #ifdef NV_NPPIDEFS_H
 // NPP API errors
-static const char *_hipGetErrorEnum(NppStatus error) {
+static const char *_cudaGetErrorEnum(NppStatus error) {
   switch (error) {
     case NPP_NOT_SUPPORTED_MODE_ERROR:
       return "NPP_NOT_SUPPORTED_MODE_ERROR";
@@ -368,7 +368,7 @@ static const char *_hipGetErrorEnum(NppStatus error) {
       return "NPP_ODD_ROI_WARNING";
 #else
 
-    // These are for hip 5.5 or higher
+    // These are for CUDA 5.5 or higher
     case NPP_BAD_ARGUMENT_ERROR:
       return "NPP_BAD_ARGUMENT_ERROR";
 
@@ -455,8 +455,8 @@ static const char *_hipGetErrorEnum(NppStatus error) {
     case NPP_NULL_POINTER_ERROR:
       return "NPP_NULL_POINTER_ERROR";
 
-    case NPP_hip_KERNEL_EXECUTION_ERROR:
-      return "NPP_hip_KERNEL_EXECUTION_ERROR";
+    case NPP_CUDA_KERNEL_EXECUTION_ERROR:
+      return "NPP_CUDA_KERNEL_EXECUTION_ERROR";
 
     case NPP_NOT_IMPLEMENTED_ERROR:
       return "NPP_NOT_IMPLEMENTED_ERROR";
@@ -584,27 +584,27 @@ template <typename T>
 void check(T result, char const *const func, const char *const file,
            int const line) {
   if (result) {
-    fprintf(stderr, "hip error at %s:%d code=%d(%s) \"%s\" \n", file, line,
-            static_cast<unsigned int>(result), _hipGetErrorEnum(result), func);
+    fprintf(stderr, "CUDA error at %s:%d code=%d(%s) \"%s\" \n", file, line,
+            static_cast<unsigned int>(result), _cudaGetErrorEnum(result), func);
     exit(EXIT_FAILURE);
   }
 }
 
 #ifdef __DRIVER_TYPES_H__
-// This will output the proper hip error strings in the event
-// that a hip host call returns an error
+// This will output the proper CUDA error strings in the event
+// that a CUDA host call returns an error
 #define HIPCHECK(val) check((val), #val, __FILE__, __LINE__)
 
 // This will output the proper error string when calling hipGetLastError
-#define getLasthipError(msg) __getLasthipError(msg, __FILE__, __LINE__)
+#define getLastCudaError(msg) __getLastCudaError(msg, __FILE__, __LINE__)
 
-inline void __getLasthipError(const char *errorMessage, const char *file,
+inline void __getLastCudaError(const char *errorMessage, const char *file,
                                const int line) {
   hipError_t err = hipGetLastError();
 
   if (hipSuccess != err) {
     fprintf(stderr,
-            "%s(%i) : getLasthipError() hip error :"
+            "%s(%i) : getLastCudaError() CUDA error :"
             " %s : (%d) %s.\n",
             file, line, errorMessage, static_cast<int>(err),
             hipGetErrorString(err));
@@ -614,15 +614,15 @@ inline void __getLasthipError(const char *errorMessage, const char *file,
 
 // This will only print the proper error string when calling hipGetLastError
 // but not exit program incase error detected.
-#define printLasthipError(msg) __printLasthipError(msg, __FILE__, __LINE__)
+#define printLastCudaError(msg) __printLastCudaError(msg, __FILE__, __LINE__)
 
-inline void __printLasthipError(const char *errorMessage, const char *file,
+inline void __printLastCudaError(const char *errorMessage, const char *file,
                                  const int line) {
   hipError_t err = hipGetLastError();
 
   if (hipSuccess != err) {
     fprintf(stderr,
-            "%s(%i) : getLasthipError() hip error :"
+            "%s(%i) : getLastCudaError() CUDA error :"
             " %s : (%d) %s.\n",
             file, line, errorMessage, static_cast<int>(err),
             hipGetErrorString(err));
@@ -738,16 +738,16 @@ inline const char* _ConvertSMVer2ArchName(int major, int minor) {
 }
   // end of GPU Architecture definitions
 
-#ifdef __hip_RUNTIME_H__
-// General GPU Device hip Initialization
+#ifdef __CUDA_RUNTIME_H__
+// General GPU Device CUDA Initialization
 inline int gpuDeviceInit(int devID) {
   int device_count;
   HIPCHECK(hipGetDeviceCount(&device_count));
 
   if (device_count == 0) {
     fprintf(stderr,
-            "gpuDeviceInit() hip error: "
-            "no devices supporting hip.\n");
+            "gpuDeviceInit() CUDA error: "
+            "no devices supporting CUDA.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -757,7 +757,7 @@ inline int gpuDeviceInit(int devID) {
 
   if (devID > device_count - 1) {
     fprintf(stderr, "\n");
-    fprintf(stderr, ">> %d hip capable GPU device(s) detected. <<\n",
+    fprintf(stderr, ">> %d CUDA capable GPU device(s) detected. <<\n",
             device_count);
     fprintf(stderr,
             ">> gpuDeviceInit (-device=%d) is not a valid"
@@ -779,12 +779,12 @@ inline int gpuDeviceInit(int devID) {
   }
 
   if (major < 1) {
-    fprintf(stderr, "gpuDeviceInit(): GPU device does not support hip.\n");
+    fprintf(stderr, "gpuDeviceInit(): GPU device does not support CUDA.\n");
     exit(EXIT_FAILURE);
   }
 
   HIPCHECK(hipSetDevice(devID));
-  printf("gpuDeviceInit() hip Device [%d]: \"%s\n", devID, _ConvertSMVer2ArchName(major, minor));
+  printf("gpuDeviceInit() CUDA Device [%d]: \"%s\n", devID, _ConvertSMVer2ArchName(major, minor));
 
   return devID;
 }
@@ -801,12 +801,12 @@ inline int gpuGetMaxGflopsDeviceId() {
 
   if (device_count == 0) {
     fprintf(stderr,
-            "gpuGetMaxGflopsDeviceId() hip error:"
-            " no devices supporting hip.\n");
+            "gpuGetMaxGflopsDeviceId() CUDA error:"
+            " no devices supporting CUDA.\n");
     exit(EXIT_FAILURE);
   }
 
-  // Find the best hip capable GPU device
+  // Find the best CUDA capable GPU device
   current_device = 0;
 
   while (current_device < device_count) {
@@ -829,13 +829,13 @@ inline int gpuGetMaxGflopsDeviceId() {
       hipError_t result = hipDeviceGetAttribute(&clockRate, hipDeviceAttributeClockRate, current_device);
       if (result != hipSuccess) {
         // If hipDeviceAttributeClockRate attribute is not supported we
-        // set clockRate as 1, to consider GPU with most SMs and hip Cores.
+        // set clockRate as 1, to consider GPU with most SMs and CUDA Cores.
         if(result == hipErrorInvalidValue) {
           clockRate = 1;
         }
         else {
-          fprintf(stderr, "hip error at %s:%d code=%d(%s) \n", __FILE__, __LINE__,
-            static_cast<unsigned int>(result), _hipGetErrorEnum(result));
+          fprintf(stderr, "CUDA error at %s:%d code=%d(%s) \n", __FILE__, __LINE__,
+            static_cast<unsigned int>(result), _cudaGetErrorEnum(result));
           exit(EXIT_FAILURE);
         }
       }
@@ -854,7 +854,7 @@ inline int gpuGetMaxGflopsDeviceId() {
 
   if (devices_prohibited == device_count) {
     fprintf(stderr,
-            "gpuGetMaxGflopsDeviceId() hip error:"
+            "gpuGetMaxGflopsDeviceId() CUDA error:"
             " all devices have compute mode prohibited.\n");
     exit(EXIT_FAILURE);
   }
@@ -862,8 +862,8 @@ inline int gpuGetMaxGflopsDeviceId() {
   return max_perf_device;
 }
 
-// Initialization code to find the best hip Device
-inline int findhipDevice(int argc, const char **argv) {
+// Initialization code to find the best CUDA Device
+inline int findCudaDevice(int argc, const char **argv) {
   int devID = 0;
 
   // If the command-line has a device number specified, use it
@@ -904,7 +904,7 @@ inline int findIntegratedGPU() {
   HIPCHECK(hipGetDeviceCount(&device_count));
 
   if (device_count == 0) {
-    fprintf(stderr, "hip error: no devices supporting hip.\n");
+    fprintf(stderr, "CUDA error: no devices supporting CUDA.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -914,7 +914,7 @@ inline int findIntegratedGPU() {
     HIPCHECK(hipDeviceGetAttribute(&computeMode, hipDeviceAttributeComputeMode, current_device));
     HIPCHECK(hipDeviceGetAttribute(&integrated, hipDeviceAttributeIntegrated, current_device));
     // If GPU is integrated and is not running on Compute Mode prohibited,
-    // then hip can map to GLES resource
+    // then cuda can map to GLES resource
     if (integrated && (computeMode != hipComputeModeProhibited)) {
       HIPCHECK(hipSetDevice(current_device));
 
@@ -934,16 +934,16 @@ inline int findIntegratedGPU() {
 
   if (devices_prohibited == device_count) {
     fprintf(stderr,
-            "hip error:"
-            " No GLES-hip Interop capable GPU found.\n");
+            "CUDA error:"
+            " No GLES-CUDA Interop capable GPU found.\n");
     exit(EXIT_FAILURE);
   }
 
   return -1;
 }
 
-// General check for hip GPU SM Capabilities
-inline bool checkhipCapabilities(int major_version, int minor_version) {
+// General check for CUDA GPU SM Capabilities
+inline bool checkCudaCapabilities(int major_version, int minor_version) {
   int dev;
   int major = 0, minor = 0;
 
@@ -960,13 +960,13 @@ inline bool checkhipCapabilities(int major_version, int minor_version) {
   } else {
     printf(
         "  No GPU device was found that can support "
-        "hip compute capability %d.%d.\n",
+        "CUDA compute capability %d.%d.\n",
         major_version, minor_version);
     return false;
   }
 }
 #endif
 
-  // end of hip Helper Functions
+  // end of CUDA Helper Functions
 
-#endif  // COMMON_HELPER_hip_H_
+#endif  // COMMON_HELPER_CUDA_H_
