@@ -217,9 +217,11 @@ def generate(x):
 	textToReplace="HIPCHECK"
 	fileToSearch=p+"/"+q+".hip"
 	textToSearch1="hipProfilerStart"
-	textToReplace1="rocprofiler_start"
+	#textToReplace1="rocprofiler_start"
+	textToSearch1="hipProfilerStart"
 	textToSearch2="hipProfilerStop"
 	textToReplace2="rocprofiler_stop"
+	'''
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch,textToReplace))
@@ -232,6 +234,7 @@ def generate(x):
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()
+	'''
 	parenthesis_check(x+".hip")
 
 def apply_patches():
