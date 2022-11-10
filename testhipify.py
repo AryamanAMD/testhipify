@@ -221,11 +221,12 @@ def generate(x):
 	textToSearch1="hipProfilerStart"
 	textToSearch2="hipProfilerStop"
 	textToReplace2="rocprofiler_stop"
-	'''
+	
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch,textToReplace))
 	tempFile.close()	
+	'''
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch1,textToReplace1))
