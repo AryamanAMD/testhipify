@@ -41,6 +41,7 @@ static const char shmName[] = "simpleIPCshm";
 #define MAX_DEVICES (32)
 #define DATA_SIZE (64ULL << 20ULL)  // 64MB
 
+/*
 #if defined(__linux__)
 #define cpu_atomic_add32(a, x) __sync_add_and_fetch(a, x)
 #elif defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -48,6 +49,9 @@ static const char shmName[] = "simpleIPCshm";
 #else
 #error Unsupported system
 #endif
+*/
+#define cpu_atomic_add32(a, x) __sync_add_and_fetch(a, x)
+
 
 typedef struct shmStruct_st {
   size_t nprocesses;
