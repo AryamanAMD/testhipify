@@ -1,0 +1,15 @@
+diff --git a/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip b/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip
+index 187af06..b6002f0 100644
+--- a/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip
+@@ -162,7 +162,3 @@ void runTest(int argc, const char **argv) {
+     exit(EXIT_FAILURE);
+   }
+ }
+-" << endl;
+-
+-    exit(EXIT_FAILURE);
+-  }
+diff --git a/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out b/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out
+index 9c794b1..7dbf025 100755
+Binary files a/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out and b/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out differ
