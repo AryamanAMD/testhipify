@@ -30,7 +30,7 @@
 #include <hip/hip_runtime.h>
 
 #include "resize_convert.h"
-
+#include "HIPCHECK.h"
 __global__ static void resizeNV12BatchKernel(hipTextureObject_t texSrcLuma,
                                              hipTextureObject_t texSrcChroma,
                                              uint8_t *pDstNv12, int nSrcWidth,

@@ -59,7 +59,7 @@
 #include "sobol.h"
 #include "sobol_gpu.h"
 #include <hip/hip_cooperative_groups.h>
-
+#include "HIPCHECK.h"
 namespace cg = cooperative_groups;
 #include <helper_cuda.h>
 

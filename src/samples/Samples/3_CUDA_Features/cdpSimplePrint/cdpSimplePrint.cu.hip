@@ -29,7 +29,7 @@
 #include <hip/hip_runtime.h>
 #include <helper_cuda.h>
 #include <helper_string.h>
-
+#include "HIPCHECK.h"
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>

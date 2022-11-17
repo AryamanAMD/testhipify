@@ -47,7 +47,7 @@
 #include <cassert>
 #include <iostream>
 #include <memory>
-
+#include "HIPCHECK.h"
 static const char *sSDKsample = "CUDA Bandwidth Test";
 
 // defines, project

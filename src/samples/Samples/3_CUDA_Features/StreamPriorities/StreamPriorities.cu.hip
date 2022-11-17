@@ -32,7 +32,7 @@
 #include <hip/hip_runtime.h>
 
 #include <helper_cuda.h>
-
+#include "HIPCHECK.h"
 #define TOTAL_SIZE 256 * 1024 * 1024
 #define EACH_SIZE 128 * 1024 * 1024
 

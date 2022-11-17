@@ -1,0 +1,104 @@
+diff --git a/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.cu.hip b/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.cu.hip
+index b75032b..a80025b 100644
+--- a/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.cu.hip
++++ b/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.cu.hip
+@@ -47,7 +47,7 @@
+ #include <cassert>
+ #include <iostream>
+ #include <memory>
+-
++#include "HIPCHECK.h"
+ static const char *sSDKsample = "CUDA Bandwidth Test";
+ 
+ // defines, project
+diff --git a/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.cu.hip b/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.cu.hip
+index 6ba6066..42a5486 100644
+--- a/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.cu.hip
+@@ -32,7 +32,7 @@
+ #include <hip/hip_runtime.h>
+ 
+ #include <helper_cuda.h>
+-
++#include "HIPCHECK.h"
+ #define TOTAL_SIZE 256 * 1024 * 1024
+ #define EACH_SIZE 128 * 1024 * 1024
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/cdpSimplePrint/cdpSimplePrint.cu.hip b/src/samples/Samples/3_CUDA_Features/cdpSimplePrint/cdpSimplePrint.cu.hip
+index 0cbf36f..90f7d33 100644
+--- a/src/samples/Samples/3_CUDA_Features/cdpSimplePrint/cdpSimplePrint.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cdpSimplePrint/cdpSimplePrint.cu.hip
+@@ -29,7 +29,7 @@
+ #include <hip/hip_runtime.h>
+ #include <helper_cuda.h>
+ #include <helper_string.h>
+-
++#include "HIPCHECK.h"
+ #include <cstdio>
+ #include <cstdlib>
+ #include <iostream>
+diff --git a/src/samples/Samples/3_CUDA_Features/cdpSimpleQuicksort/cdpSimpleQuicksort.cu.hip b/src/samples/Samples/3_CUDA_Features/cdpSimpleQuicksort/cdpSimpleQuicksort.cu.hip
+index a722796..031c347 100644
+--- a/src/samples/Samples/3_CUDA_Features/cdpSimpleQuicksort/cdpSimpleQuicksort.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cdpSimpleQuicksort/cdpSimpleQuicksort.cu.hip
+@@ -31,7 +31,7 @@
+ #include <cstdio>
+ #include <helper_cuda.h>
+ #include <helper_string.h>
+-
++#include "HIPCHECK.h"
+ #define MAX_DEPTH 16
+ #define INSERTION_SORT 32
+ 
+diff --git a/src/samples/Samples/4_CUDA_Libraries/cudaNvSci/imageKernels.cu.hip b/src/samples/Samples/4_CUDA_Libraries/cudaNvSci/imageKernels.cu.hip
+index 490f397..6941307 100644
+--- a/src/samples/Samples/4_CUDA_Libraries/cudaNvSci/imageKernels.cu.hip
++++ b/src/samples/Samples/4_CUDA_Libraries/cudaNvSci/imageKernels.cu.hip
+@@ -28,7 +28,7 @@
+ #include <hip/hip_runtime.h>
+ #include <helper_cuda.h>
+ #include <helper_image.h>
+-
++#include "HIPCHECK.h"
+ // convert floating point rgba color to 32-bit integer
+ __device__ unsigned int rgbaFloatToInt(float4 rgba) {
+   rgba.x = __saturatef(rgba.x);  // clamp to [0.0, 1.0]
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip
+index 157d583..593ea85 100644
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip
+@@ -31,7 +31,7 @@
+ #include <hip/hip_runtime.h>
+ 
+ #include "resize_convert.h"
+-
++#include "HIPCHECK.h"
+ __global__ void resizeBGRplanarBatchKernel(hipTextureObject_t texSrc,
+     float *pDst, int nDstPitch, int nDstHeight, int nSrcHeight,
+     int batch, float scaleX, float scaleY,
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip
+index 2affb2c..14a3eee 100644
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip
+@@ -30,7 +30,7 @@
+ #include <hip/hip_runtime.h>
+ 
+ #include "resize_convert.h"
+-
++#include "HIPCHECK.h"
+ __global__ static void resizeNV12BatchKernel(hipTextureObject_t texSrcLuma,
+                                              hipTextureObject_t texSrcChroma,
+                                              uint8_t *pDstNv12, int nSrcWidth,
+diff --git a/src/samples/Samples/5_Domain_Specific/SobolQRNG/sobol_gpu.cu.hip b/src/samples/Samples/5_Domain_Specific/SobolQRNG/sobol_gpu.cu.hip
+index 64003f9..637f572 100644
+--- a/src/samples/Samples/5_Domain_Specific/SobolQRNG/sobol_gpu.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/SobolQRNG/sobol_gpu.cu.hip
+@@ -59,7 +59,7 @@
+ #include "sobol.h"
+ #include "sobol_gpu.h"
+ #include <hip/hip_cooperative_groups.h>
+-
++#include "HIPCHECK.h"
+ namespace cg = cooperative_groups;
+ #include <helper_cuda.h>
+ 

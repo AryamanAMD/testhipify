@@ -28,7 +28,7 @@
 #include <hip/hip_runtime.h>
 #include <helper_cuda.h>
 #include <helper_image.h>
-
+#include "HIPCHECK.h"
 // convert floating point rgba color to 32-bit integer
 __device__ unsigned int rgbaFloatToInt(float4 rgba) {
   rgba.x = __saturatef(rgba.x);  // clamp to [0.0, 1.0]
