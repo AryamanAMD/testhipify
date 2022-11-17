@@ -32,6 +32,8 @@
 
 #include <hip/hip_runtime.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <vector>
 #include "helper_cuda.h"
@@ -111,10 +113,10 @@ static void childProcess(int id) {
 
   printf("Process %d: Starting on device %d...\n", id, shm->devices[id]);
 
-  checkCudaErrors(hipSetDevice(shm->devices[id]));
-  checkCudaErrors(hipGetDeviceProperties(&prop, shm->devices[id]));
-  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
-  checkCudaErrors(hipOccupancyMaxActiveBlocksPerMultiprocessor(
+  HIPCHECK(hipSetDevice(shm->devices[id]));
+  HIPCHECK(hipGetDeviceProperties(&prop, shm->devices[id]));
+  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+  HIPCHECK(hipOccupancyMaxActiveBlocksPerMultiprocessor(
       &blocks, simpleKernel, threads, 0));
   blocks *= prop.multiProcessorCount;
 
@@ -126,10 +128,10 @@ static void childProcess(int id) {
 
     // Notice, we don't need to explicitly enable peer access for
     // allocations on other devices.
-    checkCudaErrors(
+    HIPCHECK(
         hipIpcOpenMemHandle(&ptr, *(hipIpcMemHandle_t *)&shm->memHandle[i],
                              hipIpcMemLazyEnablePeerAccess));
-    checkCudaErrors(hipIpcOpenEventHandle(
+    HIPCHECK(hipIpcOpenEventHandle(
         &event, *(hipIpcEventHandle_t *)&shm->eventHandle[i]));
 
     ptrs.push_back(ptr);
@@ -145,13 +147,13 @@ static void childProcess(int id) {
   for (i = 0; i < procCount; i++) {
     size_t bufferId = (i + id) % procCount;
     // Wait for the buffer to be accessed to be ready
-    checkCudaErrors(hipStreamWaitEvent(stream, events[bufferId], 0));
+    HIPCHECK(hipStreamWaitEvent(stream, events[bufferId], 0));
     // Push a simple kernel on it
     simpleKernel<<<blocks, threads, 0, stream>>>((char *)ptrs[bufferId],
                                                  DATA_SIZE, id);
-    checkCudaErrors(hipGetLastError());
+    HIPCHECK(hipGetLastError());
     // Signal that this buffer is ready for the next consumer
-    checkCudaErrors(hipEventRecord(events[bufferId], stream));
+    HIPCHECK(hipEventRecord(events[bufferId], stream));
     // Wait for all my sibling processes to push this stage of their work
     // before proceeding to the next. This prevents siblings from racing
     // ahead and clobbering the recorded event or waiting on the wrong
@@ -163,11 +165,11 @@ static void childProcess(int id) {
   }
 
   // Now wait for my buffer to be ready so I can copy it locally and verify it
-  checkCudaErrors(hipStreamWaitEvent(stream, events[id], 0));
-  checkCudaErrors(hipMemcpyAsync(&verification_buffer[0], ptrs[id], DATA_SIZE,
+  HIPCHECK(hipStreamWaitEvent(stream, events[id], 0));
+  HIPCHECK(hipMemcpyAsync(&verification_buffer[0], ptrs[id], DATA_SIZE,
                                   hipMemcpyDeviceToHost, stream));
   // And wait for all the queued up work to complete
-  checkCudaErrors(hipStreamSynchronize(stream));
+  HIPCHECK(hipStreamSynchronize(stream));
 
   printf("Process %d: verifying...\n", id);
 
@@ -182,11 +184,11 @@ static void childProcess(int id) {
 
   // Clean up!
   for (i = 0; i < procCount; i++) {
-    checkCudaErrors(hipIpcCloseMemHandle(ptrs[i]));
-    checkCudaErrors(hipEventDestroy(events[i]));
+    HIPCHECK(hipIpcCloseMemHandle(ptrs[i]));
+    HIPCHECK(hipEventDestroy(events[i]));
   }
 
-  checkCudaErrors(hipStreamDestroy(stream));
+  HIPCHECK(hipStreamDestroy(stream));
 
   printf("Process %d complete!\n", id);
 }
@@ -199,7 +201,7 @@ static void parentProcess(char *app) {
   std::vector<hipEvent_t> events;
   std::vector<Process> processes;
 
-  checkCudaErrors(hipGetDeviceCount(&devCount));
+  HIPCHECK(hipGetDeviceCount(&devCount));
 
   if (sharedMemoryCreate(shmName, sizeof(*shm), &info) != 0) {
     printf("Failed to create shared memory slab\n");
@@ -215,7 +217,7 @@ static void parentProcess(char *app) {
   for (i = 0; i < devCount; i++) {
     bool allPeers = true;
     hipDeviceProp_t prop;
-    checkCudaErrors(hipGetDeviceProperties(&prop, i));
+    HIPCHECK(hipGetDeviceProperties(&prop, i));
 
     // CUDA IPC is only supported on devices with unified addressing
     if (!prop.unifiedAddressing) {
@@ -232,9 +234,9 @@ static void parentProcess(char *app) {
 
     for (int j = 0; j < shm->nprocesses; j++) {
       int canAccessPeerIJ, canAccessPeerJI;
-      checkCudaErrors(
+      HIPCHECK(
           hipDeviceCanAccessPeer(&canAccessPeerJI, shm->devices[j], i));
-      checkCudaErrors(
+      HIPCHECK(
           hipDeviceCanAccessPeer(&canAccessPeerIJ, i, shm->devices[j]));
       if (!canAccessPeerIJ || !canAccessPeerJI) {
         allPeers = false;
@@ -246,10 +248,10 @@ static void parentProcess(char *app) {
       // setup the peers for the device.  For systems that only allow 8
       // peers per GPU at a time, this acts to remove devices from CanAccessPeer
       for (int j = 0; j < shm->nprocesses; j++) {
-        checkCudaErrors(hipSetDevice(i));
-        checkCudaErrors(hipDeviceEnablePeerAccess(shm->devices[j], 0));
-        checkCudaErrors(hipSetDevice(shm->devices[j]));
-        checkCudaErrors(hipDeviceEnablePeerAccess(i, 0));
+        HIPCHECK(hipSetDevice(i));
+        HIPCHECK(hipDeviceEnablePeerAccess(shm->devices[j], 0));
+        HIPCHECK(hipSetDevice(shm->devices[j]));
+        HIPCHECK(hipDeviceEnablePeerAccess(i, 0));
       }
       shm->devices[shm->nprocesses++] = i;
       if (shm->nprocesses >= MAX_DEVICES) break;
@@ -272,13 +274,13 @@ static void parentProcess(char *app) {
     void *ptr = NULL;
     hipEvent_t event;
 
-    checkCudaErrors(hipSetDevice(shm->devices[i]));
-    checkCudaErrors(hipMalloc(&ptr, DATA_SIZE));
-    checkCudaErrors(
+    HIPCHECK(hipSetDevice(shm->devices[i]));
+    HIPCHECK(hipMalloc(&ptr, DATA_SIZE));
+    HIPCHECK(
         hipIpcGetMemHandle((hipIpcMemHandle_t *)&shm->memHandle[i], ptr));
-    checkCudaErrors(hipEventCreate(
+    HIPCHECK(hipEventCreate(
         &event, hipEventDisableTiming | hipEventInterprocess));
-    checkCudaErrors(hipIpcGetEventHandle(
+    HIPCHECK(hipIpcGetEventHandle(
         (hipIpcEventHandle_t *)&shm->eventHandle[i], event));
 
     ptrs.push_back(ptr);
@@ -311,10 +313,10 @@ static void parentProcess(char *app) {
 
   // Clean up!
   for (i = 0; i < shm->nprocesses; i++) {
-    checkCudaErrors(hipSetDevice(shm->devices[i]));
-    checkCudaErrors(hipEventSynchronize(events[i]));
-    checkCudaErrors(hipEventDestroy(events[i]));
-    checkCudaErrors(hipFree(ptrs[i]));
+    HIPCHECK(hipSetDevice(shm->devices[i]));
+    HIPCHECK(hipEventSynchronize(events[i]));
+    HIPCHECK(hipEventDestroy(events[i]));
+    HIPCHECK(hipFree(ptrs[i]));
   }
 
   sharedMemoryClose(&info);
@@ -333,3 +335,12 @@ int main(int argc, char **argv) {
   return EXIT_SUCCESS;
 #endif
 }
+__arm__) || defined(__aarch64__)
+  printf("Not supported on ARM\n");
+  return EXIT_WAIVED;
+#else
+  if (argc == 1) {
+    parentProcess(argv[0]);
+  } else {
+    childProcess(atoi(argv[1]));
+  }
