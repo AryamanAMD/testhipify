@@ -57,3 +57,11 @@ src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu
 src/samples/Samples/2_Concepts_and_Techniques/convolutionTexture/convolutionTexture.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D10/simpleD3D10_kernel.cu
 src/samples/Samples/5_Domain_Specific/VFlockingD3D10/VFlocking_kernel.cu
+src/samples/Samples/5_Domain_Specific/bilateralFilter/bilateral_kernel.cu
+src/samples/Samples/5_Domain_Specific/nbody/bodysystemcuda.cu
+src/samples/Samples/5_Domain_Specific/Mandelbrot/Mandelbrot_cuda.cu
+src/samples/Samples/4_CUDA_Libraries/cudaNvSciNvMedia/cuda_consumer.cu
+src/samples/Samples/5_Domain_Specific/simpleVulkan/SineWaveSimulation.cu
+src/samples/Samples/2_Concepts_and_Techniques/dct8x8/dct8x8.cu
+src/samples/Samples/5_Domain_Specific/simpleD3D10RenderTarget/simpleD3D10RenderTarget_kernel.cu
+src/samples/Samples/5_Domain_Specific/fluidsD3D9/fluidsD3D9_kernels.cu
