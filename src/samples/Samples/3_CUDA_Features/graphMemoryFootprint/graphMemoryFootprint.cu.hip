@@ -1,0 +1,411 @@
+/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ *  * Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ *  * Neither the name of NVIDIA CORPORATION nor the names of its
+ *    contributors may be used to endorse or promote products derived
+ *    from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+// System includes
+
+#include <hip/hip_runtime.h>
+#include <assert.h>
+#include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
+
+// helper functions and utilities to work with CUDA
+#include <helper_cuda.h>
+#include <helper_functions.h>
+
+#define NUM_GRAPHS 8
+#define THREADS_PER_BLOCK 512
+
+void printMemoryFootprint(int device) {
+  size_t footprint;
+  HIPCHECK(cudaDeviceGetGraphMemAttribute(
+      device, (cudaGraphMemAttributeType)0, &footprint));
+  printf("    FOOTPRINT: %lu bytes\n", footprint);
+}
+
+void prepareAllocParams(cudaMemAllocNodeParams *allocParams, size_t bytes,
+                        int device) {
+  memset(allocParams, 0, sizeof(*allocParams));
+
+  allocParams->bytesize = bytes;
+  allocParams->poolProps.allocType = hipMemAllocationTypePinned;
+  allocParams->poolProps.location.id = device;
+  allocParams->poolProps.location.type = hipMemLocationTypeDevice;
+}
+
+void createVirtAddrReuseGraph(hipGraphExec_t *graphExec, size_t bytes,
+                              int device) {
+  hipGraph_t graph;
+  hipGraphNode_t allocNodeA, allocNodeB, freeNodeA, freeNodeB;
+  cudaMemAllocNodeParams allocParams;
+  float *d_a, *d_b;
+
+  HIPCHECK(hipGraphCreate(&graph, 0));
+  prepareAllocParams(&allocParams, bytes, device);
+
+  HIPCHECK(
+      cudaGraphAddMemAllocNode(&allocNodeA, graph, NULL, 0, &allocParams));
+  d_a = (float *)allocParams.dptr;
+  HIPCHECK(
+      cudaGraphAddMemFreeNode(&freeNodeA, graph, &allocNodeA, 1, (void *)d_a));
+
+  // The dependency between the allocation of d_b and the free of d_a allows d_b
+  // to reuse the same VA.
+  HIPCHECK(cudaGraphAddMemAllocNode(&allocNodeB, graph, &freeNodeA, 1,
+                                           &allocParams));
+  d_b = (float *)allocParams.dptr;
+
+  if (d_a == d_b) {
+    printf("Check confirms that d_a and d_b share a virtual address.\n");
+  } else {
+    printf("Check shows that d_a and d_b DO NOT share a virtual address.\n");
+  }
+
+  HIPCHECK(
+      cudaGraphAddMemFreeNode(&freeNodeB, graph, &allocNodeB, 1, (void *)d_b));
+
+  HIPCHECK(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
+  HIPCHECK(hipGraphDestroy(graph));
+}
+
+void virtualAddressReuseSingleGraph(size_t bytes, int device) {
+  hipStream_t stream;
+  hipGraphExec_t graphExec;
+
+  printf("================================\n");
+  printf("Running virtual address reuse example.\n");
+  printf(
+      "Sequential allocations & frees within a single graph enable CUDA to "
+      "reuse virtual addresses.\n\n");
+
+  createVirtAddrReuseGraph(&graphExec, bytes, device);
+  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+
+  HIPCHECK(hipGraphLaunch(graphExec, stream));
+  HIPCHECK(hipStreamSynchronize(stream));
+  printMemoryFootprint(device);
+
+  HIPCHECK(hipGraphExecDestroy(graphExec));
+  HIPCHECK(hipStreamDestroy(stream));
+}
+
+// This is a kernel that does no real work but runs at least for a specified
+// number of clocks
+__global__ void clockBlock(clock_t clock_count) {
+  unsigned int start_clock = (unsigned int)clock();
+
+  clock_t clock_offset = 0;
+
+  while (clock_offset < clock_count) {
+    unsigned int end_clock = (unsigned int)clock();
+
+    // The code below should work like
+    // this (thanks to modular arithmetics):
+    //
+    // clock_offset = (clock_t) (end_clock > start_clock ?
+    //                           end_clock - start_clock :
+    //                           end_clock + (0xffffffffu - start_clock));
+    //
+    // Indeed, let m = 2^32 then
+    // end - start = end + m - start (mod m).
+
+    clock_offset = (clock_t)(end_clock - start_clock);
+  }
+}
+
+// A pointer to the allocated device buffer is returned in dPtr so the caller
+// can compare virtual addresses. The kernel node is added to increase the
+// graph's runtime.
+void createSimpleAllocFreeGraph(hipGraphExec_t *graphExec, float **dPtr,
+                                size_t bytes, int device) {
+  hipGraph_t graph;
+  hipGraphNode_t allocNodeA, freeNodeA, blockDeviceNode;
+  cudaMemAllocNodeParams allocParams;
+  hipKernelNodeParams blockDeviceNodeParams = {0};
+  int numElements = bytes / sizeof(float);
+  float kernelTime = 5;  // time for each thread to run in microseconds
+
+  HIPCHECK(hipGraphCreate(&graph, 0));
+  prepareAllocParams(&allocParams, bytes, device);
+
+  HIPCHECK(
+      cudaGraphAddMemAllocNode(&allocNodeA, graph, NULL, 0, &allocParams));
+  *dPtr = (float *)allocParams.dptr;
+
+  hipDeviceProp_t deviceProp;
+  HIPCHECK(hipGetDeviceProperties(&deviceProp, device));
+  clock_t time_clocks = (clock_t)((kernelTime / 1000.0) * deviceProp.clockRate);
+
+  void *blockDeviceArgs[1] = {(void *)&time_clocks};
+
+  size_t numBlocks = numElements / (size_t)THREADS_PER_BLOCK;
+  blockDeviceNodeParams.gridDim = dim3(numBlocks, 1, 1);
+  blockDeviceNodeParams.blockDim = dim3(THREADS_PER_BLOCK, 1, 1);
+  blockDeviceNodeParams.sharedMemBytes = 0;
+  blockDeviceNodeParams.extra = NULL;
+  blockDeviceNodeParams.func = (void *)clockBlock;
+  blockDeviceNodeParams.kernelParams = (void **)blockDeviceArgs;
+  HIPCHECK(hipGraphAddKernelNode(&blockDeviceNode, graph, &allocNodeA,
+                                         1, &blockDeviceNodeParams));
+
+  HIPCHECK(cudaGraphAddMemFreeNode(&freeNodeA, graph, &blockDeviceNode,
+                                          1, (void *)*dPtr));
+
+  HIPCHECK(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
+  HIPCHECK(hipGraphDestroy(graph));
+}
+
+void physicalMemoryReuseSingleStream(size_t bytes, int device) {
+  hipStream_t stream;
+  hipGraphExec_t graphExecs[NUM_GRAPHS];
+  float *dPtrs[NUM_GRAPHS];
+  bool virtualAddrDiffer = true;
+
+  printf("================================\n");
+  printf("Running physical memory reuse example.\n");
+  printf(
+      "CUDA reuses the same physical memory for allocations from separate "
+      "graphs when the allocation lifetimes don't overlap.\n\n");
+
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    createSimpleAllocFreeGraph(&graphExecs[i], &dPtrs[i], bytes, device);
+  }
+
+  printf("Creating the graph execs does not reserve any physical memory.\n");
+  printMemoryFootprint(device);
+
+  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+
+  HIPCHECK(hipGraphLaunch(graphExecs[0], stream));
+  printf("\nThe first graph launched reserves the memory it needs.\n");
+  printMemoryFootprint(device);
+
+  HIPCHECK(hipGraphLaunch(graphExecs[0], stream));
+  printf(
+      "A subsequent launch of the same graph in the same stream reuses the "
+      "same physical memory. ");
+  printf("Thus the memory footprint does not grow here.\n");
+  printMemoryFootprint(device);
+
+  printf(
+      "\nSubsequent launches of other graphs in the same stream also reuse the "
+      "physical memory. ");
+  printf("Thus the memory footprint does not grow here.\n");
+  for (int i = 1; i < NUM_GRAPHS; i++) {
+    HIPCHECK(hipGraphLaunch(graphExecs[i], stream));
+    printf("%02d: ", i);
+    printMemoryFootprint(device);
+  }
+
+  HIPCHECK(hipStreamSynchronize(stream));
+
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    for (int j = i + 1; j < NUM_GRAPHS; j++) {
+      if (dPtrs[i] == dPtrs[j]) {
+        virtualAddrDiffer = false;
+        printf("Error: Graph exec %d and %d have the same virtual address!\n",
+               i - 1, i);
+      }
+    }
+    HIPCHECK(hipGraphExecDestroy(graphExecs[i]));
+  }
+  if (virtualAddrDiffer) {
+    printf("\nCheck confirms all graphs use a different virtual address.\n");
+  } else {
+    printf(
+        "\nAll graphs do NOT use different virtual addresses. Exiting test.\n");
+    exit(EXIT_FAILURE);
+  }
+
+  HIPCHECK(hipStreamDestroy(stream));
+}
+
+void simultaneousStreams(size_t bytes, int device) {
+  hipStream_t streams[NUM_GRAPHS];
+  hipGraphExec_t graphExecs[NUM_GRAPHS];
+  float *dPtrs[NUM_GRAPHS];
+
+  printf("================================\n");
+  printf("Running simultaneous streams example.\n");
+  printf("Graphs that can run concurrently need separate physical memory. ");
+  printf(
+      "In this example, each graph launched in a separate stream increases the "
+      "total memory footprint.\n\n");
+
+  printf(
+      "When launching a new graph, CUDA may reuse physical memory from a graph "
+      "whose execution has already ");
+  printf(
+      "finished -- even if the new graph is being launched in a different "
+      "stream from the completed graph. ");
+  printf(
+      "Therefore, a kernel node is added to the graphs to increase "
+      "runtime.\n\n");
+
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    createSimpleAllocFreeGraph(&graphExecs[i], &dPtrs[i], bytes, device);
+    HIPCHECK(
+        hipStreamCreateWithFlags(&streams[i], hipStreamNonBlocking));
+  }
+
+  printf("Initial footprint:\n");
+  printMemoryFootprint(device);
+
+  printf(
+      "\nEach graph launch in a seperate stream grows the memory footprint:\n");
+  for (int i = 1; i < NUM_GRAPHS; i++) {
+    HIPCHECK(hipGraphLaunch(graphExecs[i], streams[i]));
+    printf("%02d: ", i);
+    printMemoryFootprint(device);
+  }
+
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    HIPCHECK(hipStreamSynchronize(streams[i]));
+    HIPCHECK(hipGraphExecDestroy(graphExecs[i]));
+    HIPCHECK(hipStreamDestroy(streams[i]));
+  }
+}
+
+void createSimpleAllocNoFreeGraph(hipGraphExec_t *graphExec, float **dPtr,
+                                  size_t bytes, int device) {
+  hipGraph_t graph;
+  hipGraphNode_t allocNodeA;
+  cudaMemAllocNodeParams allocParams;
+
+  HIPCHECK(hipGraphCreate(&graph, 0));
+  prepareAllocParams(&allocParams, bytes, device);
+
+  HIPCHECK(
+      cudaGraphAddMemAllocNode(&allocNodeA, graph, NULL, 0, &allocParams));
+  *dPtr = (float *)allocParams.dptr;
+
+  HIPCHECK(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
+  HIPCHECK(hipGraphDestroy(graph));
+}
+
+void unfreedAllocations(size_t bytes, int device) {
+  hipStream_t stream;
+  hipGraphExec_t graphExecs[NUM_GRAPHS];
+  float *dPtrs[NUM_GRAPHS];
+
+  printf("================================\n");
+  printf("Running unfreed streams example.\n");
+  printf(
+      "CUDA cannot reuse phyiscal memory from graphs which do not free their "
+      "allocations.\n\n");
+
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    createSimpleAllocNoFreeGraph(&graphExecs[i], &dPtrs[i], bytes, device);
+  }
+
+  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+
+  printf(
+      "Despite being launched in the same stream, each graph launch grows the "
+      "memory footprint. ");
+  printf(
+      "Since the allocation is not freed, CUDA keeps the memory valid for "
+      "use.\n");
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    HIPCHECK(hipGraphLaunch(graphExecs[i], stream));
+    printf("%02d: ", i);
+    printMemoryFootprint(device);
+  }
+
+  HIPCHECK(hipStreamSynchronize(stream));
+
+  HIPCHECK(cudaDeviceGraphMemTrim(device));
+  printf(
+      "\nTrimming does not impact the memory footprint since the un-freed "
+      "allocations are still holding onto the memory.\n");
+  printMemoryFootprint(device);
+
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    HIPCHECK(hipFree(dPtrs[i]));
+  }
+  printf("\nFreeing the allocations does not shrink the footprint.\n");
+  printMemoryFootprint(device);
+
+  HIPCHECK(cudaDeviceGraphMemTrim(device));
+  printf(
+      "\nSince the allocations are now freed, trimming does reduce the "
+      "footprint even when the graph execs are not yet destroyed.\n");
+  printMemoryFootprint(device);
+
+  for (int i = 0; i < NUM_GRAPHS; i++) {
+    HIPCHECK(hipGraphExecDestroy(graphExecs[i]));
+  }
+  HIPCHECK(hipStreamDestroy(stream));
+}
+
+void cleanupMemory(int device) {
+  HIPCHECK(cudaDeviceGraphMemTrim(device));
+  printf("\nCleaning up example by trimming device memory.\n");
+  printMemoryFootprint(device);
+  printf("\n");
+}
+
+int main(int argc, char **argv) {
+  size_t bytes = 64 * 1024 * 1024;
+  int device = findCudaDevice(argc, (const char **)argv);
+
+  int driverVersion = 0;
+  int deviceSupportsMemoryPools = 0;
+
+  hipDriverGetVersion(&driverVersion);
+  printf("Driver version is: %d.%d\n", driverVersion / 1000,
+         (driverVersion % 100) / 10);
+
+  if (driverVersion < 11040) {
+    printf("Waiving execution as driver does not support Graph Memory Nodes\n");
+    exit(EXIT_WAIVED);
+  }
+
+  hipDeviceGetAttribute(&deviceSupportsMemoryPools,
+                         hipDeviceAttributeMemoryPoolsSupported, device);
+  if (!deviceSupportsMemoryPools) {
+    printf("Waiving execution as device does not support Memory Pools\n");
+    exit(EXIT_WAIVED);
+  } else {
+    printf("Running sample.\n");
+  }
+
+  virtualAddressReuseSingleGraph(bytes, device);
+  cleanupMemory(device);
+
+  physicalMemoryReuseSingleStream(bytes, device);
+  cleanupMemory(device);
+
+  simultaneousStreams(bytes, device);
+  cleanupMemory(device);
+
+  unfreedAllocations(bytes, device);
+  cleanupMemory(device);
+
+  printf("================================\n");
+  printf("Sample complete.\n");
+}

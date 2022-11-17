@@ -44,20 +44,23 @@
 #define EXIT_WAIVED 2
 #endif
 
+
+#define __DRIVER_TYPES_H__
+
 // Note, it is required that your SDK sample to include the proper header
 // files, please refer the CUDA examples for examples of the needed CUDA
 // headers, which may change depending on which CUDA functions are used.
 
 // CUDA Runtime error messages
 #ifdef __DRIVER_TYPES_H__
-static const char *_cudaGetErrorEnum(cudaError_t error) {
-  return cudaGetErrorName(error);
+static const char *_cudaGetErrorEnum(hipError_t error) {
+  return hipGetErrorName(error);
 }
 #endif
 
 #ifdef CUDA_DRIVER_API
 // CUDA Driver API errors
-static const char *_cudaGetErrorEnum(CUresult error) {
+static const char *_cudaGetErrorEnum(hipError_t error) {
   static char unknown[] = "<unknown>";
   const char *ret = NULL;
   cuGetErrorName(error, &ret);
@@ -67,37 +70,37 @@ static const char *_cudaGetErrorEnum(CUresult error) {
 
 #ifdef CUBLAS_API_H_
 // cuBLAS API errors
-static const char *_cudaGetErrorEnum(cublasStatus_t error) {
+static const char *_cudaGetErrorEnum(hipblasStatus_t error) {
   switch (error) {
-    case CUBLAS_STATUS_SUCCESS:
-      return "CUBLAS_STATUS_SUCCESS";
+    case HIPBLAS_STATUS_SUCCESS:
+      return "HIPBLAS_STATUS_SUCCESS";
 
-    case CUBLAS_STATUS_NOT_INITIALIZED:
-      return "CUBLAS_STATUS_NOT_INITIALIZED";
+    case HIPBLAS_STATUS_NOT_INITIALIZED:
+      return "HIPBLAS_STATUS_NOT_INITIALIZED";
 
-    case CUBLAS_STATUS_ALLOC_FAILED:
-      return "CUBLAS_STATUS_ALLOC_FAILED";
+    case HIPBLAS_STATUS_ALLOC_FAILED:
+      return "HIPBLAS_STATUS_ALLOC_FAILED";
 
-    case CUBLAS_STATUS_INVALID_VALUE:
-      return "CUBLAS_STATUS_INVALID_VALUE";
+    case HIPBLAS_STATUS_INVALID_VALUE:
+      return "HIPBLAS_STATUS_INVALID_VALUE";
 
-    case CUBLAS_STATUS_ARCH_MISMATCH:
-      return "CUBLAS_STATUS_ARCH_MISMATCH";
+    case HIPBLAS_STATUS_ARCH_MISMATCH:
+      return "HIPBLAS_STATUS_ARCH_MISMATCH";
 
-    case CUBLAS_STATUS_MAPPING_ERROR:
-      return "CUBLAS_STATUS_MAPPING_ERROR";
+    case HIPBLAS_STATUS_MAPPING_ERROR:
+      return "HIPBLAS_STATUS_MAPPING_ERROR";
 
-    case CUBLAS_STATUS_EXECUTION_FAILED:
-      return "CUBLAS_STATUS_EXECUTION_FAILED";
+    case HIPBLAS_STATUS_EXECUTION_FAILED:
+      return "HIPBLAS_STATUS_EXECUTION_FAILED";
 
-    case CUBLAS_STATUS_INTERNAL_ERROR:
-      return "CUBLAS_STATUS_INTERNAL_ERROR";
+    case HIPBLAS_STATUS_INTERNAL_ERROR:
+      return "HIPBLAS_STATUS_INTERNAL_ERROR";
 
-    case CUBLAS_STATUS_NOT_SUPPORTED:
-      return "CUBLAS_STATUS_NOT_SUPPORTED";
+    case HIPBLAS_STATUS_NOT_SUPPORTED:
+      return "HIPBLAS_STATUS_NOT_SUPPORTED";
 
-    case CUBLAS_STATUS_LICENSE_ERROR:
-      return "CUBLAS_STATUS_LICENSE_ERROR";
+    case HIPBLAS_STATUS_UNKNOWN:
+      return "HIPBLAS_STATUS_UNKNOWN";
   }
 
   return "<unknown>";
@@ -106,58 +109,58 @@ static const char *_cudaGetErrorEnum(cublasStatus_t error) {
 
 #ifdef _CUFFT_H_
 // cuFFT API errors
-static const char *_cudaGetErrorEnum(cufftResult error) {
+static const char *_cudaGetErrorEnum(hipfftResult error) {
   switch (error) {
-    case CUFFT_SUCCESS:
-      return "CUFFT_SUCCESS";
+    case HIPFFT_SUCCESS:
+      return "HIPFFT_SUCCESS";
 
-    case CUFFT_INVALID_PLAN:
-      return "CUFFT_INVALID_PLAN";
+    case HIPFFT_INVALID_PLAN:
+      return "HIPFFT_INVALID_PLAN";
 
-    case CUFFT_ALLOC_FAILED:
-      return "CUFFT_ALLOC_FAILED";
+    case HIPFFT_ALLOC_FAILED:
+      return "HIPFFT_ALLOC_FAILED";
 
-    case CUFFT_INVALID_TYPE:
-      return "CUFFT_INVALID_TYPE";
+    case HIPFFT_INVALID_TYPE:
+      return "HIPFFT_INVALID_TYPE";
 
-    case CUFFT_INVALID_VALUE:
-      return "CUFFT_INVALID_VALUE";
+    case HIPFFT_INVALID_VALUE:
+      return "HIPFFT_INVALID_VALUE";
 
-    case CUFFT_INTERNAL_ERROR:
-      return "CUFFT_INTERNAL_ERROR";
+    case HIPFFT_INTERNAL_ERROR:
+      return "HIPFFT_INTERNAL_ERROR";
 
-    case CUFFT_EXEC_FAILED:
-      return "CUFFT_EXEC_FAILED";
+    case HIPFFT_EXEC_FAILED:
+      return "HIPFFT_EXEC_FAILED";
 
-    case CUFFT_SETUP_FAILED:
-      return "CUFFT_SETUP_FAILED";
+    case HIPFFT_SETUP_FAILED:
+      return "HIPFFT_SETUP_FAILED";
 
-    case CUFFT_INVALID_SIZE:
-      return "CUFFT_INVALID_SIZE";
+    case HIPFFT_INVALID_SIZE:
+      return "HIPFFT_INVALID_SIZE";
 
-    case CUFFT_UNALIGNED_DATA:
-      return "CUFFT_UNALIGNED_DATA";
+    case HIPFFT_UNALIGNED_DATA:
+      return "HIPFFT_UNALIGNED_DATA";
 
-    case CUFFT_INCOMPLETE_PARAMETER_LIST:
-      return "CUFFT_INCOMPLETE_PARAMETER_LIST";
+    case HIPFFT_INCOMPLETE_PARAMETER_LIST:
+      return "HIPFFT_INCOMPLETE_PARAMETER_LIST";
 
-    case CUFFT_INVALID_DEVICE:
-      return "CUFFT_INVALID_DEVICE";
+    case HIPFFT_INVALID_DEVICE:
+      return "HIPFFT_INVALID_DEVICE";
 
-    case CUFFT_PARSE_ERROR:
-      return "CUFFT_PARSE_ERROR";
+    case HIPFFT_PARSE_ERROR:
+      return "HIPFFT_PARSE_ERROR";
 
-    case CUFFT_NO_WORKSPACE:
-      return "CUFFT_NO_WORKSPACE";
+    case HIPFFT_NO_WORKSPACE:
+      return "HIPFFT_NO_WORKSPACE";
 
-    case CUFFT_NOT_IMPLEMENTED:
-      return "CUFFT_NOT_IMPLEMENTED";
+    case HIPFFT_NOT_IMPLEMENTED:
+      return "HIPFFT_NOT_IMPLEMENTED";
 
     case CUFFT_LICENSE_ERROR:
       return "CUFFT_LICENSE_ERROR";
 
-    case CUFFT_NOT_SUPPORTED:
-      return "CUFFT_NOT_SUPPORTED";
+    case HIPFFT_NOT_SUPPORTED:
+      return "HIPFFT_NOT_SUPPORTED";
   }
 
   return "<unknown>";
@@ -166,34 +169,34 @@ static const char *_cudaGetErrorEnum(cufftResult error) {
 
 #ifdef CUSPARSEAPI
 // cuSPARSE API errors
-static const char *_cudaGetErrorEnum(cusparseStatus_t error) {
+static const char *_cudaGetErrorEnum(hipsparseStatus_t error) {
   switch (error) {
-    case CUSPARSE_STATUS_SUCCESS:
-      return "CUSPARSE_STATUS_SUCCESS";
+    case HIPSPARSE_STATUS_SUCCESS:
+      return "HIPSPARSE_STATUS_SUCCESS";
 
-    case CUSPARSE_STATUS_NOT_INITIALIZED:
-      return "CUSPARSE_STATUS_NOT_INITIALIZED";
+    case HIPSPARSE_STATUS_NOT_INITIALIZED:
+      return "HIPSPARSE_STATUS_NOT_INITIALIZED";
 
-    case CUSPARSE_STATUS_ALLOC_FAILED:
-      return "CUSPARSE_STATUS_ALLOC_FAILED";
+    case HIPSPARSE_STATUS_ALLOC_FAILED:
+      return "HIPSPARSE_STATUS_ALLOC_FAILED";
 
-    case CUSPARSE_STATUS_INVALID_VALUE:
-      return "CUSPARSE_STATUS_INVALID_VALUE";
+    case HIPSPARSE_STATUS_INVALID_VALUE:
+      return "HIPSPARSE_STATUS_INVALID_VALUE";
 
-    case CUSPARSE_STATUS_ARCH_MISMATCH:
-      return "CUSPARSE_STATUS_ARCH_MISMATCH";
+    case HIPSPARSE_STATUS_ARCH_MISMATCH:
+      return "HIPSPARSE_STATUS_ARCH_MISMATCH";
 
-    case CUSPARSE_STATUS_MAPPING_ERROR:
-      return "CUSPARSE_STATUS_MAPPING_ERROR";
+    case HIPSPARSE_STATUS_MAPPING_ERROR:
+      return "HIPSPARSE_STATUS_MAPPING_ERROR";
 
-    case CUSPARSE_STATUS_EXECUTION_FAILED:
-      return "CUSPARSE_STATUS_EXECUTION_FAILED";
+    case HIPSPARSE_STATUS_EXECUTION_FAILED:
+      return "HIPSPARSE_STATUS_EXECUTION_FAILED";
 
-    case CUSPARSE_STATUS_INTERNAL_ERROR:
-      return "CUSPARSE_STATUS_INTERNAL_ERROR";
+    case HIPSPARSE_STATUS_INTERNAL_ERROR:
+      return "HIPSPARSE_STATUS_INTERNAL_ERROR";
 
-    case CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
-      return "CUSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
+    case HIPSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED:
+      return "HIPSPARSE_STATUS_MATRIX_TYPE_NOT_SUPPORTED";
   }
 
   return "<unknown>";
@@ -236,46 +239,46 @@ static const char *_cudaGetErrorEnum(cusolverStatus_t error) {
 
 #ifdef CURAND_H_
 // cuRAND API errors
-static const char *_cudaGetErrorEnum(curandStatus_t error) {
+static const char *_cudaGetErrorEnum(hiprandStatus_t error) {
   switch (error) {
-    case CURAND_STATUS_SUCCESS:
-      return "CURAND_STATUS_SUCCESS";
+    case HIPRAND_STATUS_SUCCESS:
+      return "HIPRAND_STATUS_SUCCESS";
 
-    case CURAND_STATUS_VERSION_MISMATCH:
-      return "CURAND_STATUS_VERSION_MISMATCH";
+    case HIPRAND_STATUS_VERSION_MISMATCH:
+      return "HIPRAND_STATUS_VERSION_MISMATCH";
 
-    case CURAND_STATUS_NOT_INITIALIZED:
-      return "CURAND_STATUS_NOT_INITIALIZED";
+    case HIPRAND_STATUS_NOT_INITIALIZED:
+      return "HIPRAND_STATUS_NOT_INITIALIZED";
 
-    case CURAND_STATUS_ALLOCATION_FAILED:
-      return "CURAND_STATUS_ALLOCATION_FAILED";
+    case HIPRAND_STATUS_ALLOCATION_FAILED:
+      return "HIPRAND_STATUS_ALLOCATION_FAILED";
 
-    case CURAND_STATUS_TYPE_ERROR:
-      return "CURAND_STATUS_TYPE_ERROR";
+    case HIPRAND_STATUS_TYPE_ERROR:
+      return "HIPRAND_STATUS_TYPE_ERROR";
 
-    case CURAND_STATUS_OUT_OF_RANGE:
-      return "CURAND_STATUS_OUT_OF_RANGE";
+    case HIPRAND_STATUS_OUT_OF_RANGE:
+      return "HIPRAND_STATUS_OUT_OF_RANGE";
 
-    case CURAND_STATUS_LENGTH_NOT_MULTIPLE:
-      return "CURAND_STATUS_LENGTH_NOT_MULTIPLE";
+    case HIPRAND_STATUS_LENGTH_NOT_MULTIPLE:
+      return "HIPRAND_STATUS_LENGTH_NOT_MULTIPLE";
 
-    case CURAND_STATUS_DOUBLE_PRECISION_REQUIRED:
-      return "CURAND_STATUS_DOUBLE_PRECISION_REQUIRED";
+    case HIPRAND_STATUS_DOUBLE_PRECISION_REQUIRED:
+      return "HIPRAND_STATUS_DOUBLE_PRECISION_REQUIRED";
 
-    case CURAND_STATUS_LAUNCH_FAILURE:
-      return "CURAND_STATUS_LAUNCH_FAILURE";
+    case HIPRAND_STATUS_LAUNCH_FAILURE:
+      return "HIPRAND_STATUS_LAUNCH_FAILURE";
 
-    case CURAND_STATUS_PREEXISTING_FAILURE:
-      return "CURAND_STATUS_PREEXISTING_FAILURE";
+    case HIPRAND_STATUS_PREEXISTING_FAILURE:
+      return "HIPRAND_STATUS_PREEXISTING_FAILURE";
 
-    case CURAND_STATUS_INITIALIZATION_FAILED:
-      return "CURAND_STATUS_INITIALIZATION_FAILED";
+    case HIPRAND_STATUS_INITIALIZATION_FAILED:
+      return "HIPRAND_STATUS_INITIALIZATION_FAILED";
 
-    case CURAND_STATUS_ARCH_MISMATCH:
-      return "CURAND_STATUS_ARCH_MISMATCH";
+    case HIPRAND_STATUS_ARCH_MISMATCH:
+      return "HIPRAND_STATUS_ARCH_MISMATCH";
 
-    case CURAND_STATUS_INTERNAL_ERROR:
-      return "CURAND_STATUS_INTERNAL_ERROR";
+    case HIPRAND_STATUS_INTERNAL_ERROR:
+      return "HIPRAND_STATUS_INTERNAL_ERROR";
   }
 
   return "<unknown>";
@@ -594,37 +597,37 @@ void check(T result, char const *const func, const char *const file,
 // that a CUDA host call returns an error
 #define checkCudaErrors(val) check((val), #val, __FILE__, __LINE__)
 
-// This will output the proper error string when calling cudaGetLastError
+// This will output the proper error string when calling hipGetLastError
 #define getLastCudaError(msg) __getLastCudaError(msg, __FILE__, __LINE__)
 
 inline void __getLastCudaError(const char *errorMessage, const char *file,
                                const int line) {
-  cudaError_t err = cudaGetLastError();
+  hipError_t err = hipGetLastError();
 
-  if (cudaSuccess != err) {
+  if (hipSuccess != err) {
     fprintf(stderr,
             "%s(%i) : getLastCudaError() CUDA error :"
             " %s : (%d) %s.\n",
             file, line, errorMessage, static_cast<int>(err),
-            cudaGetErrorString(err));
+            hipGetErrorString(err));
     exit(EXIT_FAILURE);
   }
 }
 
-// This will only print the proper error string when calling cudaGetLastError
+// This will only print the proper error string when calling hipGetLastError
 // but not exit program incase error detected.
 #define printLastCudaError(msg) __printLastCudaError(msg, __FILE__, __LINE__)
 
 inline void __printLastCudaError(const char *errorMessage, const char *file,
                                  const int line) {
-  cudaError_t err = cudaGetLastError();
+  hipError_t err = hipGetLastError();
 
-  if (cudaSuccess != err) {
+  if (hipSuccess != err) {
     fprintf(stderr,
             "%s(%i) : getLastCudaError() CUDA error :"
             " %s : (%d) %s.\n",
             file, line, errorMessage, static_cast<int>(err),
-            cudaGetErrorString(err));
+            hipGetErrorString(err));
   }
 }
 #endif
@@ -737,11 +740,11 @@ inline const char* _ConvertSMVer2ArchName(int major, int minor) {
 }
   // end of GPU Architecture definitions
 
-#ifdef __CUDA_RUNTIME_H__
+/* #ifdef __CUDA_RUNTIME_H__ */
 // General GPU Device CUDA Initialization
 inline int gpuDeviceInit(int devID) {
   int device_count;
-  checkCudaErrors(cudaGetDeviceCount(&device_count));
+  checkCudaErrors(hipGetDeviceCount(&device_count));
 
   if (device_count == 0) {
     fprintf(stderr,
@@ -767,13 +770,13 @@ inline int gpuDeviceInit(int devID) {
   }
 
   int computeMode = -1, major = 0, minor = 0;
-  checkCudaErrors(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, devID));
-  checkCudaErrors(cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, devID));
-  checkCudaErrors(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, devID));
-  if (computeMode == cudaComputeModeProhibited) {
+  checkCudaErrors(hipDeviceGetAttribute(&computeMode, hipDeviceAttributeComputeMode, devID));
+  checkCudaErrors(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, devID));
+  checkCudaErrors(hipDeviceGetAttribute(&minor, hipDeviceAttributeComputeCapabilityMinor, devID));
+  if (computeMode == hipComputeModeProhibited) {
     fprintf(stderr,
             "Error: device is running in <Compute Mode "
-            "Prohibited>, no threads can use cudaSetDevice().\n");
+            "Prohibited>, no threads can use hipSetDevice().\n");
     return -1;
   }
 
@@ -782,7 +785,7 @@ inline int gpuDeviceInit(int devID) {
     exit(EXIT_FAILURE);
   }
 
-  checkCudaErrors(cudaSetDevice(devID));
+  checkCudaErrors(hipSetDevice(devID));
   printf("gpuDeviceInit() CUDA Device [%d]: \"%s\n", devID, _ConvertSMVer2ArchName(major, minor));
 
   return devID;
@@ -796,7 +799,7 @@ inline int gpuGetMaxGflopsDeviceId() {
   int devices_prohibited = 0;
 
   uint64_t max_compute_perf = 0;
-  checkCudaErrors(cudaGetDeviceCount(&device_count));
+  checkCudaErrors(hipGetDeviceCount(&device_count));
 
   if (device_count == 0) {
     fprintf(stderr,
@@ -810,13 +813,13 @@ inline int gpuGetMaxGflopsDeviceId() {
 
   while (current_device < device_count) {
     int computeMode = -1, major = 0, minor = 0;
-    checkCudaErrors(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, current_device));
-    checkCudaErrors(cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, current_device));
-    checkCudaErrors(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, current_device));
+    checkCudaErrors(hipDeviceGetAttribute(&computeMode, hipDeviceAttributeComputeMode, current_device));
+    checkCudaErrors(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, current_device));
+    checkCudaErrors(hipDeviceGetAttribute(&minor, hipDeviceAttributeComputeCapabilityMinor, current_device));
 
     // If this GPU is not running on Compute Mode prohibited,
     // then we can add it to the list
-    if (computeMode != cudaComputeModeProhibited) {
+    if (computeMode != hipComputeModeProhibited) {
       if (major == 9999 && minor == 9999) {
         sm_per_multiproc = 1;
       } else {
@@ -824,12 +827,12 @@ inline int gpuGetMaxGflopsDeviceId() {
             _ConvertSMVer2Cores(major,  minor);
       }
       int multiProcessorCount = 0, clockRate = 0;
-      checkCudaErrors(cudaDeviceGetAttribute(&multiProcessorCount, cudaDevAttrMultiProcessorCount, current_device));
-      cudaError_t result = cudaDeviceGetAttribute(&clockRate, cudaDevAttrClockRate, current_device);
-      if (result != cudaSuccess) {
-        // If cudaDevAttrClockRate attribute is not supported we
+      checkCudaErrors(hipDeviceGetAttribute(&multiProcessorCount, hipDeviceAttributeMultiprocessorCount, current_device));
+      hipError_t result = hipDeviceGetAttribute(&clockRate, hipDeviceAttributeClockRate, current_device);
+      if (result != hipSuccess) {
+        // If hipDeviceAttributeClockRate attribute is not supported we
         // set clockRate as 1, to consider GPU with most SMs and CUDA Cores.
-        if(result == cudaErrorInvalidValue) {
+        if(result == hipErrorInvalidValue) {
           clockRate = 1;
         }
         else {
@@ -883,10 +886,10 @@ inline int findCudaDevice(int argc, const char **argv) {
   } else {
     // Otherwise pick the device with highest Gflops/s
     devID = gpuGetMaxGflopsDeviceId();
-    checkCudaErrors(cudaSetDevice(devID));
+    checkCudaErrors(hipSetDevice(devID));
     int major = 0, minor = 0;
-    checkCudaErrors(cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, devID));
-    checkCudaErrors(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, devID));
+    checkCudaErrors(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, devID));
+    checkCudaErrors(hipDeviceGetAttribute(&minor, hipDeviceAttributeComputeCapabilityMinor, devID));
     printf("GPU Device %d: \"%s\" with compute capability %d.%d\n\n",
            devID, _ConvertSMVer2ArchName(major, minor), major, minor);
 
@@ -900,7 +903,7 @@ inline int findIntegratedGPU() {
   int device_count = 0;
   int devices_prohibited = 0;
 
-  checkCudaErrors(cudaGetDeviceCount(&device_count));
+  checkCudaErrors(hipGetDeviceCount(&device_count));
 
   if (device_count == 0) {
     fprintf(stderr, "CUDA error: no devices supporting CUDA.\n");
@@ -910,16 +913,16 @@ inline int findIntegratedGPU() {
   // Find the integrated GPU which is compute capable
   while (current_device < device_count) {
     int computeMode = -1, integrated = -1;
-    checkCudaErrors(cudaDeviceGetAttribute(&computeMode, cudaDevAttrComputeMode, current_device));
-    checkCudaErrors(cudaDeviceGetAttribute(&integrated, cudaDevAttrIntegrated, current_device));
+    checkCudaErrors(hipDeviceGetAttribute(&computeMode, hipDeviceAttributeComputeMode, current_device));
+    checkCudaErrors(hipDeviceGetAttribute(&integrated, hipDeviceAttributeIntegrated, current_device));
     // If GPU is integrated and is not running on Compute Mode prohibited,
     // then cuda can map to GLES resource
-    if (integrated && (computeMode != cudaComputeModeProhibited)) {
-      checkCudaErrors(cudaSetDevice(current_device));
+    if (integrated && (computeMode != hipComputeModeProhibited)) {
+      checkCudaErrors(hipSetDevice(current_device));
 
       int major = 0, minor = 0;
-      checkCudaErrors(cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, current_device));
-      checkCudaErrors(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, current_device));
+      checkCudaErrors(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, current_device));
+      checkCudaErrors(hipDeviceGetAttribute(&minor, hipDeviceAttributeComputeCapabilityMinor, current_device));
       printf("GPU Device %d: \"%s\" with compute capability %d.%d\n\n",
              current_device, _ConvertSMVer2ArchName(major, minor), major, minor);
 
@@ -946,9 +949,9 @@ inline bool checkCudaCapabilities(int major_version, int minor_version) {
   int dev;
   int major = 0, minor = 0;
 
-  checkCudaErrors(cudaGetDevice(&dev));
-  checkCudaErrors(cudaDeviceGetAttribute(&major, cudaDevAttrComputeCapabilityMajor, dev));
-  checkCudaErrors(cudaDeviceGetAttribute(&minor, cudaDevAttrComputeCapabilityMinor, dev));
+  checkCudaErrors(hipGetDevice(&dev));
+  checkCudaErrors(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, dev));
+  checkCudaErrors(hipDeviceGetAttribute(&minor, hipDeviceAttributeComputeCapabilityMinor, dev));
 
   if ((major > major_version) ||
       (major == major_version &&
@@ -964,7 +967,7 @@ inline bool checkCudaCapabilities(int major_version, int minor_version) {
     return false;
   }
 }
-#endif
+/* #endif */
 
   // end of CUDA Helper Functions
 
