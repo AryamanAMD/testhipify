@@ -1,0 +1,94 @@
+diff --git a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip
+index b778cc5..1671fb8 100644
+--- a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip
++++ b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip
+@@ -36,7 +36,7 @@
+ 
+ // includes, system
+ #include <stdio.h>
+-#include "rocprofiler.h"
++//#include "rocprofiler.h"
+ #include "HIPCHECK.h"
+ 
+ // includes CUDA Runtime
+@@ -44,7 +44,7 @@
+ #include <hip/hip_runtime_api.h>
+ 
+ // includes, project
+-#include <helper_cuda.h>
++#include <helper_cuda-hipified.h>
+ #include <helper_functions.h>  // helper utility functions
+ 
+ __global__ void increment_kernel(int *g_data, int inc_value) {
+@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
+   float gpu_time = 0.0f;
+ 
+   // asynchronously issue work to the GPU (all to stream 0)
+-  HIPCHECK(rocprofiler_start());
++  //HIPCHECK(rocprofiler_start());
+   sdkStartTimer(&timer);
+   hipEventRecord(start, 0);
+   hipMemcpyAsync(d_a, a, nbytes, hipMemcpyHostToDevice, 0);
+@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
+   hipMemcpyAsync(a, d_a, nbytes, hipMemcpyDeviceToHost, 0);
+   hipEventRecord(stop, 0);
+   sdkStopTimer(&timer);
+-  HIPCHECK(rocprofiler_stop());
++  //HIPCHECK(rocprofiler_stop());
+ 
+   // have CPU do some work while waiting for stage 1 to finish
+   unsigned long int counter = 0;
+diff --git a/src/samples/Samples/0_Introduction/matrixMul/matrixMul.cu b/src/samples/Samples/0_Introduction/matrixMul/matrixMul.cu
+index 98c4184..703acca 100644
+--- a/src/samples/Samples/0_Introduction/matrixMul/matrixMul.cu
++++ b/src/samples/Samples/0_Introduction/matrixMul/matrixMul.cu
+@@ -345,9 +345,9 @@ int main(int argc, char **argv) {
+   printf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y,
+          dimsB.x, dimsB.y);
+ 
+-  checkCudaErrors(cudaProfilerStart());
++  //checkCudaErrors(cudaProfilerStart());
+   int matrix_result = MatrixMultiply(argc, argv, block_size, dimsA, dimsB);
+-  checkCudaErrors(cudaProfilerStop());
++  //checkCudaErrors(cudaProfilerStop());
+ 
+   exit(matrix_result);
+ }
+diff --git a/src/samples/Samples/0_Introduction/matrixMul/matrixMul.cu.hip b/src/samples/Samples/0_Introduction/matrixMul/matrixMul.cu.hip
+index 575d702..50beffb 100644
+--- a/src/samples/Samples/0_Introduction/matrixMul/matrixMul.cu.hip
++++ b/src/samples/Samples/0_Introduction/matrixMul/matrixMul.cu.hip
+@@ -41,7 +41,7 @@
+ 
+ // System includes
+ #include <stdio.h>
+-#include "rocprofiler.h"
++//#include "rocprofiler.h"
+ #include "HIPCHECK.h"
+ #include <assert.h>
+ 
+@@ -51,7 +51,8 @@
+ 
+ // Helper functions and utilities to work with CUDA
+ #include <helper_functions.h>
+-#include <helper_cuda.h>
++//#include <helper_cuda.h>
++#include <helper_cuda_hipified.h>
+ 
+ /**
+  * Matrix multiplication (CUDA Kernel) on the device: C = A * B
+@@ -347,9 +348,9 @@ int main(int argc, char **argv) {
+   printf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y,
+          dimsB.x, dimsB.y);
+ 
+-  HIPCHECK(rocprofiler_start());
++//  HIPCHECK(rocprofiler_start());
+   int matrix_result = MatrixMultiply(argc, argv, block_size, dimsA, dimsB);
+-  HIPCHECK(rocprofiler_stop());
++//  HIPCHECK(rocprofiler_stop());
+ 
+   exit(matrix_result);
+ }
+diff --git a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out
+index 32aa4e6..7b576e7 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out and b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out differ

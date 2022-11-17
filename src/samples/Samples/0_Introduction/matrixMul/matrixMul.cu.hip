@@ -41,7 +41,7 @@
 
 // System includes
 #include <stdio.h>
-#include "rocprofiler.h"
+//#include "rocprofiler.h"
 #include "HIPCHECK.h"
 #include <assert.h>
 
@@ -51,7 +51,8 @@
 
 // Helper functions and utilities to work with CUDA
 #include <helper_functions.h>
-#include <helper_cuda.h>
+//#include <helper_cuda.h>
+#include <helper_cuda_hipified.h>
 
 /**
  * Matrix multiplication (CUDA Kernel) on the device: C = A * B
@@ -347,9 +348,9 @@ int main(int argc, char **argv) {
   printf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y,
          dimsB.x, dimsB.y);
 
-  HIPCHECK(rocprofiler_start());
+//  HIPCHECK(rocprofiler_start());
   int matrix_result = MatrixMultiply(argc, argv, block_size, dimsA, dimsB);
-  HIPCHECK(rocprofiler_stop());
+//  HIPCHECK(rocprofiler_stop());
 
   exit(matrix_result);
 }
