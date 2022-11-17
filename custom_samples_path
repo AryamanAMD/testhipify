@@ -12,3 +12,6 @@ src/samples/Samples/2_Concepts_and_Techniques/convolutionTexture/convolutionText
 src/samples/Samples/5_Domain_Specific/simpleD3D10/simpleD3D10_kernel.cu
 src/samples/Samples/5_Domain_Specific/VFlockingD3D10/VFlocking_kernel.cu
 src/samples/Samples/5_Domain_Specific/bilateralFilter/bilateral_kernel.cu
+src/samples/Samples/5_Domain_Specific/nbody/bodysystemcuda.cu
+src/samples/Samples/5_Domain_Specific/Mandelbrot/Mandelbrot_cuda.cu
+src/samples/Samples/4_CUDA_Libraries/cudaNvSciNvMedia/cuda_consumer.cu
