@@ -78,7 +78,7 @@ static inline __device__ uint binarySearchInclusive(uint val, uint *data,
   uint pos = 0;
 
   for (; stride > 0; stride >>= 1) {
-    uint newPos = umin(pos + stride, L);
+    uint newPos = min(pos + stride, L);
 
     if ((sortDir && (data[newPos - 1] <= val)) ||
         (!sortDir && (data[newPos - 1] >= val))) {
@@ -99,7 +99,7 @@ static inline __device__ uint binarySearchExclusive(uint val, uint *data,
   uint pos = 0;
 
   for (; stride > 0; stride >>= 1) {
-    uint newPos = umin(pos + stride, L);
+    uint newPos = min(pos + stride, L);
 
     if ((sortDir && (data[newPos - 1] < val)) ||
         (!sortDir && (data[newPos - 1] > val))) {
@@ -209,7 +209,7 @@ __global__ void generateSampleRanksKernel(uint *d_RanksA, uint *d_RanksB,
   d_RanksB += segmentBase / SAMPLE_STRIDE;
 
   const uint segmentElementsA = stride;
-  const uint segmentElementsB = umin(stride, N - segmentBase - stride);
+  const uint segmentElementsB = min(stride, N - segmentBase - stride);
   const uint segmentSamplesA = getSampleCount(segmentElementsA);
   const uint segmentSamplesB = getSampleCount(segmentElementsB);
 
@@ -265,7 +265,7 @@ __global__ void mergeRanksAndIndicesKernel(uint *d_Limits, uint *d_Ranks,
   d_Limits += (pos - i) * 2;
 
   const uint segmentElementsA = stride;
-  const uint segmentElementsB = umin(stride, N - segmentBase - stride);
+  const uint segmentElementsB = min(stride, N - segmentBase - stride);
   const uint segmentSamplesA = getSampleCount(segmentElementsA);
   const uint segmentSamplesB = getSampleCount(segmentElementsB);
 
@@ -363,7 +363,7 @@ __global__ void mergeElementaryIntervalsKernel(uint *d_DstKey, uint *d_DstVal,
 
   if (threadIdx.x == 0) {
     uint segmentElementsA = stride;
-    uint segmentElementsB = umin(stride, N - segmentBase - stride);
+    uint segmentElementsB = min(stride, N - segmentBase - stride);
     uint segmentSamplesA = getSampleCount(segmentElementsA);
     uint segmentSamplesB = getSampleCount(segmentElementsB);
     uint segmentSamples = segmentSamplesA + segmentSamplesB;
@@ -529,9 +529,3 @@ extern "C" void mergeSort(uint *d_DstKey, uint *d_DstVal, uint *d_BufKey,
     oval = t;
   }
 }
-key;
-    okey = t;
-    t = ival;
-    ival = oval;
-    oval = t;
-  }
