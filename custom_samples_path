@@ -6,3 +6,8 @@ src/samples/Samples/5_Domain_Specific/simpleD3D11/sinewave_cuda.cu
 src/samples/Samples/0_Introduction/c++11_cuda/c++11_cuda.cu
 src/samples/Samples/5_Domain_Specific/bilateralFilter/bilateral_kernel.cu
 src/samples/Samples/5_Domain_Specific/recursiveGaussian/recursiveGaussian_cuda.cu
+src/samples/Samples/2_Concepts_and_Techniques/convolutionTexture/convolutionTexture.cu
+src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu
+src/samples/Samples/2_Concepts_and_Techniques/convolutionTexture/convolutionTexture.cu
+src/samples/Samples/5_Domain_Specific/simpleD3D10/simpleD3D10_kernel.cu
+src/samples/Samples/5_Domain_Specific/VFlockingD3D10/VFlocking_kernel.cu
