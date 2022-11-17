@@ -104,14 +104,6 @@ def parenthesis_check_all(y):
 		if elem.endswith('.cu.hip'):  ##or elem.endswith('.cpp') 
 			parenthesis_check(elem)			
 
-		
-
-
-		
-
-
-        		
-
 
 open_list = ["{"]
 close_list = ["}"]
@@ -352,28 +344,7 @@ def rem(z):
 	with open ('final_ignored_samples.txt', 'a') as fp:
 		fp.write(data1)
     
-
-
-
-   
-		
-        
-    
-
-    		
-
-
-						
-
-
-
-				
-		
-        	
-            
-
-
-
+      
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
 parser.add_argument("-b", "--generate", help='Generate .hip files')
@@ -437,11 +408,3 @@ if args.parenthesis_check:
 if args.parenthesis_check_all:
 	f=args.parenthesis_check_all
 	parenthesis_check_all(f)					
-
-
-
-
-
-
-
-	
