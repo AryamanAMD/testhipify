@@ -33,7 +33,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
-
+#include "HIPCHECK.h"
 #define NUM_OF_BLOCKS 128
 #define NUM_OF_THREADS 128
 

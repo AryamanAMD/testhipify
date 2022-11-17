@@ -29,7 +29,7 @@
 #include <hip/hip_runtime.h>
 #include <iostream>
 #include <helper_cuda.h>  // helper functions for CUDA error check
-
+#include "HIPCHECK.h"
 const int manualBlockSize = 32;
 
 ////////////////////////////////////////////////////////////////////////////////

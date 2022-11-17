@@ -1,0 +1,117 @@
+diff --git a/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.cu.hip b/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.cu.hip
+index d97ec63..7843864 100644
+--- a/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.cu.hip
++++ b/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.cu.hip
+@@ -33,7 +33,7 @@
+ #include <cstdio>
+ #include <cstdlib>
+ #include <ctime>
+-
++#include "HIPCHECK.h"
+ #define NUM_OF_BLOCKS 128
+ #define NUM_OF_THREADS 128
+ 
+diff --git a/src/samples/Samples/0_Introduction/mergeSort/mergeSort.cu.hip b/src/samples/Samples/0_Introduction/mergeSort/mergeSort.cu.hip
+index 4ec6748..6806081 100644
+--- a/src/samples/Samples/0_Introduction/mergeSort/mergeSort.cu.hip
++++ b/src/samples/Samples/0_Introduction/mergeSort/mergeSort.cu.hip
+@@ -37,7 +37,7 @@
+ #include <hip/hip_runtime.h>
+ #include <assert.h>
+ #include <hip/hip_cooperative_groups.h>
+-
++#include "HIPCHECK.h"
+ namespace cg = cooperative_groups;
+ 
+ #include <helper_cuda.h>
+diff --git a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip
+index 7768545..51f49e7 100644
+--- a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip
+@@ -29,7 +29,7 @@
+ #include <hip/hip_runtime.h>
+ #include <iostream>
+ #include <helper_cuda.h>  // helper functions for CUDA error check
+-
++#include "HIPCHECK.h"
+ const int manualBlockSize = 32;
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+diff --git a/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip b/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
+index 372cbd1..4ffe3c2 100644
+--- a/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
++++ b/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
+@@ -35,7 +35,7 @@
+ #include <stdint.h>
+ #include <cstdio>
+ #include <ctime>
+-
++#include "HIPCHECK.h"
+ #define min(a, b) (a) < (b) ? (a) : (b)
+ #define max(a, b) (a) > (b) ? (a) : (b)
+ 
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu.hip
+index 8b3467e..d615dee 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu.hip
+@@ -34,7 +34,7 @@ extern "C" __global__ void sequence_gpu(int *d_ptr, int length) {
+     unsigned int laneid;
+ 
+     // This command gets the lane ID within the current warp
+-    asm("mov.u32 %0, %%laneid;" : "=r"(laneid));
++    asm("mov.u32  %0, %%laneid;" : "=r"(laneid));
+ 
+     d_ptr[elemID] = laneid;
+   }
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.cu.hip
+index c03bc5c..fa05eaa 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.cu.hip
+@@ -33,7 +33,7 @@
+ namespace cg = cooperative_groups;
+ #include <helper_cuda.h>
+ #include "scan_common.h"
+-
++#include "HIPCHECK.h"
+ // All three kernels run 512 threads per workgroup
+ // Must be a power of two
+ #define THREADBLOCK_SIZE 256
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip
+index ad2def1..08aa4a6 100644
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip
+@@ -30,7 +30,7 @@
+ #include <sys/types.h>
+ #include <fstream>
+ #include <iostream>
+-
++#include "HIPCHECK.h"
+ #include <hip/hip_runtime.h>
+ 
+ 
+diff --git a/src/samples/Samples/5_Domain_Specific/volumeRender/volumeRender_kernel.cu.hip b/src/samples/Samples/5_Domain_Specific/volumeRender/volumeRender_kernel.cu.hip
+index 42a0b31..4ce7ef8 100644
+--- a/src/samples/Samples/5_Domain_Specific/volumeRender/volumeRender_kernel.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/volumeRender/volumeRender_kernel.cu.hip
+@@ -32,7 +32,7 @@
+ 
+ #include <helper_cuda.h>
+ #include <helper_math.h>
+-
++#include "HIPCHECK.h"
+ typedef unsigned int uint;
+ typedef unsigned char uchar;
+ 
+diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+index 08cdbe4..14e7624 100644
+--- a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
++++ b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+@@ -31,7 +31,7 @@
+ #include <helper_timer.h>
+ #include "commonDefs.hpp"
+ #include "commonKernels.hpp"
+-
++#include "HIPCHECK.h"
+ #define VERIFY_GPU_CORRECTNESS 0
+ 
+ size_t maxSampleSizeInMb = 64;

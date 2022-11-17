@@ -31,7 +31,7 @@
 #include <helper_timer.h>
 #include "commonDefs.hpp"
 #include "commonKernels.hpp"
-
+#include "HIPCHECK.h"
 #define VERIFY_GPU_CORRECTNESS 0
 
 size_t maxSampleSizeInMb = 64;

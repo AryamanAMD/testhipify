@@ -35,7 +35,7 @@
 #include <stdint.h>
 #include <cstdio>
 #include <ctime>
-
+#include "HIPCHECK.h"
 #define min(a, b) (a) < (b) ? (a) : (b)
 #define max(a, b) (a) > (b) ? (a) : (b)
 

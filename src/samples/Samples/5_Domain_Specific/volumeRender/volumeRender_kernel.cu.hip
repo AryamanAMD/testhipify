@@ -32,7 +32,7 @@
 
 #include <helper_cuda.h>
 #include <helper_math.h>
-
+#include "HIPCHECK.h"
 typedef unsigned int uint;
 typedef unsigned char uchar;
 

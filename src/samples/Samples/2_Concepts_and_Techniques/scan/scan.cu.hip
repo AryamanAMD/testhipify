@@ -33,7 +33,7 @@
 namespace cg = cooperative_groups;
 #include <helper_cuda.h>
 #include "scan_common.h"
-
+#include "HIPCHECK.h"
 // All three kernels run 512 threads per workgroup
 // Must be a power of two
 #define THREADBLOCK_SIZE 256

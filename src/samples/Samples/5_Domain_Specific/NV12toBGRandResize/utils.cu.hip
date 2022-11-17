@@ -30,7 +30,7 @@
 #include <sys/types.h>
 #include <fstream>
 #include <iostream>
-
+#include "HIPCHECK.h"
 #include <hip/hip_runtime.h>
 
 
