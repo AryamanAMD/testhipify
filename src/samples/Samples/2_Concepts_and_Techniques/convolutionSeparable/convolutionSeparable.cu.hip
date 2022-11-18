@@ -28,7 +28,7 @@
 
 #include <hip/hip_runtime.h>
 #include <assert.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <hip/hip_cooperative_groups.h>
 
 namespace cg = cooperative_groups;

@@ -31,7 +31,7 @@
 
 // System includes
 #include <stdio.h>
-#include "rocprofiler.h"
+//#include "rocprofiler.h"
 #include "HIPCHECK.h"
 #include <assert.h>
 
@@ -39,8 +39,8 @@
 #include <hip/hip_runtime.h>
 
 // helper functions and utilities to work with CUDA
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
 
 __global__ void sequence_gpu(int *d_ptr, int length)
 {
