@@ -27,8 +27,7 @@
 
 // System includes.
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
+//#include "rocprofiler.h"
 #include <iostream>
 
 // STL.
@@ -38,8 +37,10 @@
 #include <hip/hip_runtime.h>
 
 // Helper functions and utilities to work with CUDA.
+#include <helper_cuda_hipified.h>
 #include <helper_functions.h>
-#include <helper_cuda.h>
+#include "HIPCHECK.h"
+//#include <helper_cuda.h>
 
 // Device library includes.
 #include "simpleDeviceLibrary.cuh"
