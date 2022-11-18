@@ -44,7 +44,8 @@
 #include <hip/hip_runtime_api.h>
 
 // includes, project
-#include <helper_cuda-hipified.h>
+//#include <helper_cuda.h>
+#include <helper_cuda_hipified.h>
 #include <helper_functions.h>  // helper utility functions
 
 __global__ void increment_kernel(int *g_data, int inc_value) {

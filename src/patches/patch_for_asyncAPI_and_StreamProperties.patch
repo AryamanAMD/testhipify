@@ -1,0 +1,42 @@
+diff --git a/a.out b/a.out
+index d086bb1..74f52e9 100755
+Binary files a/a.out and b/a.out differ
+diff --git a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip
+index 1671fb8..8cbb076 100644
+--- a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip
++++ b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip
+@@ -44,7 +44,8 @@
+ #include <hip/hip_runtime_api.h>
+ 
+ // includes, project
+-#include <helper_cuda-hipified.h>
++//#include <helper_cuda.h>
++#include <helper_cuda_hipified.h>
+ #include <helper_functions.h>  // helper utility functions
+ 
+ __global__ void increment_kernel(int *g_data, int inc_value) {
+diff --git a/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.cu.hip b/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.cu.hip
+index 42a5486..b5d40ee 100644
+--- a/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.cu.hip
+@@ -31,15 +31,17 @@
+ // CUDA-C includes
+ #include <hip/hip_runtime.h>
+ 
+-#include <helper_cuda.h>
+-#include "HIPCHECK.h"
++
++
+ #define TOTAL_SIZE 256 * 1024 * 1024
+ #define EACH_SIZE 128 * 1024 * 1024
+ 
+ // # threadblocks
+ #define TBLOCKS 1024
+ #define THREADS 512
+-
++#include "HIPCHECK.h"
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ // throw error on equality
+ #define ERR_EQ(X, Y)                                                           \
+   do {                                                                         \
