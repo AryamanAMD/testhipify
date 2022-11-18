@@ -29,14 +29,15 @@
 #include <hip/hip_runtime.h>
 #include <assert.h>
 #include <stdio.h>
-#include "rocprofiler.h"
+//#include "rocprofiler.h"
 #include "HIPCHECK.h"
 #include <stdlib.h>
 #include <string.h>
 #include <hip/hip_cooperative_groups.h>
 
 namespace cg = cooperative_groups;
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
+#include "helper_functions.h"
 #include "histogram_common.h"
 
 ////////////////////////////////////////////////////////////////////////////////

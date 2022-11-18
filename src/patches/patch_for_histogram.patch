@@ -1,0 +1,44 @@
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram256.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram256.cu.hip
+index c3a4926..1649e73 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram256.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram256.cu.hip
+@@ -29,14 +29,15 @@
+ #include <hip/hip_runtime.h>
+ #include <assert.h>
+ #include <stdio.h>
+-#include "rocprofiler.h"
++//#include "rocprofiler.h"
+ #include "HIPCHECK.h"
+ #include <stdlib.h>
+ #include <string.h>
+ #include <hip/hip_cooperative_groups.h>
+ 
+ namespace cg = cooperative_groups;
+-#include <helper_cuda.h>
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ #include "histogram_common.h"
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram64.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram64.cu.hip
+index a3db8b6..1e19257 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram64.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram64.cu.hip
+@@ -29,14 +29,15 @@
+ #include <hip/hip_runtime.h>
+ #include <assert.h>
+ #include <stdio.h>
+-#include "rocprofiler.h"
++//#include "rocprofiler.h"
+ #include "HIPCHECK.h"
+ #include <stdlib.h>
+ #include <string.h>
+ #include <hip/hip_cooperative_groups.h>
+ 
+ namespace cg = cooperative_groups;
+-#include <helper_cuda.h>
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ #include "histogram_common.h"
+ 
+ ////////////////////////////////////////////////////////////////////////////////
