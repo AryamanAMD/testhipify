@@ -27,16 +27,16 @@
 
 // System includes
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
+//#include "rocprofiler.h"
 #include <assert.h>
 
 // CUDA runtime
 #include <hip/hip_runtime.h>
 
 // helper functions and utilities to work with CUDA
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
+#include "HIPCHECK.h"
 
 #ifndef MAX
 #define MAX(a, b) (a > b ? a : b)
