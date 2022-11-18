@@ -1,0 +1,28 @@
+diff --git a/a.out b/a.out
+index 74f52e9..fc94c13 100755
+Binary files a/a.out and b/a.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.cu.hip
+index 8ec9302..c905e5b 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.cu.hip
+@@ -40,16 +40,16 @@
+ // System includes
+ #include <assert.h>
+ #include <stdio.h>
+-#include "rocprofiler.h"
+-#include "HIPCHECK.h"
++//#include "rocprofiler.h"
+ #include <climits>
+ 
+ // CUDA runtime
+ #include <hip/hip_runtime.h>
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_cuda.h>
+-#include <helper_functions.h>
++#include "HIPCHECK.h"
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ 
+ #define MAX_ITER 20
+ 

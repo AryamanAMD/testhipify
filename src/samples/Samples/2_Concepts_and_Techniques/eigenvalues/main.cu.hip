@@ -34,16 +34,18 @@
 #include <hip/hip_runtime.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
+//#include "rocprofiler.h"
 #include <string.h>
 #include <math.h>
 #include <float.h>
 #include <assert.h>
 
 // includes, project
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "HIPCHECK.h"
+#include "helper_cuda_hipified.h"
+#include "helper_functions.h"
+//#include <helper_functions.h>
+//#include <helper_cuda.h>
 #include "config.h"
 #include "structs.h"
 #include "matlab.h"
