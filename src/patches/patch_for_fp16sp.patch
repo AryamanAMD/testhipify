@@ -1,0 +1,17 @@
+diff --git a/a.out b/a.out
+index fc94c13..723aa1e 100755
+Binary files a/a.out and b/a.out differ
+diff --git a/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.cu.hip b/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.cu.hip
+index 7843864..893fd7a 100644
+--- a/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.cu.hip
++++ b/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.cu.hip
+@@ -28,7 +28,8 @@
+ 
+ #include <hip/hip_runtime.h>
+ #include "hip/hip_fp16.h"
+-#include "helper_cuda.h"
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ 
+ #include <cstdio>
+ #include <cstdlib>

@@ -28,7 +28,8 @@
 
 #include <hip/hip_runtime.h>
 #include "hip/hip_fp16.h"
-#include "helper_cuda.h"
+#include "helper_cuda_hipified.h"
+#include "helper_functions.h"
 
 #include <cstdio>
 #include <cstdlib>
