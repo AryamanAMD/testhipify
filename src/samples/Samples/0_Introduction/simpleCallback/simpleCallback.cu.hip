@@ -43,12 +43,12 @@
 
 #include <hip/hip_runtime.h>
 #include <stdio.h>
-#include "rocprofiler.h"
+//#include "rocprofiler.h"
 #include "HIPCHECK.h"
 
 // helper functions and utilities to work with CUDA
 #include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 
 #include "multithreading.h"
 
@@ -57,8 +57,7 @@ const int N_elements_per_workload = 100000;
 
 CUTBarrier thread_barrier;
 
-void CUDART_CB myStreamCallback(hipStream_t event, hipError_t status,
-                                void *data);
+void (CUDART_CB* myStreamCallback)(hipStream_t event, hipError_t status, void *data);
 
 struct heterogeneous_workload {
   int id;
@@ -144,8 +143,7 @@ CUT_THREADPROC postprocess(void *void_arg) {
   CUT_THREADEND;
 }
 
-void CUDART_CB myStreamCallback(hipStream_t stream, hipError_t status,
-                                void *data) {
+void (CUDART_CB* myStreamCallback)(hipStream_t stream, hipError_t status, void *data) {
   // Check status of GPU after stream operations are done
   HIPCHECK(status);
 
