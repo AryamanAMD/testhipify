@@ -1,0 +1,39 @@
+diff --git a/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.cu.hip b/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.cu.hip
+index 3f4dfc4..7a95c75 100644
+--- a/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.cu.hip
++++ b/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.cu.hip
+@@ -35,7 +35,7 @@
+ // System includes
+ #include <stdlib.h>
+ #include <stdio.h>
+-#include "rocprofiler.h"
++//#include "rocprofiler.h"
+ #include "HIPCHECK.h"
+ #include <string.h>
+ #include <math.h>
+@@ -45,8 +45,8 @@
+ #include <hip/hip_runtime.h>
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_cuda.h>
+-#include <helper_functions.h>
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ 
+ #ifndef MAX
+ #define MAX(a, b) (a > b ? a : b)
+diff --git a/src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu.hip b/src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu.hip
+index 3ea2ccf..7bc8a48 100644
+--- a/src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu.hip
+@@ -35,8 +35,8 @@
+ #include <hip/hip_runtime.h>
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_cuda.h>
+-#include <helper_functions.h>
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ 
+ #ifndef MAX
+ #define MAX(a, b) (a > b ? a : b)

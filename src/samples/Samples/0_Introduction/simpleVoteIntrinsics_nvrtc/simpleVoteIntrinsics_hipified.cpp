@@ -26,33 +26,31 @@
  */
 
 // System includes
-#include <assert.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
+#include <assert.h>
 
 // CUDA runtime
 #include <hip/hip_runtime.h>
+#include "nvrtc_helper.h"
 
 // helper functions and utilities to work with CUDA
-#include "helper_cuda_hipified.h"
-#include "helper_functions.h"
+#include <helper_functions.h>
 
 #ifndef MAX
 #define MAX(a, b) (a > b ? a : b)
 #endif
 
-static const char *sSDKsample = "[simpleVoteIntrinsics]\0";
+static const char *sSDKsample = "[simpleVoteIntrinsics_nvrtc]\0";
 
 ////////////////////////////////////////////////////////////////////////////////
 // Global types and parameters
 ////////////////////////////////////////////////////////////////////////////////
+
 #define VOTE_DATA_GROUP 4
 
 ////////////////////////////////////////////////////////////////////////////////
 // CUDA Voting Kernel functions
 ////////////////////////////////////////////////////////////////////////////////
-#include "simpleVote_kernel.cuh"
 
 // Generate the test pattern for Tests 1 and 2
 void genVoteTestPattern(unsigned int *VOTE_PATTERN, int size) {
@@ -137,6 +135,7 @@ int checkResultsVoteAnyKernel1(unsigned int *h_result, int size,
                    4 * VOTE_DATA_GROUP * warp_size / 4, warp_size, "Vote.Any");
 
   printf((error_count == 0) ? "\tOK\n" : "\tERROR\n");
+
   return error_count;
 }
 
@@ -158,6 +157,7 @@ int checkResultsVoteAllKernel2(unsigned int *h_result, int size,
                    4 * VOTE_DATA_GROUP * warp_size / 4, warp_size, "Vote.All");
 
   printf((error_count == 0) ? "\tOK\n" : "\tERROR\n");
+
   return error_count;
 }
 
@@ -168,140 +168,170 @@ int checkResultsVoteAnyKernel3(bool *hinfo, int size) {
   for (i = 0; i < size * 3; i++) {
     switch (i % 3) {
       case 0:
-
         // First warp should be all zeros.
         if (hinfo[i] != (i >= size * 1)) {
           error_count++;
         }
-
         break;
 
       case 1:
-
         // First warp and half of second should be all zeros.
         if (hinfo[i] != (i >= size * 3 / 2)) {
           error_count++;
         }
-
         break;
 
       case 2:
-
         // First two warps should be all zeros.
         if (hinfo[i] != (i >= size * 2)) {
           error_count++;
         }
-
         break;
     }
   }
 
   printf((error_count == 0) ? "\tOK\n" : "\tERROR\n");
+
   return error_count;
 }
 
 int main(int argc, char **argv) {
   unsigned int *h_input, *h_result;
-  unsigned int *d_input, *d_result;
+  hipDeviceptr_t d_input, d_result;
 
-  bool *dinfo = NULL, *hinfo = NULL;
+  char *cubin, *kernel_file;
+  size_t cubinSize;
+  kernel_file = sdkFindFilePath("simpleVote_kernel.cuh", argv[0]);
+  compileFileToCUBIN(kernel_file, argc, argv, &cubin, &cubinSize, 0);
+  hipModule_t module = loadCUBIN(cubin, argc, argv);
+
+  bool *hinfo = NULL;
+  hipDeviceptr_t dinfo;
+
   int error_count[3] = {0, 0, 0};
-
-  hipDeviceProp_t deviceProp;
-  int devID, warp_size = 32;
+  int warp_size = 32;
 
   printf("%s\n", sSDKsample);
-
-  // This will pick the best possible CUDA capable device
-  devID = findCudaDevice(argc, (const char **)argv);
-
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, devID));
-
-  // Statistics about the GPU device
-  printf(
-      "> GPU device has %d Multi-Processors, SM %d.%d compute capabilities\n\n",
-      deviceProp.multiProcessorCount, deviceProp.major, deviceProp.minor);
 
   h_input = (unsigned int *)malloc(VOTE_DATA_GROUP * warp_size *
                                    sizeof(unsigned int));
   h_result = (unsigned int *)malloc(VOTE_DATA_GROUP * warp_size *
                                     sizeof(unsigned int));
-  HIPCHECK(
-      hipMalloc(reinterpret_cast<void **>(&d_input),
-                 VOTE_DATA_GROUP * warp_size * sizeof(unsigned int)));
-  HIPCHECK(
-      hipMalloc(reinterpret_cast<void **>(&d_result),
-                 VOTE_DATA_GROUP * warp_size * sizeof(unsigned int)));
+
+  checkCudaErrors(
+      hipMalloc(&d_input, VOTE_DATA_GROUP * warp_size * sizeof(unsigned int)));
+  checkCudaErrors(hipMalloc(
+      &d_result, VOTE_DATA_GROUP * warp_size * sizeof(unsigned int)));
+
   genVoteTestPattern(h_input, VOTE_DATA_GROUP * warp_size);
-  HIPCHECK(hipMemcpy(d_input, h_input,
-                             VOTE_DATA_GROUP * warp_size * sizeof(unsigned int),
-                             hipMemcpyHostToDevice));
+
+  checkCudaErrors(hipMemcpyHtoD(
+      d_input, h_input, VOTE_DATA_GROUP * warp_size * sizeof(unsigned int)));
 
   // Start of Vote Any Test Kernel #1
   printf("[VOTE Kernel Test 1/3]\n");
   printf("\tRunning <<Vote.Any>> kernel1 ...\n");
   {
-    HIPCHECK(hipDeviceSynchronize());
     dim3 gridBlock(1, 1);
     dim3 threadBlock(VOTE_DATA_GROUP * warp_size, 1);
-    VoteAnyKernel1<<<gridBlock, threadBlock>>>(d_input, d_result,
-                                               VOTE_DATA_GROUP * warp_size);
-    getLastCudaError("VoteAnyKernel() execution failed\n");
-    HIPCHECK(hipDeviceSynchronize());
+    hipFunction_t kernel_addr;
+    checkCudaErrors(
+        hipModuleGetFunction(&kernel_addr, module, "VoteAnyKernel1"));
+
+    int size = VOTE_DATA_GROUP * warp_size;
+    void *arr[] = {(void *)&d_input, (void *)&d_result, (void *)&size};
+
+    checkCudaErrors(hipModuleLaunchKernel(
+        kernel_addr, gridBlock.x, gridBlock.y, gridBlock.z, /* grid dim */
+        threadBlock.x, threadBlock.y, threadBlock.z,        /* block dim */
+        0, 0,    /* shared mem, stream */
+        &arr[0], /* arguments */
+        0));
+
+    checkCudaErrors(hipCtxSynchronize());
   }
-  HIPCHECK(hipMemcpy(h_result, d_result,
-                             VOTE_DATA_GROUP * warp_size * sizeof(unsigned int),
-                             hipMemcpyDeviceToHost));
+
+  checkCudaErrors(hipMemcpyDtoH(
+      h_result, d_result, VOTE_DATA_GROUP * warp_size * sizeof(unsigned int)));
+
   error_count[0] += checkResultsVoteAnyKernel1(
       h_result, VOTE_DATA_GROUP * warp_size, warp_size);
 
   // Start of Vote All Test Kernel #2
+
   printf("\n[VOTE Kernel Test 2/3]\n");
+
   printf("\tRunning <<Vote.All>> kernel2 ...\n");
   {
-    HIPCHECK(hipDeviceSynchronize());
     dim3 gridBlock(1, 1);
     dim3 threadBlock(VOTE_DATA_GROUP * warp_size, 1);
-    VoteAllKernel2<<<gridBlock, threadBlock>>>(d_input, d_result,
-                                               VOTE_DATA_GROUP * warp_size);
-    getLastCudaError("VoteAllKernel() execution failed\n");
-    HIPCHECK(hipDeviceSynchronize());
+
+    hipFunction_t kernel_addr;
+    checkCudaErrors(
+        hipModuleGetFunction(&kernel_addr, module, "VoteAllKernel2"));
+
+    int size = VOTE_DATA_GROUP * warp_size;
+    void *arr[] = {(void *)&d_input, (void *)&d_result, (void *)&size};
+
+    checkCudaErrors(hipModuleLaunchKernel(
+        kernel_addr, gridBlock.x, gridBlock.y, gridBlock.z, /* grid dim */
+        threadBlock.x, threadBlock.y, threadBlock.z,        /* block dim */
+        0, 0,    /* shared mem, stream */
+        &arr[0], /* arguments */
+        0));
+
+    checkCudaErrors(hipCtxSynchronize());
   }
-  HIPCHECK(hipMemcpy(h_result, d_result,
-                             VOTE_DATA_GROUP * warp_size * sizeof(unsigned int),
-                             hipMemcpyDeviceToHost));
+
+  checkCudaErrors(hipMemcpyDtoH(
+      h_result, d_result, VOTE_DATA_GROUP * warp_size * sizeof(unsigned int)));
+
   error_count[1] += checkResultsVoteAllKernel2(
       h_result, VOTE_DATA_GROUP * warp_size, warp_size);
 
   // Second Vote Kernel Test #3 (both Any/All)
-  hinfo = reinterpret_cast<bool *>(calloc(warp_size * 3 * 3, sizeof(bool)));
-  hipMalloc(reinterpret_cast<void **>(&dinfo),
-             warp_size * 3 * 3 * sizeof(bool));
-  hipMemcpy(dinfo, hinfo, warp_size * 3 * 3 * sizeof(bool),
-             hipMemcpyHostToDevice);
+  hinfo = (bool *)calloc(warp_size * 3 * 3, sizeof(bool));
+
+  checkCudaErrors(hipMalloc(&dinfo, warp_size * 3 * 3 * sizeof(bool)));
+  checkCudaErrors(hipMemcpyHtoD(dinfo, hinfo, warp_size * 3 * 3 * sizeof(bool)));
 
   printf("\n[VOTE Kernel Test 3/3]\n");
   printf("\tRunning <<Vote.Any>> kernel3 ...\n");
   {
-    HIPCHECK(hipDeviceSynchronize());
-    VoteAnyKernel3<<<1, warp_size * 3>>>(dinfo, warp_size);
-    HIPCHECK(hipDeviceSynchronize());
+    dim3 gridBlock(1, 1);
+    dim3 threadBlock(warp_size * 3, 1);
+
+    hipFunction_t kernel_addr;
+
+    checkCudaErrors(
+        hipModuleGetFunction(&kernel_addr, module, "VoteAnyKernel3"));
+
+    int size = warp_size;
+    void *arr[] = {(void *)&dinfo, (void *)&size};
+
+    checkCudaErrors(hipModuleLaunchKernel(
+        kernel_addr, gridBlock.x, gridBlock.y, gridBlock.z, /* grid dim */
+        threadBlock.x, threadBlock.y, threadBlock.z,        /* block dim */
+        0, 0,    /* shared mem, stream */
+        &arr[0], /* arguments */
+        0));
+
+    checkCudaErrors(hipCtxSynchronize());
   }
 
-  hipMemcpy(hinfo, dinfo, warp_size * 3 * 3 * sizeof(bool),
-             hipMemcpyDeviceToHost);
+  checkCudaErrors(hipMemcpyDtoH(hinfo, dinfo, warp_size * 3 * 3 * sizeof(bool)));
 
   error_count[2] = checkResultsVoteAnyKernel3(hinfo, warp_size * 3);
 
   // Now free these resources for Test #1,2
-  HIPCHECK(hipFree(d_input));
-  HIPCHECK(hipFree(d_result));
+  checkCudaErrors(hipFree(d_input));
+  checkCudaErrors(hipFree(d_result));
   free(h_input);
   free(h_result);
 
   // Free resources from Test #3
   free(hinfo);
-  hipFree(dinfo);
+  checkCudaErrors(hipFree(dinfo));
 
   printf("\tShutting down...\n");
 
