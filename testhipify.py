@@ -211,9 +211,9 @@ def generate(x):
 	fileToSearch=p+"/"+q+".hip"
 	
 	textToSearch1="#include <helper_cuda.h>"
-	textToReplace1="#include "helper_cuda_hipified.h"'
+	textToReplace1='#include "helper_cuda_hipified.h"'
 	textToSearch2="#include <helper_functions.h>"
-	textToReplace2="#include "helper_functions.h"
+	textToReplace2='#include "helper_functions.h"'
 	
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
