@@ -31,7 +31,7 @@
 #include <hip/hip_cooperative_groups.h>
 
 namespace cg = cooperative_groups;
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include "scan_common.h"
 #include "HIPCHECK.h"
 // All three kernels run 512 threads per workgroup

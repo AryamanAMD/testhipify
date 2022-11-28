@@ -25,14 +25,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "scan_common.h"
+#ifndef SIMPLE_DEVICE_LIBRARY_CUH
+#define SIMPLE_DEVICE_LIBRARY_CUH
 
-extern "C" void scanExclusiveHost(uint *dst, uint *src, uint batchSize,
-                                  uint arrayLength) {
-  for (uint i = 0; i < batchSize; i++, src += arrayLength, dst += arrayLength) {
-    dst[0] = 0;
+extern __device__ float multiplyByTwo(float number);
 
-    for (uint j = 1; j < arrayLength; j++) dst[j] = src[j - 1] + dst[j - 1];
-  }
-}
+extern __device__ float divideByTwo(float number);
 
+#endif /* SIMPLE_DEVICE_LIBRARY_CUH */

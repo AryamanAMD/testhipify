@@ -37,13 +37,13 @@
 #include <hip/hip_runtime.h>
 
 // includes, project
-#include <helper_cuda.h>
-#include <helper_functions.h>  // helper functions for SDK examples
+#include "helper_cuda_hipified.h"
+#include "helper_functions.h"  // helper functions for SDK examples
 
 ////////////////////////////////////////////////////////////////////////////////
 // declaration, forward
 void runTest(int argc, char **argv);
-
+#define cudaStreamAttrValue cudaLaunchAttributeValue
 hipAccessPolicyWindow initAccessPolicyWindow(void) {
   hipAccessPolicyWindow accessPolicyWindow = {0};
   accessPolicyWindow.base_ptr = (void *)0;

@@ -37,7 +37,7 @@
 #include <hip/hip_runtime.h>
 
 // Helper functions and utilities to work with CUDA.
-#include <helper_cuda_hipified.h>
+#include "helper_cuda_hipified.h"
 #include <helper_functions.h>
 #include "HIPCHECK.h"
 //#include <helper_cuda.h>
@@ -65,6 +65,8 @@ bool testResult = true;
 // Static device pointers to __device__ functions.
 __device__ deviceFunc dMultiplyByTwoPtr = multiplyByTwo;
 __device__ deviceFunc dDivideByTwoPtr = divideByTwo;
+//__global__ deviceFunc dMultiplyByTwoPtr = multiplyByTwo;
+//__global__ deviceFunc dDivideByTwoPtr = divideByTwo;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Kernels
