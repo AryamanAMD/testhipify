@@ -22,3 +22,4 @@ src/samples/Samples/5_Domain_Specific/fluidsD3D9/fluidsD3D9_kernels.cu
 src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu
 src/samples/Samples/3_CUDA_Features/cdpAdvancedQuicksort/cdpBitonicSort.cu
 src/samples/Samples/2_Concepts_and_Techniques/inlinePTX/inlinePTX.cu
+src/samples/Samples/5_Domain_Specific/SobelFilter/
