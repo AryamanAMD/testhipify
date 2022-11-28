@@ -200,7 +200,8 @@ def generate(x):
 		print("GL Headers found")	
 		"""
 	#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
-	command="hipify-clang -Isrc/samples/Common "+x+" > "+x+".hip"
+	#command="hipify-clang -Isrc/samples/Common "+x+" > "+x+".hip"
+	command="hipify-perl -Isrc/samples/Common "+x+" > "+x+".hip"
 	print(command)
 	os.system(command)
 	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"\n')
@@ -208,14 +209,17 @@ def generate(x):
 	textToSearch="checkCudaErrors"
 	textToReplace="HIPCHECK"
 	fileToSearch=p+"/"+q+".hip"
-	textToSearch1="hipProfilerStart"
-	textToReplace1="rocprofiler_start"
-	textToSearch2="hipProfilerStop"
-	textToReplace2="rocprofiler_stop"
+	
+	textToSearch1="#include <helper_cuda.h>"
+	textToReplace1="#include "helper_cuda_hipified.h"'
+	textToSearch2="#include <helper_functions.h>"
+	textToReplace2="#include "helper_functions.h"
+	
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch,textToReplace))
 	tempFile.close()	
+	
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch1,textToReplace1))
@@ -224,6 +228,7 @@ def generate(x):
 	for line in fileinput.input(fileToSearch):
 		tempFile.write(line.replace(textToSearch2,textToReplace2))	
 	tempFile.close()
+	
 	parenthesis_check(x+".hip")
 
 def apply_patches():
