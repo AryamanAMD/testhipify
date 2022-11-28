@@ -30,7 +30,7 @@
 #include <hip/hip_cooperative_groups.h>
 
 namespace cg = cooperative_groups;
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <assert.h>
 #include "mergeSort_common.h"
 
@@ -105,10 +105,9 @@ extern "C" uint factorRadix2(uint *log2L, uint L) {
   if (!L) {
     *log2L = 0;
     return 0;
-  } else {
-    for (*log2L = 0; (L & 1) == 0; L >>= 1, *log2L++)
-      ;
-
+  }
+ else {
+    for (*log2L = 0; (L & 1) == 0; L >>= 1, *log2L++) ;
     return L;
   }
 }
@@ -193,7 +192,7 @@ __global__ void bitonicMergeElementaryIntervalsKernel(
 
   if (threadIdx.x == 0) {
     uint segmentElementsA = stride;
-    uint segmentElementsB = umin(stride, N - segmentBase - stride);
+    uint segmentElementsB =min(stride, N - segmentBase - stride);
     uint segmentSamplesA = stride / SAMPLE_STRIDE;
     uint segmentSamplesB = getSampleCount(segmentElementsB);
     uint segmentSamples = segmentSamplesA + segmentSamplesB;

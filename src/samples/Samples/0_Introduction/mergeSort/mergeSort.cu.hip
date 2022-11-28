@@ -40,7 +40,7 @@
 #include "HIPCHECK.h"
 namespace cg = cooperative_groups;
 
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include "mergeSort_common.h"
 
 ////////////////////////////////////////////////////////////////////////////////

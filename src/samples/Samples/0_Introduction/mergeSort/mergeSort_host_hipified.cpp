@@ -47,7 +47,7 @@ static void checkOrder(uint *data, uint N, uint sortDir) {
     }
 }
 
-static uint umin(uint a, uint b) { return (a<= b) ? a : b; }
+uint umin(uint a, uint b) { return (a <= b) ? a : b; }
 
 static uint getSampleCount(uint dividend) {
   return ((dividend % SAMPLE_STRIDE) != 0) ? (dividend / SAMPLE_STRIDE + 1)
