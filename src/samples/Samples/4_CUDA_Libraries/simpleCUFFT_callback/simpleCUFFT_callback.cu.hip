@@ -46,8 +46,8 @@
 #include <hip/hip_runtime.h>
 #include <hipfft.h>
 #include <hipfftXt.h>
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
 
 // Complex data type
 typedef float2 Complex;
