@@ -36,12 +36,13 @@ def generate_all(y):
 
 
 def replace_words(x,search_text,replace_text):
+    p=os.path.dirname(x)
     q=os.path.basename(x)
     r=os.path.splitext(q)[0]
-    with open(r+"_hipified.cpp", 'r') as file:
+    with open(p+'/'+r+"_hipified.cpp", 'r') as file:
         data = file.read()
         data = data.replace(search_text, replace_text)
-    with open(r+"_hipified.cpp", 'w') as file:
+    with open(p+'/'+r+"_hipified.cpp", 'w') as file:
         file.write(data)
 					    
 generate_all('src/samples/Samples')                        
