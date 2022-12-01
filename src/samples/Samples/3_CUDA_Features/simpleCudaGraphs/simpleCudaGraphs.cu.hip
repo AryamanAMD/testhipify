@@ -25,11 +25,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <hip/hip_cooperative_groups.h>
 #include <hip/hip_runtime.h>
+#include <hip/hip_cooperative_groups.h>	
 #include "helper_cuda_hipified.h"
 #include <vector>
-
+#include "HIPCHECK.h"
 namespace cg = cooperative_groups;
 
 #define THREADS_PER_BLOCK 512
@@ -131,7 +131,8 @@ void init_input(float *a, size_t size) {
   for (size_t i = 0; i < size; i++) a[i] = (rand() & 0xFF) / (float)RAND_MAX;
 }
 
-void CUDART_CB myHostNodeCallback(void *data) {
+//void CUDART_CB myHostNodeCallback(void *data) {
+void myHostNodeCallback(void *data) {
   // Check status of GPU after stream operations are done
   callBackData_t *tmp = (callBackData_t *)(data);
   // HIPCHECK(tmp->status);
