@@ -20,7 +20,7 @@ def generate(x):
     p=p.replace("\\","/")
     q=os.path.basename(x)
     r=os.path.splitext(q)[0]
-    command="hipify-perl "+x+" > "+p+r+"_hipified.cpp"
+    command="hipify-perl "+x+" > "+p+'/'+r+"_hipified.cpp"
     print(command)
     os.system(command)
     replace_words(x,'#include <helper_cuda.h>','#include "helper_cuda_hipified.h"')
