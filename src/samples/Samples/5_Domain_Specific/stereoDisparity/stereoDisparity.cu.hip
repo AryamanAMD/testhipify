@@ -32,7 +32,7 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
-#include "rocprofiler.h"
+//#include "rocprofiler.h"
 #include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
@@ -42,8 +42,8 @@
 #include "stereoDisparity_kernel.cuh"
 
 // includes, project
-#include <helper_functions.h>  // helper for shared that are common to CUDA Samples
-#include <helper_cuda.h>  // helper for checking cuda initialization and error checking
+#include "helper_functions.h"  // helper for shared that are common to CUDA Samples
+#include "helper_cuda_hipified.h"  // helper for checking cuda initialization and error checking
 #include <helper_string.h>  // helper functions for string parsing
 
 static const char *sSDKsample = "[stereoDisparity]\0";

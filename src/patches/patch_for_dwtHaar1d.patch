@@ -1,0 +1,1263 @@
+diff --git a/src/samples/Samples/0_Introduction/mergeSort/main_hipified.cpp b/src/samples/Samples/0_Introduction/mergeSort/main_hipified.cpp
+index cb3325e..f14cdd1 100644
+--- a/src/samples/Samples/0_Introduction/mergeSort/main_hipified.cpp
++++ b/src/samples/Samples/0_Introduction/mergeSort/main_hipified.cpp
+@@ -29,10 +29,10 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <hip/hip_runtime.h>
+-#include <helper_functions.h>
++#include "helper_functions.h"
+ #include "helper_cuda_hipified.h"
+ #include "mergeSort_common.h"
+-#include "HIPCHECK.h"
++
+ ////////////////////////////////////////////////////////////////////////////////
+ // Test driver
+ ////////////////////////////////////////////////////////////////////////////////
+diff --git a/src/samples/Samples/0_Introduction/mergeSort/mergeSort_host_hipified.cpp b/src/samples/Samples/0_Introduction/mergeSort/mergeSort_host_hipified.cpp
+index 9baadc4..55f0411 100644
+--- a/src/samples/Samples/0_Introduction/mergeSort/mergeSort_host_hipified.cpp
++++ b/src/samples/Samples/0_Introduction/mergeSort/mergeSort_host_hipified.cpp
+@@ -47,7 +47,7 @@ static void checkOrder(uint *data, uint N, uint sortDir) {
+     }
+ }
+ 
+-uint umin(uint a, uint b) { return (a <= b) ? a : b; }
++static uint umin(uint a, uint b) { return (a<= b) ? a : b; }
+ 
+ static uint getSampleCount(uint dividend) {
+   return ((dividend % SAMPLE_STRIDE) != 0) ? (dividend / SAMPLE_STRIDE + 1)
+diff --git a/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip b/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip
+index e69de29..097e148 100644
+--- a/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip
+@@ -0,0 +1,256 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++// Includes, system
++#include <stdio.h>
++
++// Includes CUDA
++#include <hip/hip_runtime.h>
++#include <cuda/barrier>
++#include <hip/hip_cooperative_groups.h>
++
++// Utilities and timing functions
++#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
++
++// CUDA helper functions
++#include <helper_cuda.h>  // helper functions for CUDA error check
++
++namespace cg = cooperative_groups;
++
++#if __CUDA_ARCH__ >= 700
++template <bool writeSquareRoot>
++__device__ void reduceBlockData(
++    cuda::barrier<cuda::thread_scope_block> &barrier,
++    cg::thread_block_tile<32> &tile32, double &threadSum, double *result) {
++  extern __shared__ double tmp[];
++
++#pragma unroll
++  for (int offset = tile32.size() / 2; offset > 0; offset /= 2) {
++    threadSum += tile32.shfl_down(threadSum, offset);
++  }
++  if (tile32.thread_rank() == 0) {
++    tmp[tile32.meta_group_rank()] = threadSum;
++  }
++
++  auto token = barrier.arrive();
++
++  barrier.wait(std::move(token));
++
++  // The warp 0 will perform last round of reduction
++  if (tile32.meta_group_rank() == 0) {
++    double beta = tile32.thread_rank() < tile32.meta_group_size()
++                      ? tmp[tile32.thread_rank()]
++                      : 0.0;
++
++#pragma unroll
++    for (int offset = tile32.size() / 2; offset > 0; offset /= 2) {
++      beta += tile32.shfl_down(beta, offset);
++    }
++
++    if (tile32.thread_rank() == 0) {
++      if (writeSquareRoot)
++        *result = sqrt(beta);
++      else
++        *result = beta;
++    }
++  }
++}
++#endif
++
++__global__ void normVecByDotProductAWBarrier(float *vecA, float *vecB,
++                                             double *partialResults, int size) {
++#if __CUDA_ARCH__ >= 700
++#pragma diag_suppress static_var_with_dynamic_init
++  cg::thread_block cta = cg::this_thread_block();
++  cg::grid_group grid = cg::this_grid();
++  ;
++  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
++
++  __shared__ cuda::barrier<cuda::thread_scope_block> barrier;
++
++  if (threadIdx.x == 0) {
++    init(&barrier, blockDim.x);
++  }
++
++  cg::sync(cta);
++
++  double threadSum = 0.0;
++  for (int i = grid.thread_rank(); i < size; i += grid.size()) {
++    threadSum += (double)(vecA[i] * vecB[i]);
++  }
++
++  // Each thread block performs reduction of partial dotProducts and writes to
++  // global mem.
++  reduceBlockData<false>(barrier, tile32, threadSum,
++                         &partialResults[blockIdx.x]);
++
++  cg::sync(grid);
++
++  // One block performs the final summation of partial dot products
++  // of all the thread blocks and writes the sqrt of final dot product.
++  if (blockIdx.x == 0) {
++    threadSum = 0.0;
++    for (int i = cta.thread_rank(); i < gridDim.x; i += cta.size()) {
++      threadSum += partialResults[i];
++    }
++    reduceBlockData<true>(barrier, tile32, threadSum, &partialResults[0]);
++  }
++
++  cg::sync(grid);
++
++  const double finalValue = partialResults[0];
++
++  // Perform normalization of vecA & vecB.
++  for (int i = grid.thread_rank(); i < size; i += grid.size()) {
++    vecA[i] = (float)vecA[i] / finalValue;
++    vecB[i] = (float)vecB[i] / finalValue;
++  }
++#endif
++}
++
++int runNormVecByDotProductAWBarrier(int argc, char **argv, int deviceId);
++
++////////////////////////////////////////////////////////////////////////////////
++// Program main
++////////////////////////////////////////////////////////////////////////////////
++int main(int argc, char **argv) {
++  printf("%s starting...\n", argv[0]);
++
++  // This will pick the best possible CUDA capable device
++  int dev = findCudaDevice(argc, (const char **)argv);
++
++  int major = 0;
++  checkCudaErrors(
++      hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, dev));
++
++  // Arrive-Wait Barrier require a GPU of Volta (SM7X) architecture or higher.
++  if (major < 7) {
++    printf("simpleAWBarrier requires SM 7.0 or higher.  Exiting...\n");
++    exit(EXIT_WAIVED);
++  }
++
++  int supportsCooperativeLaunch = 0;
++  checkCudaErrors(hipDeviceGetAttribute(&supportsCooperativeLaunch,
++                                         hipDeviceAttributeCooperativeLaunch, dev));
++
++  if (!supportsCooperativeLaunch) {
++    printf(
++        "\nSelected GPU (%d) does not support Cooperative Kernel Launch, "
++        "Waiving the run\n",
++        dev);
++    exit(EXIT_WAIVED);
++  }
++
++  int testResult = runNormVecByDotProductAWBarrier(argc, argv, dev);
++
++  printf("%s completed, returned %s\n", argv[0], testResult ? "OK" : "ERROR!");
++  exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
++}
++
++int runNormVecByDotProductAWBarrier(int argc, char **argv, int deviceId) {
++  float *vecA, *d_vecA;
++  float *vecB, *d_vecB;
++  double *d_partialResults;
++  int size = 10000000;
++
++  checkCudaErrors(hipHostMalloc(&vecA, sizeof(float) * size));
++  checkCudaErrors(hipHostMalloc(&vecB, sizeof(float) * size));
++
++  checkCudaErrors(hipMalloc(&d_vecA, sizeof(float) * size));
++  checkCudaErrors(hipMalloc(&d_vecB, sizeof(float) * size));
++
++  float baseVal = 2.0;
++  for (int i = 0; i < size; i++) {
++    vecA[i] = vecB[i] = baseVal;
++  }
++
++  hipStream_t stream;
++  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
++
++  checkCudaErrors(hipMemcpyAsync(d_vecA, vecA, sizeof(float) * size,
++                                  hipMemcpyHostToDevice, stream));
++  checkCudaErrors(hipMemcpyAsync(d_vecB, vecB, sizeof(float) * size,
++                                  hipMemcpyHostToDevice, stream));
++
++  // Kernel configuration, where a one-dimensional
++  // grid and one-dimensional blocks are configured.
++  int minGridSize = 0, blockSize = 0;
++  checkCudaErrors(hipOccupancyMaxPotentialBlockSize(
++      &minGridSize, &blockSize, (void *)normVecByDotProductAWBarrier, 0, size));
++
++  int smemSize = ((blockSize / 32) + 1) * sizeof(double);
++
++  int numBlocksPerSm = 0;
++  checkCudaErrors(hipOccupancyMaxActiveBlocksPerMultiprocessor(
++      &numBlocksPerSm, normVecByDotProductAWBarrier, blockSize, smemSize));
++
++  int multiProcessorCount = 0;
++  checkCudaErrors(hipDeviceGetAttribute(
++      &multiProcessorCount, hipDeviceAttributeMultiprocessorCount, deviceId));
++
++  minGridSize = multiProcessorCount * numBlocksPerSm;
++  checkCudaErrors(hipMalloc(&d_partialResults, minGridSize * sizeof(double)));
++
++  printf(
++      "Launching normVecByDotProductAWBarrier kernel with numBlocks = %d "
++      "blockSize = %d\n",
++      minGridSize, blockSize);
++
++  dim3 dimGrid(minGridSize, 1, 1), dimBlock(blockSize, 1, 1);
++
++  void *kernelArgs[] = {(void *)&d_vecA, (void *)&d_vecB,
++                        (void *)&d_partialResults, (void *)&size};
++
++  checkCudaErrors(
++      hipLaunchCooperativeKernel((void *)normVecByDotProductAWBarrier, dimGrid,
++                                  dimBlock, kernelArgs, smemSize, stream));
++
++  checkCudaErrors(hipMemcpyAsync(vecA, d_vecA, sizeof(float) * size,
++                                  hipMemcpyDeviceToHost, stream));
++  checkCudaErrors(hipStreamSynchronize(stream));
++
++  float expectedResult = (baseVal / sqrt(size * baseVal * baseVal));
++  unsigned int matches = 0;
++  for (int i = 0; i < size; i++) {
++    if ((vecA[i] - expectedResult) > 0.00001) {
++      printf("mismatch at i = %d\n", i);
++      break;
++    } else {
++      matches++;
++    }
++  }
++
++  printf("Result = %s\n", matches == size ? "PASSED" : "FAILED");
++  checkCudaErrors(hipFree(d_vecA));
++  checkCudaErrors(hipFree(d_vecB));
++  checkCudaErrors(hipFree(d_partialResults));
++
++  checkCudaErrors(hipHostFree(vecA));
++  checkCudaErrors(hipHostFree(vecB));
++  return matches == size;
++}
+diff --git a/src/samples/Samples/0_Introduction/simpleTemplates_nvrtc/simpleTemplates_hipified.cpp b/src/samples/Samples/0_Introduction/simpleTemplates_nvrtc/simpleTemplates_hipified.cpp
+index ec273b6..d4004b8 100644
+--- a/src/samples/Samples/0_Introduction/simpleTemplates_nvrtc/simpleTemplates_hipified.cpp
++++ b/src/samples/Samples/0_Introduction/simpleTemplates_nvrtc/simpleTemplates_hipified.cpp
+@@ -43,7 +43,7 @@
+ // helper functions and utilities to work with CUDA
+ #include "helper_functions.h"
+ #include <nvrtc_helper.h>
+-#include "helper_cuda_hipified.h"
++
+ #ifndef MAX
+ #define MAX(a, b) (a > b ? a : b)
+ #endif
+diff --git a/src/samples/Samples/0_Introduction/simpleVoteIntrinsics_nvrtc/simpleVoteIntrinsics_hipified.cpp b/src/samples/Samples/0_Introduction/simpleVoteIntrinsics_nvrtc/simpleVoteIntrinsics_hipified.cpp
+index 23d1153..466d615 100644
+--- a/src/samples/Samples/0_Introduction/simpleVoteIntrinsics_nvrtc/simpleVoteIntrinsics_hipified.cpp
++++ b/src/samples/Samples/0_Introduction/simpleVoteIntrinsics_nvrtc/simpleVoteIntrinsics_hipified.cpp
+@@ -34,7 +34,7 @@
+ #include "nvrtc_helper.h"
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_functions.h>
++#include "helper_functions.h"
+ 
+ #ifndef MAX
+ #define MAX(a, b) (a > b ? a : b)
+diff --git a/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip b/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
+index 4ffe3c2..8687e7a 100644
+--- a/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
++++ b/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
+@@ -30,7 +30,7 @@
+  */
+ 
+ #include <hip/hip_runtime.h>
+-#include <helper_cuda.h>
++#include "helper_cuda_hipified.h"
+ #include <math.h>
+ #include <stdint.h>
+ #include <cstdio>
+@@ -58,7 +58,8 @@ __global__ void atomicKernel(int *atom_arr) {
+     atomicMin_system(&atom_arr[3], tid);
+ 
+     // Atomic increment (modulo 17+1)
+-    atomicInc_system((unsigned int *)&atom_arr[4], 17);
++    // atomicInc_system((unsigned int *)&atom_arr[4], 17);
++       atomicAnd_system((unsigned int *)&atom_arr[4], 17);
+ 
+     // Atomic decrement
+     atomicDec_system((unsigned int *)&atom_arr[5], 137);
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineQ/src/main_hipified.cpp b/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineQ/src/main_hipified.cpp
+index c614d7a..9d63c6d 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineQ/src/main_hipified.cpp
++++ b/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineQ/src/main_hipified.cpp
+@@ -44,7 +44,7 @@
+ #include <stdexcept>
+ #include <hip/hip_runtime.h>
+ #include <helper_timer.h>
+-#include <helper_cuda.h>
++#include "helper_cuda_hipified.h"
+ 
+ #include <math.h>
+ #include "../inc/test.h"
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/main_hipified.cpp b/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/main_hipified.cpp
+index 923fd0f..a92753f 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/main_hipified.cpp
++++ b/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/main_hipified.cpp
+@@ -34,8 +34,8 @@
+ #include <hip/hip_runtime.h>
+ 
+ // Utilities and system includes
+-#include <helper_functions.h>
+-#include <helper_cuda_hipified.h>
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"
+ 
+ #include "convolutionSeparable_common.h"
+ 
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/histogram/main_hipified.cpp b/src/samples/Samples/2_Concepts_and_Techniques/histogram/main_hipified.cpp
+index d998702..5f79a2c 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/histogram/main_hipified.cpp
++++ b/src/samples/Samples/2_Concepts_and_Techniques/histogram/main_hipified.cpp
+@@ -36,7 +36,7 @@
+ // Utility and system includes
+ #include "helper_cuda_hipified.h"
+ #include "helper_functions.h"  // helper for shared that are common to CUDA Samples
+-#include "HIPCHECK.h"
++
+ // project include
+ #include "histogram_common.h"
+ 
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip
+index 2cf603b..b39cf72 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip
+@@ -42,7 +42,7 @@
+ #include "HIPCHECK.h"
+ #include <stdlib.h>
+ #include <string.h>
+-#include <helper_cuda.h>
++#include "helper_cuda_hipified.h"
+ #include "imageDenoising.h"
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.cu.hip
+index 5a04c6b..7318b87 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.cu.hip
+@@ -39,8 +39,8 @@
+ #include <time.h>
+ #include <string.h>
+ 
+-#include <helper_functions.h>
+-#include <helper_cuda.h>
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"
+ 
+ ///////////////////////////////////////////////////////////////////////////////
+ // Calculate scalar products of VectorN vectors of ElementN elements on CPU
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/sortingNetworks/oddEvenMergeSort.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/sortingNetworks/oddEvenMergeSort.cu.hip
+index f7c5e44..05791f4 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/sortingNetworks/oddEvenMergeSort.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/sortingNetworks/oddEvenMergeSort.cu.hip
+@@ -35,7 +35,7 @@
+ 
+ namespace cg = cooperative_groups;
+ 
+-#include <helper_cuda.h>
++#include "helper_cuda_hipified.h"
+ #include "sortingNetworks_common.h"
+ #include "sortingNetworks_common.cuh"
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip
+index a9b9f99..4c58381 100644
+--- a/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip
+@@ -71,8 +71,8 @@
+ #include "HIPCHECK.h"
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_cuda.h>
+-#include <helper_functions.h>
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ 
+ // Externally configurable parameters.
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.cu.hip b/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.cu.hip
+index e69de29..c471fa8 100644
+--- a/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.cu.hip
+@@ -0,0 +1,312 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++// This sample demonstrates dynamic global memory allocation through device C++
++// new and delete operators and virtual function declarations available with
++// CUDA 4.0.
++
++#include <stdio.h>
++#include "rocprofiler.h"
++#include "HIPCHECK.h"
++
++#include <hip/hip_cooperative_groups.h>
++
++namespace cg = cooperative_groups;
++#include "helper_cuda_hipified.h"
++
++#include <stdlib.h>
++
++#include <vector>
++#include <algorithm>
++
++const char *sSDKsample = "newdelete";
++
++#include "container.hpp"
++
++////////////////////////////////////////////////////////////////////////////////
++//
++// Kernels to allocate and instantiate Container objects on the device heap
++//
++////////////////////////////////////////////////////////////////////////////////
++
++__global__ void vectorCreate(Container<int> **g_container, int max_size) {
++  // The Vector object and the data storage are allocated in device heap memory.
++  // This makes it persistent for the lifetime of the CUDA context.
++  // The grid has only one thread as only a single object instance is needed.
++
++  *g_container = new Vector<int>(max_size);
++}
++
++////////////////////////////////////////////////////////////////////////////////
++//
++// Kernels to fill and consume shared Container objects.
++//
++////////////////////////////////////////////////////////////////////////////////
++
++__global__ void containerFill(Container<int> **g_container) {
++  // All threads of the grid cooperatively populate the shared Container object
++  // with data.
++  if (threadIdx.x == 0) {
++    (*g_container)->push(blockIdx.x);
++  }
++}
++
++__global__ void containerConsume(Container<int> **g_container, int *d_result) {
++  // All threads of the grid cooperatively consume the data from the shared
++  // Container object.
++  int idx = blockIdx.x * blockDim.x + threadIdx.x;
++
++  int v;
++
++  if ((*g_container)->pop(v)) {
++    d_result[idx] = v;
++  } else {
++    d_result[idx] = -1;
++  }
++}
++
++////////////////////////////////////////////////////////////////////////////////
++//
++// Kernel to delete shared Container objects.
++//
++////////////////////////////////////////////////////////////////////////////////
++
++__global__ void containerDelete(Container<int> **g_container) {
++  delete *g_container;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++//
++// Kernels to using of placement new to put shared Vector objects and data in
++// shared memory
++//
++////////////////////////////////////////////////////////////////////////////////
++
++__global__ void placementNew(int *d_result) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  __shared__ unsigned char __align__(8) s_buffer[sizeof(Vector<int>)];
++  __shared__ int __align__(8) s_data[1024];
++  __shared__ Vector<int> *s_vector;
++
++  // The first thread of the block initializes the shared Vector object.
++  // The placement new operator enables the Vector object and the data array top
++  // be placed in shared memory.
++  if (threadIdx.x == 0) {
++    s_vector = new (s_buffer) Vector<int>(1024, s_data);
++  }
++
++  cg::sync(cta);
++
++  if ((threadIdx.x & 1) == 0) {
++    s_vector->push(threadIdx.x >> 1);
++  }
++
++  // Need to sync as the vector implementation does not support concurrent
++  // push/pop operations.
++  cg::sync(cta);
++
++  int v;
++
++  if (s_vector->pop(v)) {
++    d_result[threadIdx.x] = v;
++  } else {
++    d_result[threadIdx.x] = -1;
++  }
++
++  // Note: deleting objects placed in shared memory is not necessary (lifetime
++  // of shared memory is that of the block)
++}
++
++struct ComplexType_t {
++  int a;
++  int b;
++  float c;
++  float d;
++};
++
++__global__ void complexVector(int *d_result) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  __shared__ unsigned char __align__(8) s_buffer[sizeof(Vector<ComplexType_t>)];
++  __shared__ ComplexType_t __align__(8) s_data[1024];
++  __shared__ Vector<ComplexType_t> *s_vector;
++
++  // The first thread of the block initializes the shared Vector object.
++  // The placement new operator enables the Vector object and the data array top
++  // be placed in shared memory.
++  if (threadIdx.x == 0) {
++    s_vector = new (s_buffer) Vector<ComplexType_t>(1024, s_data);
++  }
++
++  cg::sync(cta);
++
++  if ((threadIdx.x & 1) == 0) {
++    ComplexType_t data;
++    data.a = threadIdx.x >> 1;
++    data.b = blockIdx.x;
++    data.c = threadIdx.x / (float)(blockDim.x);
++    data.d = blockIdx.x / (float)(gridDim.x);
++
++    s_vector->push(data);
++  }
++
++  cg::sync(cta);
++
++  ComplexType_t v;
++
++  if (s_vector->pop(v)) {
++    d_result[threadIdx.x] = v.a;
++  } else {
++    d_result[threadIdx.x] = -1;
++  }
++
++  // Note: deleting objects placed in shared memory is not necessary (lifetime
++  // of shared memory is that of the block)
++}
++
++////////////////////////////////////////////////////////////////////////////////
++//
++// Host code
++//
++////////////////////////////////////////////////////////////////////////////////
++
++bool checkResult(int *d_result, int N) {
++  std::vector<int> h_result;
++  h_result.resize(N);
++
++  HIPCHECK(hipMemcpy(&h_result[0], d_result, N * sizeof(int),
++                             hipMemcpyDeviceToHost));
++  std::sort(h_result.begin(), h_result.end());
++
++  bool success = true;
++  bool test = false;
++
++  int value = 0;
++
++  for (int i = 0; i < N; ++i) {
++    if (h_result[i] != -1) {
++      test = true;
++    }
++
++    if (test && (value++) != h_result[i]) {
++      success = false;
++    }
++  }
++
++  return success;
++}
++
++bool testContainer(Container<int> **d_container, int blocks, int threads) {
++  int *d_result;
++  hipMalloc(&d_result, blocks * threads * sizeof(int));
++
++  containerFill<<<blocks, threads>>>(d_container);
++  containerConsume<<<blocks, threads>>>(d_container, d_result);
++  containerDelete<<<1, 1>>>(d_container);
++  HIPCHECK(hipDeviceSynchronize());
++
++  bool success = checkResult(d_result, blocks * threads);
++
++  hipFree(d_result);
++
++  return success;
++}
++
++bool testPlacementNew(int threads) {
++  int *d_result;
++  hipMalloc(&d_result, threads * sizeof(int));
++
++  placementNew<<<1, threads>>>(d_result);
++  HIPCHECK(hipDeviceSynchronize());
++
++  bool success = checkResult(d_result, threads);
++
++  hipFree(d_result);
++
++  return success;
++}
++
++bool testComplexType(int threads) {
++  int *d_result;
++  hipMalloc(&d_result, threads * sizeof(int));
++
++  complexVector<<<1, threads>>>(d_result);
++  HIPCHECK(hipDeviceSynchronize());
++
++  bool success = checkResult(d_result, threads);
++
++  hipFree(d_result);
++
++  return success;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++//
++// MAIN
++//
++////////////////////////////////////////////////////////////////////////////////
++
++int main(int argc, char **argv) {
++  printf("%s Starting...\n\n", sSDKsample);
++
++  // use command-line specified CUDA device, otherwise use device with highest
++  // Gflops/s
++  findCudaDevice(argc, (const char **)argv);
++
++  // set the heap size for device size new/delete to 128 MB
++  HIPCHECK(hipDeviceSetLimit(hipLimitMallocHeapSize, 128 * (1 << 20)));
++
++  Container<int> **d_container;
++  HIPCHECK(hipMalloc(&d_container, sizeof(Container<int> **)));
++
++  bool bTest = false;
++  int test_passed = 0;
++
++  printf(" > Container = Vector test ");
++  vectorCreate<<<1, 1>>>(d_container, 128 * 128);
++  bTest = testContainer(d_container, 128, 128);
++  printf(bTest ? "OK\n\n" : "NOT OK\n\n");
++  test_passed += (bTest ? 1 : 0);
++
++  HIPCHECK(hipFree(d_container));
++
++  printf(" > Container = Vector, using placement new on SMEM buffer test ");
++  bTest = testPlacementNew(1024);
++  printf(bTest ? "OK\n\n" : "NOT OK\n\n");
++  test_passed += (bTest ? 1 : 0);
++
++  printf(" > Container = Vector, with user defined datatype test ");
++  bTest = testComplexType(1024);
++  printf(bTest ? "OK\n\n" : "NOT OK\n\n");
++  test_passed += (bTest ? 1 : 0);
++
++  printf("Test Summary: %d/3 succesfully run\n", test_passed);
++
++  exit(test_passed == 3 ? EXIT_SUCCESS : EXIT_FAILURE);
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/ptxjit/ptxjit_kernel.cu.hip b/src/samples/Samples/3_CUDA_Features/ptxjit/ptxjit_kernel.cu.hip
+index 2ba5701..566beb4 100644
+--- a/src/samples/Samples/3_CUDA_Features/ptxjit/ptxjit_kernel.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/ptxjit/ptxjit_kernel.cu.hip
+@@ -1,5 +1,4 @@
+-
+-#include <hip/hip_runtime.h>
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+diff --git a/src/samples/Samples/5_Domain_Specific/SobelFilter/SobelFilter_hipified.cpp b/src/samples/Samples/5_Domain_Specific/SobelFilter/SobelFilter_hipified.cpp
+index f1d6947..2a9cd4a 100644
+--- a/src/samples/Samples/5_Domain_Specific/SobelFilter/SobelFilter_hipified.cpp
++++ b/src/samples/Samples/5_Domain_Specific/SobelFilter/SobelFilter_hipified.cpp
+@@ -49,8 +49,8 @@
+ #include "SobelFilter_kernels.h"
+ 
+ // includes, project
+-#include <helper_functions.h>  // includes for SDK helper functions
+-#include <helper_cuda.h>  // includes for cuda initialization and error checking
++#include "helper_functions.h"  // includes for SDK helper functions
++#include "helper_cuda_hipified.h"  // includes for cuda initialization and error checking
+ 
+ const char *filterMode[] = {"No Filtering", "Sobel Texture",
+                             "Sobel SMEM+Texture", NULL};
+diff --git a/src/samples/Samples/5_Domain_Specific/bilateralFilter/bilateral_kernel.cu.hip b/src/samples/Samples/5_Domain_Specific/bilateralFilter/bilateral_kernel.cu.hip
+index df5e15f..966feff 100644
+--- a/src/samples/Samples/5_Domain_Specific/bilateralFilter/bilateral_kernel.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/bilateralFilter/bilateral_kernel.cu.hip
+@@ -1,3 +1,4 @@
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -25,11 +26,9 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+-
+-#include <hip/hip_runtime.h>
+ #include <helper_math.h>
+-#include <helper_functions.h>
+-#include <helper_cuda.h>  // CUDA device initialization helper functions
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"  // CUDA device initialization helper functions
+ 
+ __constant__ float cGaussian[64];  // gaussian array in device side
+ 
+@@ -135,7 +134,7 @@ extern "C" void initTexture(int width, int height, uint *hImage) {
+                                sizeof(uint) * width, height,
+                                hipMemcpyHostToDevice));
+ 
+-  // texture<uchar4, 2, cudaReadModeNormalizedFloat> rgbaTex;
++  // texture<uchar4, 2, hipReadModeNormalizedFloat> rgbaTex;
+   hipChannelFormatDesc desc = hipCreateChannelDesc<uchar4>();
+   hipResourceDesc texRes;
+   memset(&texRes, 0, sizeof(hipResourceDesc));
+@@ -207,7 +206,7 @@ extern "C" void updateGaussian(float delta, int radius) {
+     fGaussian[i] = expf(-(x * x) / (2 * delta * delta));
+   }
+ 
+-  HIP_SYMBOL(cGaussian)(hipMemcpyToSymbol(cGaussian, fGaussian,
++  HIPCHECK(hipMemcpyToSymbol(HIP_SYMBOL(cGaussian), fGaussian,
+                                      sizeof(float) * (2 * radius + 1)));
+ }
+ 
+@@ -261,6 +260,6 @@ extern "C" double bilateralFilterRGBA(uint *dDest, int width, int height,
+ 
+   return ((dKernelTime / 1000.) / (double)iterations);
+ }
+-viceToDevice));
++emcpyDeviceToDevice));
+     }
+   }
+diff --git a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_hipified.cpp b/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_hipified.cpp
+index 9ca1480..d66338f 100644
+--- a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_hipified.cpp
++++ b/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_hipified.cpp
+@@ -37,9 +37,9 @@
+ #include <math.h>
+ #include <hip/hip_runtime.h>
+ 
+-#include <helper_functions.h>
+-#include <helper_cuda_hipified.h>
+-#include "HIPCHECK.h"
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"
++
+ #include "binomialOptions_common.h"
+ #include "realtype.h"
+ 
+diff --git a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip
+index 7730928..0c9302d 100644
+--- a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip
+@@ -95,8 +95,8 @@ decomposition.
+ #include <assert.h>
+ 
+ // includes, project
+-#include <helper_functions.h>
+-#include <helper_cuda.h>
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"
+ 
+ // constants which are used in host and device code
+ #define INV_SQRT_2 0.70710678118654752440f;
+diff --git a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D_kernel.cuh b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D_kernel.cuh
+index e1cf98b..12ab9ec 100644
+--- a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D_kernel.cuh
++++ b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D_kernel.cuh
+@@ -82,8 +82,8 @@ decomposition.
+ #ifndef _DWTHAAR1D_KERNEL_H_
+ #define _DWTHAAR1D_KERNEL_H_
+ 
+-#include <cooperative_groups.h>
+-
++//#include <cooperative_groups.h>
++#include <hip/hip_cooperative_groups.h>
+ namespace cg = cooperative_groups;
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+diff --git a/src/samples/Samples/5_Domain_Specific/simpleD3D10Texture/simpleD3D10Texture_hipified.cpp b/src/samples/Samples/5_Domain_Specific/simpleD3D10Texture/simpleD3D10Texture_hipified.cpp
+index f13f143..0de7025 100644
+--- a/src/samples/Samples/5_Domain_Specific/simpleD3D10Texture/simpleD3D10Texture_hipified.cpp
++++ b/src/samples/Samples/5_Domain_Specific/simpleD3D10Texture/simpleD3D10Texture_hipified.cpp
+@@ -41,7 +41,7 @@
+ 
+ // includes, project
+ #include <rendercheck_d3d10.h>
+-#include <helper_cuda.h>  // helper functions for CUDA error checking and initialization
++#include "helper_cuda_hipified.h"  // helper functions for CUDA error checking and initialization
+ 
+ #define MAX_EPSILON 10
+ 
+diff --git a/src/samples/Samples/5_Domain_Specific/simpleVulkanMMAP/MonteCarloPi.cu.hip b/src/samples/Samples/5_Domain_Specific/simpleVulkanMMAP/MonteCarloPi.cu.hip
+index e69de29..0e359ed 100644
+--- a/src/samples/Samples/5_Domain_Specific/simpleVulkanMMAP/MonteCarloPi.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/simpleVulkanMMAP/MonteCarloPi.cu.hip
+@@ -0,0 +1,308 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * See: https://www.piday.org/million/
++ */
++
++#include "MonteCarloPi.h"
++#include <algorithm>
++#define CUDA_DRIVER_API
++#include "helper_cuda_hipified.h"
++#include <iostream>
++
++#define ROUND_UP_TO_GRANULARITY(x, n) (((x + n - 1) / n) * n)
++
++// `ipcHandleTypeFlag` specifies the platform specific handle type this sample
++// uses for importing and exporting memory allocation. On Linux this sample
++// specifies the type as hipMemHandleTypePosixFileDescriptor meaning that
++// file descriptors will be used. On Windows this sample specifies the type as
++// hipMemHandleTypeWin32 meaning that NT HANDLEs will be used. The
++// ipcHandleTypeFlag variable is a convenience variable and is passed by value
++// to individual requests.
++#if defined(__linux__)
++hipMemAllocationHandleType ipcHandleTypeFlag =
++    hipMemHandleTypePosixFileDescriptor;
++#else
++hipMemAllocationHandleType ipcHandleTypeFlag = hipMemHandleTypeWin32;
++#endif
++
++// Windows-specific LPSECURITYATTRIBUTES
++void getDefaultSecurityDescriptor(hipMemAllocationProp *prop) {
++#if defined(__linux__)
++  return;
++#elif defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
++  static const char sddl[] = "D:P(OA;;GARCSDWDWOCCDCLCSWLODTWPRPCRFA;;;WD)";
++  static OBJECT_ATTRIBUTES objAttributes;
++  static bool objAttributesConfigured = false;
++
++  if (!objAttributesConfigured) {
++    PSECURITY_DESCRIPTOR secDesc;
++    BOOL result = ConvertStringSecurityDescriptorToSecurityDescriptorA(
++        sddl, SDDL_REVISION_1, &secDesc, NULL);
++    if (result == 0) {
++      printf("IPC failure: getDefaultSecurityDescriptor Failed! (%d)\n",
++             GetLastError());
++    }
++
++    InitializeObjectAttributes(&objAttributes, NULL, 0, NULL, secDesc);
++
++    objAttributesConfigured = true;
++  }
++
++  prop->win32HandleMetaData = &objAttributes;
++  return;
++#endif
++}
++
++__global__ void monte_carlo_kernel(vec2 *xyVector, float *pointsInsideCircle,
++                                   float *numPointsInCircle,
++                                   unsigned int numPoints, float time) {
++  const size_t stride = gridDim.x * blockDim.x;
++  size_t tid = blockIdx.x * blockDim.x + threadIdx.x;
++  float count = 0.0f;
++
++  hiprandState rgnState;
++  hiprand_init((unsigned long long)time, tid, 0, &rgnState);
++
++  for (; tid < numPoints; tid += stride) {
++    float x = hiprand_uniform(&rgnState);
++    float y = hiprand_uniform(&rgnState);
++    x = (2.0f * x) - 1.0f;
++    y = (2.0f * y) - 1.0f;
++    xyVector[tid][0] = x;
++    xyVector[tid][1] = y;
++
++    // Compute the distance of this point form the center(0, 0)
++    float dist = sqrtf((x * x) + (y * y));
++
++    // If distance is less than the radius of the unit circle, the point lies in
++    // the circle.
++    pointsInsideCircle[tid] = (dist <= 1.0f);
++    count += (dist <= 1.0f);
++  }
++  atomicAdd(numPointsInCircle, count);
++}
++
++MonteCarloPiSimulation::MonteCarloPiSimulation(size_t num_points)
++    : m_xyVector(nullptr),
++      m_pointsInsideCircle(nullptr),
++      m_totalPointsInsideCircle(0),
++      m_totalPointsSimulated(0),
++      m_numPoints(num_points) {}
++
++MonteCarloPiSimulation::~MonteCarloPiSimulation() {
++  if (m_numPointsInCircle) {
++    HIPCHECK(hipFree(m_numPointsInCircle));
++    m_numPointsInCircle = nullptr;
++  }
++  if (m_hostNumPointsInCircle) {
++    HIPCHECK(hipHostFree(m_hostNumPointsInCircle));
++    m_hostNumPointsInCircle = nullptr;
++  }
++
++  cleanupSimulationAllocations();
++}
++
++void MonteCarloPiSimulation::initSimulation(int cudaDevice,
++                                            hipStream_t stream) {
++  m_cudaDevice = cudaDevice;
++  getIdealExecutionConfiguration();
++
++  // Allocate a position buffer that contains random location of the points in
++  // XY cartesian plane.
++  // Allocate a bitmap buffer which holds information of whether a point in the
++  // position buffer is inside the unit circle or not.
++  setupSimulationAllocations();
++
++  HIPCHECK(
++      hipMalloc((float **)&m_numPointsInCircle, sizeof(*m_numPointsInCircle)));
++  HIPCHECK(hipHostMalloc((float **)&m_hostNumPointsInCircle,
++                                 sizeof(*m_hostNumPointsInCircle)));
++}
++
++void MonteCarloPiSimulation::stepSimulation(float time, hipStream_t stream) {
++  HIPCHECK(hipMemsetAsync(m_numPointsInCircle, 0,
++                                  sizeof(*m_numPointsInCircle), stream));
++
++  monte_carlo_kernel<<<m_blocks, m_threads, 0, stream>>>(
++      m_xyVector, m_pointsInsideCircle, m_numPointsInCircle, m_numPoints, time);
++  getLastCudaError("Failed to launch CUDA simulation");
++
++  HIPCHECK(hipMemcpyAsync(m_hostNumPointsInCircle, m_numPointsInCircle,
++                                  sizeof(*m_numPointsInCircle),
++                                  hipMemcpyDeviceToHost, stream));
++
++  // Queue up a stream callback to compute and print the PI value.
++  HIPCHECK(
++      hipLaunchHostFunc(stream, this->computePiCallback, (void *)this));
++}
++
++void MonteCarloPiSimulation::computePiCallback(void *args) {
++  MonteCarloPiSimulation *cbData = (MonteCarloPiSimulation *)args;
++  cbData->m_totalPointsInsideCircle += *(cbData->m_hostNumPointsInCircle);
++  cbData->m_totalPointsSimulated += cbData->m_numPoints;
++  double piValue = 4.0 * ((double)cbData->m_totalPointsInsideCircle /
++                          (double)cbData->m_totalPointsSimulated);
++  printf("Approximate Pi value for %zd data points: %lf \n",
++         cbData->m_totalPointsSimulated, piValue);
++}
++
++void MonteCarloPiSimulation::getIdealExecutionConfiguration() {
++  int warpSize = 0;
++  int multiProcessorCount = 0;
++
++  HIPCHECK(hipSetDevice(m_cudaDevice));
++  HIPCHECK(
++      hipDeviceGetAttribute(&warpSize, hipDeviceAttributeWarpSize, m_cudaDevice));
++
++  // We don't need large block sizes, since there's not much inter-thread
++  // communication
++  m_threads = warpSize;
++
++  // Use the occupancy calculator and fill the gpu as best as we can
++  HIPCHECK(hipOccupancyMaxActiveBlocksPerMultiprocessor(
++      &m_blocks, monte_carlo_kernel, warpSize, 0));
++
++  HIPCHECK(hipDeviceGetAttribute(
++      &multiProcessorCount, hipDeviceAttributeMultiprocessorCount, m_cudaDevice));
++  m_blocks *= multiProcessorCount;
++
++  // Go ahead and the clamp the blocks to the minimum needed for this
++  // height/width
++  m_blocks =
++      std::min(m_blocks, (int)((m_numPoints + m_threads - 1) / m_threads));
++}
++
++void MonteCarloPiSimulation::setupSimulationAllocations() {
++  hipDeviceptr_t d_ptr = 0U;
++  size_t granularity = 0;
++  hipMemGenericAllocationHandle_t cudaPositionHandle, cudaInCircleHandle;
++
++  hipMemAllocationProp allocProp = {};
++  allocProp.type = hipMemAllocationTypePinned;
++  allocProp.location.type = hipMemLocationTypeDevice;
++  allocProp.location.id = m_cudaDevice;
++  allocProp.win32HandleMetaData = NULL;
++  allocProp.requestedHandleTypes = ipcHandleTypeFlag;
++
++  // Windows-specific LPSECURITYATTRIBUTES is required when
++  // hipMemHandleTypeWin32 is used. The security attribute defines the scope
++  // of which exported allocations may be tranferred to other processes. For all
++  // other handle types, pass NULL.
++  getDefaultSecurityDescriptor(&allocProp);
++
++  // Get the recommended granularity for m_cudaDevice.
++  HIPCHECK(hipMemGetAllocationGranularity(
++      &granularity, &allocProp, hipMemAllocationGranularityRecommended));
++
++  size_t xyPositionVecSize = m_numPoints * sizeof(*m_xyVector);
++  size_t inCircleVecSize = m_numPoints * sizeof(*m_pointsInsideCircle);
++
++  size_t xyPositionSize =
++      ROUND_UP_TO_GRANULARITY(xyPositionVecSize, granularity);
++  size_t inCircleSize = ROUND_UP_TO_GRANULARITY(inCircleVecSize, granularity);
++  m_totalAllocationSize = (xyPositionSize + inCircleSize);
++
++  // Reserve the required contiguous VA space for the allocations
++  HIPCHECK(
++      hipMemAddressReserve(&d_ptr, m_totalAllocationSize, granularity, 0U, 0));
++
++  // Create the allocations as a pinned allocation on this device.
++  // Create an allocation to store all the positions of points on the xy plane
++  // and a second allocation which stores information if the corresponding
++  // position is inside the unit circle or not.
++  HIPCHECK(
++      hipMemCreate(&cudaPositionHandle, xyPositionSize, &allocProp, 0));
++  HIPCHECK(
++      hipMemCreate(&cudaInCircleHandle, inCircleSize, &allocProp, 0));
++
++  // Export the allocation to a platform-specific handle. The type of handle
++  // requested here must match the requestedHandleTypes field in the prop
++  // structure passed to hipMemCreate. The handle obtained here will be passed to
++  // vulkan to import the allocation.
++  HIPCHECK(hipMemExportToShareableHandle(
++      (void *)&m_posShareableHandle, cudaPositionHandle, ipcHandleTypeFlag, 0));
++  HIPCHECK(
++      hipMemExportToShareableHandle((void *)&m_inCircleShareableHandle,
++                                   cudaInCircleHandle, ipcHandleTypeFlag, 0));
++
++  hipDeviceptr_t va_position = d_ptr;
++  hipDeviceptr_t va_InCircle = va_position + xyPositionSize;
++  m_pointsInsideCircle = (float *)va_InCircle;
++  m_xyVector = (vec2 *)va_position;
++
++  // Assign the chunk to the appropriate VA range
++  HIPCHECK(
++      hipMemMap(va_position, xyPositionSize, 0, cudaPositionHandle, 0));
++  HIPCHECK(
++      hipMemMap(va_InCircle, inCircleSize, 0, cudaInCircleHandle, 0));
++
++  // Release the handles for the allocation. Since the allocation is currently
++  // mapped to a VA range with a previous call to hipMemMap the actual freeing of
++  // memory allocation will happen on an eventual call to hipMemUnmap. Thus the
++  // allocation will be kept live until it is unmapped.
++  HIPCHECK(hipMemRelease(cudaPositionHandle));
++  HIPCHECK(hipMemRelease(cudaInCircleHandle));
++
++  hipMemAccessDesc accessDescriptor = {};
++  accessDescriptor.location.id = m_cudaDevice;
++  accessDescriptor.location.type = hipMemLocationTypeDevice;
++  accessDescriptor.flags = hipMemAccessFlagsProtReadWrite;
++
++  // Apply the access descriptor to the whole VA range. Essentially enables
++  // Read-Write access to the range.
++  HIPCHECK(
++      hipMemSetAccess(d_ptr, m_totalAllocationSize, &accessDescriptor, 1));
++}
++
++void MonteCarloPiSimulation::cleanupSimulationAllocations() {
++  if (m_xyVector && m_pointsInsideCircle) {
++    // Unmap the mapped virtual memory region
++    // Since the handles to the mapped backing stores have already been released
++    // by hipMemRelease, and these are the only/last mappings referencing them,
++    // The backing stores will be freed.
++    HIPCHECK(hipMemUnmap((hipDeviceptr_t)m_xyVector, m_totalAllocationSize));
++
++    checkIpcErrors(ipcCloseShareableHandle(m_posShareableHandle));
++    checkIpcErrors(ipcCloseShareableHandle(m_inCircleShareableHandle));
++
++    // Free the virtual address region.
++    HIPCHECK(
++        hipMemAddressFree((hipDeviceptr_t)m_xyVector, m_totalAllocationSize));
++
++    m_xyVector = nullptr;
++    m_pointsInsideCircle = nullptr;
++  }
++}
++   checkCudaErrors(
++        hipMemAddressFree((hipDeviceptr_t)m_xyVector, m_totalAllocationSize));
++
++    m_xyVector = nullptr;
++    m_pointsInsideCircle = nullptr;
++  }
+diff --git a/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity.cu.hip b/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity.cu.hip
+index 8fc6487..308188c 100644
+--- a/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity.cu.hip
+@@ -32,7 +32,7 @@
+ // includes, system
+ #include <stdlib.h>
+ #include <stdio.h>
+-#include "rocprofiler.h"
++//#include "rocprofiler.h"
+ #include "HIPCHECK.h"
+ #include <string.h>
+ #include <math.h>
+@@ -42,8 +42,8 @@
+ #include "stereoDisparity_kernel.cuh"
+ 
+ // includes, project
+-#include <helper_functions.h>  // helper for shared that are common to CUDA Samples
+-#include <helper_cuda.h>  // helper for checking cuda initialization and error checking
++#include "helper_functions.h"  // helper for shared that are common to CUDA Samples
++#include "helper_cuda_hipified.h"  // helper for checking cuda initialization and error checking
+ #include <helper_string.h>  // helper functions for string parsing
+ 
+ static const char *sSDKsample = "[stereoDisparity]\0";
+diff --git a/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity_kernel.cuh b/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity_kernel.cuh
+index 89f9b5f..0e30f75 100644
+--- a/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity_kernel.cuh
++++ b/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity_kernel.cuh
+@@ -39,7 +39,7 @@
+ // area (see convolution CUDA Sample for example)
+ #define STEPS 3
+ 
+-#include <cooperative_groups.h>
++#include <hip/hip_cooperative_groups.h>
+ 
+ namespace cg = cooperative_groups;
+ 
+@@ -92,8 +92,8 @@ __global__ void stereoDisparityKernel(unsigned int *g_img0,
+                                       unsigned int *g_img1,
+                                       unsigned int *g_odata, int w, int h,
+                                       int minDisparity, int maxDisparity,
+-                                      cudaTextureObject_t tex2Dleft,
+-                                      cudaTextureObject_t tex2Dright) {
++                                      hipTextureObject_t tex2Dleft,
++                                      hipTextureObject_t tex2Dright) {
+   // Handle to thread block group
+   cg::thread_block cta = cg::this_thread_block();
+   // access thread id
+diff --git a/src/samples/Samples/5_Domain_Specific/volumeRender/volumeRender_kernel.cu.hip b/src/samples/Samples/5_Domain_Specific/volumeRender/volumeRender_kernel.cu.hip
+index 4ce7ef8..fc8134a 100644
+--- a/src/samples/Samples/5_Domain_Specific/volumeRender/volumeRender_kernel.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/volumeRender/volumeRender_kernel.cu.hip
+@@ -30,7 +30,7 @@
+ #ifndef _VOLUMERENDER_KERNEL_CU_
+ #define _VOLUMERENDER_KERNEL_CU_
+ 
+-#include <helper_cuda.h>
++#include "helper_cuda_hipified.h"
+ #include <helper_math.h>
+ #include "HIPCHECK.h"
+ typedef unsigned int uint;

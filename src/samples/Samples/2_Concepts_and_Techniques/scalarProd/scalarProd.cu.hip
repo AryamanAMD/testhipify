@@ -39,8 +39,8 @@
 #include <time.h>
 #include <string.h>
 
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 // Calculate scalar products of VectorN vectors of ElementN elements on CPU

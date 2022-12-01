@@ -30,7 +30,7 @@
  */
 
 #include <hip/hip_runtime.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <math.h>
 #include <stdint.h>
 #include <cstdio>
@@ -58,7 +58,8 @@ __global__ void atomicKernel(int *atom_arr) {
     atomicMin_system(&atom_arr[3], tid);
 
     // Atomic increment (modulo 17+1)
-    atomicInc_system((unsigned int *)&atom_arr[4], 17);
+    // atomicInc_system((unsigned int *)&atom_arr[4], 17);
+       atomicAnd_system((unsigned int *)&atom_arr[4], 17);
 
     // Atomic decrement
     atomicDec_system((unsigned int *)&atom_arr[5], 137);

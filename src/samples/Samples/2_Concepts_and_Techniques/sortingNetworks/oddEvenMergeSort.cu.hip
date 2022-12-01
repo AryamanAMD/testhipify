@@ -35,7 +35,7 @@
 
 namespace cg = cooperative_groups;
 
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include "sortingNetworks_common.h"
 #include "sortingNetworks_common.cuh"
 

@@ -34,8 +34,8 @@
 #include <hip/hip_runtime.h>
 
 // Utilities and system includes
-#include <helper_functions.h>
-#include <helper_cuda_hipified.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
 
 #include "convolutionSeparable_common.h"
 

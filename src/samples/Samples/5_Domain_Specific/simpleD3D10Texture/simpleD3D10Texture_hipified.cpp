@@ -41,7 +41,7 @@
 
 // includes, project
 #include <rendercheck_d3d10.h>
-#include <helper_cuda.h>  // helper functions for CUDA error checking and initialization
+#include "helper_cuda_hipified.h"  // helper functions for CUDA error checking and initialization
 
 #define MAX_EPSILON 10
 

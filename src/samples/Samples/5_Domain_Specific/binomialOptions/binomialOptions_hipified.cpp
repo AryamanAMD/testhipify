@@ -37,9 +37,9 @@
 #include <math.h>
 #include <hip/hip_runtime.h>
 
-#include <helper_functions.h>
-#include <helper_cuda_hipified.h>
-#include "HIPCHECK.h"
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
+
 #include "binomialOptions_common.h"
 #include "realtype.h"
 

@@ -29,10 +29,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <hip/hip_runtime.h>
-#include <helper_functions.h>
+#include "helper_functions.h"
 #include "helper_cuda_hipified.h"
 #include "mergeSort_common.h"
-#include "HIPCHECK.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 // Test driver
 ////////////////////////////////////////////////////////////////////////////////

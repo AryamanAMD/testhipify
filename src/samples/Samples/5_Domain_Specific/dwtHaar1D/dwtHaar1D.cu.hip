@@ -95,8 +95,8 @@ decomposition.
 #include <assert.h>
 
 // includes, project
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
 
 // constants which are used in host and device code
 #define INV_SQRT_2 0.70710678118654752440f;

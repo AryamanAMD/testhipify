@@ -43,7 +43,7 @@
 // helper functions and utilities to work with CUDA
 #include "helper_functions.h"
 #include <nvrtc_helper.h>
-#include "helper_cuda_hipified.h"
+
 #ifndef MAX
 #define MAX(a, b) (a > b ? a : b)
 #endif

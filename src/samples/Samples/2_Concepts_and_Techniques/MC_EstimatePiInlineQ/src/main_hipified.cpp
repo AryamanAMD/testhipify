@@ -44,7 +44,7 @@
 #include <stdexcept>
 #include <hip/hip_runtime.h>
 #include <helper_timer.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 
 #include <math.h>
 #include "../inc/test.h"

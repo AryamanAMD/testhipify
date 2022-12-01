@@ -49,8 +49,8 @@
 #include "SobelFilter_kernels.h"
 
 // includes, project
-#include <helper_functions.h>  // includes for SDK helper functions
-#include <helper_cuda.h>  // includes for cuda initialization and error checking
+#include "helper_functions.h"  // includes for SDK helper functions
+#include "helper_cuda_hipified.h"  // includes for cuda initialization and error checking
 
 const char *filterMode[] = {"No Filtering", "Sobel Texture",
                             "Sobel SMEM+Texture", NULL};

@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,11 +26,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#include <hip/hip_runtime.h>
 #include <helper_math.h>
-#include <helper_functions.h>
-#include <helper_cuda.h>  // CUDA device initialization helper functions
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"  // CUDA device initialization helper functions
 
 __constant__ float cGaussian[64];  // gaussian array in device side
 
@@ -135,7 +134,7 @@ extern "C" void initTexture(int width, int height, uint *hImage) {
                                sizeof(uint) * width, height,
                                hipMemcpyHostToDevice));
 
-  // texture<uchar4, 2, cudaReadModeNormalizedFloat> rgbaTex;
+  // texture<uchar4, 2, hipReadModeNormalizedFloat> rgbaTex;
   hipChannelFormatDesc desc = hipCreateChannelDesc<uchar4>();
   hipResourceDesc texRes;
   memset(&texRes, 0, sizeof(hipResourceDesc));
@@ -207,7 +206,7 @@ extern "C" void updateGaussian(float delta, int radius) {
     fGaussian[i] = expf(-(x * x) / (2 * delta * delta));
   }
 
-  HIP_SYMBOL(cGaussian)(hipMemcpyToSymbol(cGaussian, fGaussian,
+  HIPCHECK(hipMemcpyToSymbol(HIP_SYMBOL(cGaussian), fGaussian,
                                      sizeof(float) * (2 * radius + 1)));
 }
 
@@ -261,6 +260,6 @@ extern "C" double bilateralFilterRGBA(uint *dDest, int width, int height,
 
   return ((dKernelTime / 1000.) / (double)iterations);
 }
-viceToDevice));
+emcpyDeviceToDevice));
     }
   }

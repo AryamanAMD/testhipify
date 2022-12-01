@@ -36,7 +36,7 @@
 // Utility and system includes
 #include "helper_cuda_hipified.h"
 #include "helper_functions.h"  // helper for shared that are common to CUDA Samples
-#include "HIPCHECK.h"
+
 // project include
 #include "histogram_common.h"
 

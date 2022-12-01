@@ -30,7 +30,7 @@
 #ifndef _VOLUMERENDER_KERNEL_CU_
 #define _VOLUMERENDER_KERNEL_CU_
 
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <helper_math.h>
 #include "HIPCHECK.h"
 typedef unsigned int uint;
