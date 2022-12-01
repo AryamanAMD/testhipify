@@ -1,0 +1,30 @@
+diff --git a/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.cu.hip b/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.cu.hip
+index c275ac0..8e90506 100644
+--- a/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.cu.hip
+@@ -45,8 +45,8 @@
+ #include "HIPCHECK.h"
+ #include <stdlib.h>
+ #include <string.h>
+-#include <helper_functions.h>
+-#include <helper_cuda.h>
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ // Reference CPU FWT
+diff --git a/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform_kernel.cuh b/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform_kernel.cuh
+index 4f64117..73f503e 100644
+--- a/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform_kernel.cuh
++++ b/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform_kernel.cuh
+@@ -30,8 +30,8 @@
+ #ifndef fwt_kernel_cuh
+ #define fwt_kernel_cuh
+ 
+-#include <cooperative_groups.h>
+-
++//#include <cooperative_groups.h>
++#include <hip/hip_cooperative_groups.h>
+ namespace cg = cooperative_groups;
+ 
+ ///////////////////////////////////////////////////////////////////////////////

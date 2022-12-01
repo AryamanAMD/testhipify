@@ -45,8 +45,8 @@
 #include "HIPCHECK.h"
 #include <stdlib.h>
 #include <string.h>
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Reference CPU FWT
