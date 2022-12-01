@@ -31,7 +31,7 @@ def generate_all(y):
 	y=y.replace('"', '')
 	listOfFiles=getListOfFiles(y)
 	for elem in listOfFiles:
-		if elem.endswith('_gold.cpp') or elem=='main.cpp':  ##or elem.endswith('.cpp') 
+		if elem.endswith('_gold.cpp') or elem.endswith('main.cpp'):  ##or elem.endswith('.cpp') 
                     generate(elem)
 
 
