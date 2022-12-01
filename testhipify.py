@@ -327,6 +327,7 @@ def rem(z):
 			with open(elem) as f:
 				for line in f:
 					if any(word in line for word in ignore_list):
+						#a.write(elem+"\n"+line)
 						a.write(elem+"\n")
 						
 	a.close()
