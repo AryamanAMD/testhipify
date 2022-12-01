@@ -36,7 +36,7 @@ def generate_all(y):
 
 
 def replace_words(x,search_text,replace_text):
-    q=os.path.basename(x)[0]
+    q=os.path.basename(x)
     r=os.path.splitext(q)[0]
     with open(r+"_hipified.cpp", 'r') as file:
         data = file.read()
