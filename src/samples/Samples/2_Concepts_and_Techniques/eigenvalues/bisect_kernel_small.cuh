@@ -30,8 +30,8 @@
 #ifndef _BISECT_KERNEL_SMALL_H_
 #define _BISECT_KERNEL_SMALL_H_
 
-#include <cooperative_groups.h>
-
+//#include <cooperative_groups.h>
+#include <hip/hip_cooperative_groups.h>
 namespace cg = cooperative_groups;
 
 // includes, project
@@ -39,7 +39,7 @@ namespace cg = cooperative_groups;
 #include "util.h"
 
 // additional kernel
-#include "bisect_util.cu"
+#include "bisect_util.cu.hip"
 
 ////////////////////////////////////////////////////////////////////////////////
 //! Bisection to find eigenvalues of a real, symmetric, and tridiagonal matrix

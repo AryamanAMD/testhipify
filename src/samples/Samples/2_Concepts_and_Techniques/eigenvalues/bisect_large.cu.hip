@@ -40,7 +40,7 @@
 
 // includes, project
 #include "helper_functions.h"
-#include "helper_cuda.h"
+#include "helper_cuda_hipified.h"
 #include "config.h"
 #include "structs.h"
 #include "util.h"
@@ -370,12 +370,3 @@ bool processResultDataLargeMatrix(const InputData &input,
 
   return bCompareResult;
 }
-e, eigenvals, mat_size, tolerance) == true) {
-      bCompareResult = true;
-    } else {
-      bCompareResult = false;
-    }
-
-    free(ref_path);
-    free(reference);
-  }

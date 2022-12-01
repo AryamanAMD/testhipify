@@ -30,6 +30,7 @@
 #ifndef _BISECT_UTIL_H_
 #define _BISECT_UTIL_H_
 
+#include <hip/hip_runtime.h>
 #include <hip/hip_cooperative_groups.h>
 
 namespace cg = cooperative_groups;
@@ -218,7 +219,7 @@ __device__ inline unsigned int computeNumSmallerEigenvalsLarge(
     if (tid < num_intervals_active) {
       // perform (optimized) Gaussian elimination to determine the number
       // of eigenvalues that are smaller than n
-      for (unsigned int k = 0; k < min(rem, blockDim.x); ++k) {
+      for (unsigned int k = 0; k < min((int)rem, (int)blockDim.x); ++k) {
         delta = s_d[k] - x - (s_s[k] * s_s[k]) / delta;
         // delta = (abs( delta) < (1.0e-10)) ? -(1.0e-10) : delta;
         count += (delta < 0) ? 1 : 0;

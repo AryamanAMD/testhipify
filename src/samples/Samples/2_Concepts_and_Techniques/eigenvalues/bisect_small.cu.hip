@@ -40,7 +40,7 @@
 
 // includes, project
 #include "helper_functions.h"
-#include "helper_cuda.h"
+#include "helper_cuda_hipified.h"
 #include "config.h"
 #include "structs.h"
 #include "matlab.h"
