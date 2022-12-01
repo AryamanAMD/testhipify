@@ -16,8 +16,10 @@ def generate(x):
     x=x.replace('"', '')
     x=x.replace("\\","/")
     #print(os.path.splitext("/path/to/some/file.txt")[0])
+    p=os.path.basename(x)
+    p=p.replace("\\","/")
     q=os.path.splitext(os.path.basename(x)[0])
-    command="hipify-perl "+x+" > "+q+"_hipified.cpp"
+    command="hipify-perl "+x+" > "+p+q+"_hipified.cpp"
     print(command)
     os.system(command)
     replace_words(x,'#include <helper_cuda.h>','#include "helper_cuda_hipified.h"')
