@@ -29,7 +29,7 @@
 #include <hip/hip_runtime.h>
 #include <iostream>
 #include <cstdio>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <helper_string.h>
 #include "HIPCHECK.h"
 #define MAX_DEPTH 16
