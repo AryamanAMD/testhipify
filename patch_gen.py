@@ -16,7 +16,8 @@ def generate(x):
     x=x.replace('"', '')
     x=x.replace("\\","/")
     #print(os.path.splitext("/path/to/some/file.txt")[0])
-    command="hipify-perl "+x+" > "+x[0]+"_hipified.cpp"
+    q=os.path.splitext(os.path.basename(x)[0])
+    command="hipify-perl "+x+" > "+q+"_hipified.cpp"
     print(command)
     os.system(command)
     replace_words(x,'#include <helper_cuda.h>','#include "helper_cuda_hipified.h"')
@@ -32,10 +33,11 @@ def generate_all(y):
 
 
 def replace_words(x,search_text,replace_text):
-    with open(x[0]+"_hipified.cpp", 'r') as file:
+    q=os.path.basename(x)[0]
+    with open(q+"_hipified.cpp", 'r') as file:
         data = file.read()
         data = data.replace(search_text, replace_text)
-    with open(x[0]+"_hipified.cpp", 'w') as file:
+    with open(q+"_hipified.cpp", 'w') as file:
         file.write(data)
 					    
 generate_all('src/samples/Samples')                        
