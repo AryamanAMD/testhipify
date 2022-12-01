@@ -46,3 +46,4 @@ src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.c
 src/samples/Samples/3_CUDA_Features/cdpAdvancedQuicksort/cdpBitonicSort.cu
 src/samples/Samples/2_Concepts_and_Techniques/inlinePTX/inlinePTX.cu
 src/samples/Samples/5_Domain_Specific/SobelFilter/SobelFilter_kernels.cu
+src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity.cu
