@@ -311,16 +311,13 @@ def fall(y):
 
 			
 
-
 def rem(z):
 	print("This script automates sample exclusion.Please backup any paths provided by you to avoid loss or overwriting.")
 	input("Press Enter to continue...")
 	a=open("samples_to_be_ignored.txt","r+")
-	a.truncate(0)
-
-		
+	a.truncate(0)	
 	b=open("final_ignored_samples.txt", 'w')
-	b.close()	
+	b.close()
 	z=z.replace('"','')
 	#ignore_list = ['<GL/', '<screen', '<drm.h>','FDTD3dGPU.h','#include <d312.h>\n',' #include <GLES3/gl31.h>\n','#include <windows.h>\n','#include <omp.h>\n','#include "nvmedia_image_nvscibuf.h"\n','#include "graphics_interface.c"\n','#include <DirectXMath.h>\n']
 	ignore_list = ['<GL/','<screen/screen.h>', '<drm.h>','"FDTD3dGPU.h"','<d3d12.h>',' <GLES3/gl31.h>','<EGL/egl.h>','<GLFW/glfw3.h>','"cudla.h"','#include <d312.h>\n',' #include <GLES3/gl31.h>\n','#include <windows.h>\n','#include <omp.h>\n','#include "nvmedia_image_nvscibuf.h"\n','#include "graphics_interface.c"\n','#include <DirectXMath.h>\n']
@@ -331,7 +328,7 @@ def rem(z):
 				for line in f:
 					if any(word in line for word in ignore_list):
 						a.write(elem+"\n")
-	
+						
 	a.close()
 	lines_seen = set()
 	outfile = open('final_ignored_samples.txt', "w")
