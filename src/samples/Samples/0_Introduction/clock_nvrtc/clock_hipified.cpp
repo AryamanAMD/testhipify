@@ -40,7 +40,7 @@
 
 #include <hip/hip_runtime.h>
 #include <nvrtc_helper.h>
-
+#include "HIPCHECK.h"
 // helper functions and utilities to work with CUDA
 #include "helper_functions.h"
 
@@ -93,20 +93,20 @@ int main(int argc, char **argv) {
   hipModule_t module = loadCUBIN(cubin, argc, argv);
   hipFunction_t kernel_addr;
 
-  checkCudaErrors(hipModuleGetFunction(&kernel_addr, module, "timedReduction"));
+  HIPCHECK(hipModuleGetFunction(&kernel_addr, module, "timedReduction"));
 
   dim3 cudaBlockSize(NUM_THREADS, 1, 1);
   dim3 cudaGridSize(NUM_BLOCKS, 1, 1);
 
   hipDeviceptr_t dinput, doutput, dtimer;
-  checkCudaErrors(hipMalloc(&dinput, sizeof(float) * NUM_THREADS * 2));
-  checkCudaErrors(hipMalloc(&doutput, sizeof(float) * NUM_BLOCKS));
-  checkCudaErrors(hipMalloc(&dtimer, sizeof(clock_t) * NUM_BLOCKS * 2));
-  checkCudaErrors(hipMemcpyHtoD(dinput, input, sizeof(float) * NUM_THREADS * 2));
+  HIPCHECK(hipMalloc(&dinput, sizeof(float) * NUM_THREADS * 2));
+  HIPCHECK(hipMalloc(&doutput, sizeof(float) * NUM_BLOCKS));
+  HIPCHECK(hipMalloc(&dtimer, sizeof(clock_t) * NUM_BLOCKS * 2));
+  HIPCHECK(hipMemcpyHtoD(dinput, input, sizeof(float) * NUM_THREADS * 2));
 
   void *arr[] = {(void *)&dinput, (void *)&doutput, (void *)&dtimer};
 
-  checkCudaErrors(hipModuleLaunchKernel(
+  HIPCHECK(hipModuleLaunchKernel(
       kernel_addr, cudaGridSize.x, cudaGridSize.y,
       cudaGridSize.z,                                    /* grid dim */
       cudaBlockSize.x, cudaBlockSize.y, cudaBlockSize.z, /* block dim */
@@ -114,12 +114,12 @@ int main(int argc, char **argv) {
       &arr[0],                            /* arguments */
       0));
 
-  checkCudaErrors(hipCtxSynchronize());
-  checkCudaErrors(
+  HIPCHECK(hipCtxSynchronize());
+  HIPCHECK(
       hipMemcpyDtoH(timer, dtimer, sizeof(clock_t) * NUM_BLOCKS * 2));
-  checkCudaErrors(hipFree(dinput));
-  checkCudaErrors(hipFree(doutput));
-  checkCudaErrors(hipFree(dtimer));
+  HIPCHECK(hipFree(dinput));
+  HIPCHECK(hipFree(doutput));
+  HIPCHECK(hipFree(dtimer));
 
   long double avgElapsedClocks = 0;
 
