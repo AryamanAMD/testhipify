@@ -1,9 +1,5 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -52,7 +48,7 @@
 #include <hipblas.h>
 
 // utilities
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 
 #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 // SRAND48 and DRAND48 don't exist on windows, but these are the equivalent
@@ -345,8 +341,3 @@ int main(int argc, char **argv) {
   printf("All Done!\n");
   exit(EXIT_SUCCESS);
 }
-cuBlas handles
-  for (int i = 0; i < nthreads + 1; i++) {
-    hipStreamDestroy(streams[i]);
-    hipblasDestroy(handles[i]);
-  }
