@@ -27,9 +27,9 @@
 
 #ifndef _BOXFILTER_KERNEL_CH_
 #define _BOXFILTER_KERNEL_CH_
-
-#include <helper_math.h>
-#include <helper_functions.h>
+#include <hip/hip_cooperative_groups.h>
+//#include <helper_math.h>
+#include "helper_functions.h"
 
 hipTextureObject_t tex;
 hipTextureObject_t texTempArray;

@@ -59,44 +59,44 @@ struct rounded_arith {
 template <>
 struct rounded_arith<float> {
   __device__ float add_down(const float &x, const float &y) {
-    return __fadd_rn(x, y);
+    return __fadd_rd(x, y);
   }
 
   __device__ float add_up(const float &x, const float &y) {
-    return __fadd_rn(x, y);
+    return __fadd_ru(x, y);
   }
 
   __device__ float sub_down(const float &x, const float &y) {
-    return __fadd_rn(x, -y);
+    return __fadd_rd(x, -y);
   }
 
   __device__ float sub_up(const float &x, const float &y) {
-    return __fadd_rn(x, -y);
+    return __fadd_ru(x, -y);
   }
 
   __device__ float mul_down(const float &x, const float &y) {
-    return __fmul_rn(x, y);
+    return __fmul_rd(x, y);
   }
 
   __device__ float mul_up(const float &x, const float &y) {
-    return __fmul_rn(x, y);
+    return __fmul_ru(x, y);
   }
 
   __device__ float div_down(const float &x, const float &y) {
-    return __fdiv_rn(x, y);
+    return __fdiv_rd(x, y);
   }
 
   __device__ float div_up(const float &x, const float &y) {
-    return __fdiv_rn(x, y);
+    return __fdiv_ru(x, y);
   }
 
   __device__ float median(const float &x, const float &y) {
     return (x + y) * .5f;
   }
 
-  __device__ float sqrt_down(const float &x) { return __fsqrt_rn(x); }
+  __device__ float sqrt_down(const float &x) { return __fsqrt_rd(x); }
 
-  __device__ float sqrt_up(const float &x) { return __fsqrt_rn(x); }
+  __device__ float sqrt_up(const float &x) { return __fsqrt_ru(x); }
 
   __device__ float int_down(const float &x) { return floorf(x); }
 
@@ -117,43 +117,43 @@ struct rounded_arith<float> {
 template <>
 struct rounded_arith<double> {
   __device__ double add_down(const double &x, const double &y) {
-    return __dadd_rn(x, y);
+    return __dadd_rd(x, y);
   }
 
   __device__ double add_up(const double &x, const double &y) {
-    return __dadd_rn(x, y);
+    return __dadd_ru(x, y);
   }
 
   __device__ double sub_down(const double &x, const double &y) {
-    return __dadd_rn(x, -y);
+    return __dadd_rd(x, -y);
   }
 
   __device__ double sub_up(const double &x, const double &y) {
-    return __dadd_rn(x, -y);
+    return __dadd_ru(x, -y);
   }
 
   __device__ double mul_down(const double &x, const double &y) {
-    return __dmul_rn(x, y);
+    return __dmul_rd(x, y);
   }
 
   __device__ double mul_up(const double &x, const double &y) {
-    return __dmul_rn(x, y);
+    return __dmul_ru(x, y);
   }
 
   __device__ double div_down(const double &x, const double &y) {
-    return __ddiv_rn(x, y);
+    return __ddiv_rd(x, y);
   }
 
   __device__ double div_up(const double &x, const double &y) {
-    return __ddiv_rn(x, y);
+    return __ddiv_ru(x, y);
   }
   __device__ double median(const double &x, const double &y) {
     return (x + y) * .5;
   }
 
-  __device__ double sqrt_down(const double &x) { return __dsqrt_rn(x); }
+  __device__ double sqrt_down(const double &x) { return __dsqrt_rd(x); }
 
-  __device__ double sqrt_up(const double &x) { return __dsqrt_rn(x); }
+  __device__ double sqrt_up(const double &x) { return __dsqrt_ru(x); }
 
   __device__ double int_down(const double &x) { return floor(x); }
 

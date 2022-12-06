@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,11 +26,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#include <hip/hip_runtime.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <helper_string.h>
-#include "HIPCHECK.h"
+
 #include <cstdio>
 #include <cstdlib>
 #include <iostream>
@@ -125,7 +124,7 @@ int main(int argc, char **argv) {
   int device = -1;
   hipDeviceProp_t deviceProp;
   device = findCudaDevice(argc, (const char **)argv);
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, device));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, device));
 
   if (!(deviceProp.major > 3 ||
         (deviceProp.major == 3 && deviceProp.minor >= 5))) {
@@ -160,15 +159,15 @@ int main(int argc, char **argv) {
       "***\n\n");
 
   // We set the recursion limit for CDP to max_depth.
-  cudaDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, max_depth);
+  hipDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, max_depth);
 
   // Launch the kernel from the CPU.
   printf("Launching cdp_kernel() with CUDA Dynamic Parallelism:\n\n");
   cdp_kernel<<<2, 2>>>(max_depth, 0, 0, -1);
-  HIPCHECK(hipGetLastError());
+  checkCudaErrors(hipGetLastError());
 
   // Finalize.
-  HIPCHECK(hipDeviceSynchronize());
+  checkCudaErrors(hipDeviceSynchronize());
 
   exit(EXIT_SUCCESS);
 }

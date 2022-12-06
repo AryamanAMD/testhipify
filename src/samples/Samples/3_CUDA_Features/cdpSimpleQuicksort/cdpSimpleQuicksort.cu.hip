@@ -32,6 +32,7 @@
 #include "helper_cuda_hipified.h"
 #include <helper_string.h>
 #include "HIPCHECK.h"
+#include <hip/hip_runtime_api.h>
 #define MAX_DEPTH 16
 #define INSERTION_SORT 32
 

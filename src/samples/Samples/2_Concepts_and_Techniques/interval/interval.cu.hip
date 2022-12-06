@@ -45,10 +45,10 @@ const static char *sSDKsample = "Interval Computing";
 #include <stdio.h>
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
-#include "helper_cuda.h"
-#include "interval.h"
-#include "cuda_interval.h"
-#include "cpu_interval.h"
+#include "helper_cuda_hipified.h"
+#include "interval_hipified.h"
+#include "cuda_interval_hipified.h"
+#include "cpu_interval_hipified.h"
 
 int main(int argc, char *argv[]) {
   int implementation_choice = 0;
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
 
   // Increase the stack size large enough for the non-inlined and recursive
   // function calls (only applicable to sm_20 and higher)
-  CHECKED_CALL(cudaDeviceSetLimit(cudaLimitStackSize, 8192));
+  CHECKED_CALL(hipDeviceSetLimit(hipLimitStackSize, 8192));
 
   interval_gpu<T> i(0.01f, 4.0f);
   std::cout << "Searching for roots in [" << i.lower() << ", " << i.upper()

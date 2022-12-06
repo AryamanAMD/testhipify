@@ -40,7 +40,7 @@
 // Includes CUDA
 #include <hip/hip_runtime.h>
 #include "nvrtc_helper.h"
-
+#include "HIPCHECK.h"
 // Utilities and timing functions
 #include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
 
@@ -86,12 +86,12 @@ void runTest(int argc, char **argv) {
   hipModule_t module = loadCUBIN(cubin, argc, argv);
   hipFunction_t kernel_addr;
 
-  checkCudaErrors(hipModuleGetFunction(&kernel_addr, module, "testKernel"));
+  HIPCHECK(hipModuleGetFunction(&kernel_addr, module, "testKernel"));
 
   int count = 60;
   void *args[] = {(void *)&count};
 
-  checkCudaErrors(hipModuleLaunchKernel(
+  HIPCHECK(hipModuleLaunchKernel(
       kernel_addr, dimGrid.x, dimGrid.y, dimGrid.z, /* grid dim */
       dimBlock.x, dimBlock.y, dimBlock.z,           /* block dim */
       0, 0,                                         /* shared mem, stream */
