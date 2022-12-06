@@ -40,13 +40,12 @@
 #include <map>
 #include <set>
 #include <utility>
-
 // CUDA runtime
 #include <hip/hip_runtime.h>
 
 // helper functions and utilities to work with CUDA
-#include <helper_cuda.h>
-#include <helper_functions.h>
+#include "helper_cuda_hipified.h"
+#include "helper_functions.h"
 
 // Simple kernel to demonstrate copying cudaMallocAsync memory via P2P to peer
 // device
@@ -219,7 +218,7 @@ int memPoolP2PCopy() {
   printf("> copyP2PAndScale kernel running ...\n");
   dim3 block(256);
   dim3 grid((unsigned int)ceil(nelem / (int)block.x));
-  HIPCHECK(hipStreamWaitEvent(stream2, waitOnStream1));
+  HIPCHECK(hipStreamWaitEvent(stream2, waitOnStream1,3));
   copyP2PAndScale<<<grid, block, 0, stream2>>>(dev0_srcVec, dev1_dstVec, nelem);
 
   HIPCHECK(hipMemcpyAsync(output, dev1_dstVec, bytes,

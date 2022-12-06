@@ -25,8 +25,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
  
-#include <cooperative_groups.h>
-
+//#include <cooperative_groups.h>
+#include  <hip/hip_cooperative_groups.h>
 namespace cg = cooperative_groups;
 
 // Utility function to extract unsigned chars from an
