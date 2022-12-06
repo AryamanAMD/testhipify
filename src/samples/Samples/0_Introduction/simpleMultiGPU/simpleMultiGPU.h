@@ -52,11 +52,12 @@ typedef struct {
   float *h_Sum_from_device;
 
   // Stream for asynchronous command execution
-  cudaStream_t stream;
+ // cudaStream_t stream;
+  hipStream_t stream;
 
 } TGPUplan;
 
 extern "C" void launch_reduceKernel(float *d_Result, float *d_Input, int N,
-                                    int BLOCK_N, int THREAD_N, cudaStream_t &s);
+                                    int BLOCK_N, int THREAD_N, hipStream_t &s);
 
 #endif

@@ -1,0 +1,97 @@
+diff --git a/src/samples/Samples/0_Introduction/asyncAPI/a.out b/src/samples/Samples/0_Introduction/asyncAPI/a.out
+deleted file mode 100755
+index 8dd7cc3..0000000
+Binary files a/src/samples/Samples/0_Introduction/asyncAPI/a.out and /dev/null differ
+diff --git a/src/samples/Samples/0_Introduction/matrixMul/a.out b/src/samples/Samples/0_Introduction/matrixMul/a.out
+deleted file mode 100755
+index dfea656..0000000
+Binary files a/src/samples/Samples/0_Introduction/matrixMul/a.out and /dev/null differ
+diff --git a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip
+index f7e9555..9310edc 100644
+--- a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip
+@@ -1,8 +1,4 @@
+-#include "rocprofiler.h"
+-#include "HIPCHECK.h"
+-#include "rocprofiler.h"
+-#include "HIPCHECK.h"
+-#include "rocprofiler.h"
++
+ #include "HIPCHECK.h"
+ #include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+@@ -48,10 +44,10 @@
+ #include <hip/hip_runtime.h>
+ 
+ // Utilities and timing functions
+-#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
++#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+ 
+ // CUDA helper functions
+-#include <helper_cuda.h>  // helper functions for CUDA error check
++#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+ 
+ const char *sampleName = "simpleAssert";
+ 
+diff --git a/src/samples/Samples/0_Introduction/simpleCallback/a.out b/src/samples/Samples/0_Introduction/simpleCallback/a.out
+deleted file mode 100755
+index 7562f4d..0000000
+Binary files a/src/samples/Samples/0_Introduction/simpleCallback/a.out and /dev/null differ
+diff --git a/src/samples/Samples/0_Introduction/simpleIPC/a.out b/src/samples/Samples/0_Introduction/simpleIPC/a.out
+deleted file mode 100755
+index 4813441..0000000
+Binary files a/src/samples/Samples/0_Introduction/simpleIPC/a.out and /dev/null differ
+diff --git a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip
+index d90d21a..3eb406b 100644
+--- a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip
+@@ -46,8 +46,8 @@
+ #include <hip/hip_runtime.h>
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_functions.h>
+-#include <helper_cuda.h>
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"
+ 
+ #ifndef MAX
+ #define MAX(a, b) (a > b ? a : b)
+diff --git a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.h b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.h
+index 90bd0d8..98793e0 100644
+--- a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.h
++++ b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.h
+@@ -52,11 +52,12 @@ typedef struct {
+   float *h_Sum_from_device;
+ 
+   // Stream for asynchronous command execution
+-  cudaStream_t stream;
++ // cudaStream_t stream;
++  hipStream_t stream;
+ 
+ } TGPUplan;
+ 
+ extern "C" void launch_reduceKernel(float *d_Result, float *d_Input, int N,
+-                                    int BLOCK_N, int THREAD_N, cudaStream_t &s);
++                                    int BLOCK_N, int THREAD_N, hipStream_t &s);
+ 
+ #endif
+diff --git a/src/samples/Samples/0_Introduction/simplePitchLinearTexture/a.out b/src/samples/Samples/0_Introduction/simplePitchLinearTexture/a.out
+deleted file mode 100755
+index 03c7358..0000000
+Binary files a/src/samples/Samples/0_Introduction/simplePitchLinearTexture/a.out and /dev/null differ
+diff --git a/src/samples/Samples/0_Introduction/simpleTexture/a.out b/src/samples/Samples/0_Introduction/simpleTexture/a.out
+deleted file mode 100755
+index ec3dc99..0000000
+Binary files a/src/samples/Samples/0_Introduction/simpleTexture/a.out and /dev/null differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/a.out b/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/a.out
+deleted file mode 100755
+index 9a92252..0000000
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/a.out and /dev/null differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/histogram/a.out b/src/samples/Samples/2_Concepts_and_Techniques/histogram/a.out
+deleted file mode 100755
+index 82500fe..0000000
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/histogram/a.out and /dev/null differ
+diff --git a/src/samples/Samples/5_Domain_Specific/binomialOptions/a.out b/src/samples/Samples/5_Domain_Specific/binomialOptions/a.out
+deleted file mode 100755
+index a1d61dc..0000000
+Binary files a/src/samples/Samples/5_Domain_Specific/binomialOptions/a.out and /dev/null differ
