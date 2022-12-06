@@ -1,0 +1,137 @@
+diff --git a/src/samples/Samples/0_Introduction/matrixMul_nvrtc/matrixMul_hipified.cpp b/src/samples/Samples/0_Introduction/matrixMul_nvrtc/matrixMul_hipified.cpp
+index 8381e03..0ba8187 100644
+--- a/src/samples/Samples/0_Introduction/matrixMul_nvrtc/matrixMul_hipified.cpp
++++ b/src/samples/Samples/0_Introduction/matrixMul_nvrtc/matrixMul_hipified.cpp
+@@ -51,7 +51,7 @@
+ 
+ // Helper functions and utilities to work with CUDA
+ #include "helper_functions.h"
+-
++#include "HIPCHECK.h"
+ void constantInit(float *data, int size, float val) {
+   for (int i = 0; i < size; ++i) {
+     data[i] = val;
+@@ -97,13 +97,13 @@ int matrixMultiply(int argc, char **argv, int block_size, dim3 &dimsA,
+     exit(EXIT_FAILURE);
+   }
+ 
+-  checkCudaErrors(hipMalloc(&d_A, mem_size_A));
+-  checkCudaErrors(hipMalloc(&d_B, mem_size_B));
+-  checkCudaErrors(hipMalloc(&d_C, mem_size_C));
++  HIPCHECK(hipMalloc(&d_A, mem_size_A));
++  HIPCHECK(hipMalloc(&d_B, mem_size_B));
++  HIPCHECK(hipMalloc(&d_C, mem_size_C));
+ 
+   // copy host memory to device
+-  checkCudaErrors(hipMemcpyHtoD(d_A, h_A, mem_size_A));
+-  checkCudaErrors(hipMemcpyHtoD(d_B, h_B, mem_size_B));
++  HIPCHECK(hipMemcpyHtoD(d_A, h_A, mem_size_A));
++  HIPCHECK(hipMemcpyHtoD(d_B, h_B, mem_size_B));
+ 
+   // Setup execution parameters
+   dim3 threads(block_size, block_size);
+@@ -114,10 +114,10 @@ int matrixMultiply(int argc, char **argv, int block_size, dim3 &dimsA,
+ 
+   hipFunction_t kernel_addr;
+   if (block_size == 16) {
+-    checkCudaErrors(
++    HIPCHECK(
+         hipModuleGetFunction(&kernel_addr, module, "matrixMulCUDA_block16"));
+   } else {
+-    checkCudaErrors(
++    HIPCHECK(
+         hipModuleGetFunction(&kernel_addr, module, "matrixMulCUDA_block32"));
+   }
+ 
+@@ -128,18 +128,18 @@ int matrixMultiply(int argc, char **argv, int block_size, dim3 &dimsA,
+   int nIter = 300;
+ 
+   for (int j = 0; j < nIter; j++) {
+-    checkCudaErrors(
++    HIPCHECK(
+         hipModuleLaunchKernel(kernel_addr, grid.x, grid.y, grid.z, /* grid dim */
+                        threads.x, threads.y, threads.z,     /* block dim */
+                        0, 0,    /* shared mem, stream */
+                        &arr[0], /* arguments */
+                        0));
+ 
+-    checkCudaErrors(hipCtxSynchronize());
++    HIPCHECK(hipCtxSynchronize());
+   }
+ 
+   // Copy result from device to host
+-  checkCudaErrors(hipMemcpyDtoH(h_C, d_C, mem_size_C));
++  HIPCHECK(hipMemcpyDtoH(h_C, d_C, mem_size_C));
+ 
+   printf("Checking computed result for correctness: ");
+ 
+@@ -174,9 +174,9 @@ int matrixMultiply(int argc, char **argv, int block_size, dim3 &dimsA,
+   free(h_B);
+   free(h_C);
+ 
+-  checkCudaErrors(hipFree(d_A));
+-  checkCudaErrors(hipFree(d_B));
+-  checkCudaErrors(hipFree(d_C));
++  HIPCHECK(hipFree(d_A));
++  HIPCHECK(hipFree(d_B));
++  HIPCHECK(hipFree(d_C));
+ 
+   if (correct) {
+     return EXIT_SUCCESS;
+diff --git a/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip b/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
+index 8687e7a..1d7a247 100644
+--- a/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
++++ b/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
+@@ -35,7 +35,7 @@
+ #include <stdint.h>
+ #include <cstdio>
+ #include <ctime>
+-#include "HIPCHECK.h"
++
+ #define min(a, b) (a) < (b) ? (a) : (b)
+ #define max(a, b) (a) > (b) ? (a) : (b)
+ 
+@@ -58,11 +58,13 @@ __global__ void atomicKernel(int *atom_arr) {
+     atomicMin_system(&atom_arr[3], tid);
+ 
+     // Atomic increment (modulo 17+1)
+-    // atomicInc_system((unsigned int *)&atom_arr[4], 17);
+-       atomicAnd_system((unsigned int *)&atom_arr[4], 17);
++    //atomicInc_system((unsigned int *)&atom_arr[4], 17);
++    atomicInc((unsigned int *)&atom_arr[4], 17);
++
+ 
+     // Atomic decrement
+-    atomicDec_system((unsigned int *)&atom_arr[5], 137);
++    //atomicDec_system((unsigned int *)&atom_arr[5], 137);
++    atomicDec((unsigned int *)&atom_arr[4], 17);
+ 
+     // Atomic compare-and-swap
+     atomicCAS_system(&atom_arr[6], tid - 1, tid);
+@@ -280,7 +282,7 @@ int main(int argc, char **argv) {
+   // set device
+   hipDeviceProp_t device_prop;
+   int dev_id = findCudaDevice(argc, (const char **)argv);
+-  HIPCHECK(hipGetDeviceProperties(&device_prop, dev_id));
++  checkCudaErrors(hipGetDeviceProperties(&device_prop, dev_id));
+ 
+   if (!device_prop.managedMemory) {
+     // This samples requires being run on a device that supports Unified Memory
+@@ -315,7 +317,7 @@ int main(int argc, char **argv) {
+     atom_arr = (int *)malloc(sizeof(int) * numData);
+   } else {
+     printf("CANNOT access pageable memory\n");
+-    HIPCHECK(hipMallocManaged(&atom_arr, sizeof(int) * numData));
++    checkCudaErrors(hipMallocManaged(&atom_arr, sizeof(int) * numData));
+   }
+ 
+   for (unsigned int i = 0; i < numData; i++) atom_arr[i] = 0;
+@@ -326,7 +328,7 @@ int main(int argc, char **argv) {
+   atomicKernel<<<numBlocks, numThreads>>>(atom_arr);
+   atomicKernel_CPU(atom_arr, numBlocks * numThreads);
+ 
+-  HIPCHECK(hipDeviceSynchronize());
++  checkCudaErrors(hipDeviceSynchronize());
+ 
+   // Compute & verify reference solution
+   int testResult = verify(atom_arr, 2 * numThreads * numBlocks);

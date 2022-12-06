@@ -51,7 +51,7 @@
 
 // Helper functions and utilities to work with CUDA
 #include "helper_functions.h"
-
+#include "HIPCHECK.h"
 void constantInit(float *data, int size, float val) {
   for (int i = 0; i < size; ++i) {
     data[i] = val;
@@ -97,13 +97,13 @@ int matrixMultiply(int argc, char **argv, int block_size, dim3 &dimsA,
     exit(EXIT_FAILURE);
   }
 
-  checkCudaErrors(hipMalloc(&d_A, mem_size_A));
-  checkCudaErrors(hipMalloc(&d_B, mem_size_B));
-  checkCudaErrors(hipMalloc(&d_C, mem_size_C));
+  HIPCHECK(hipMalloc(&d_A, mem_size_A));
+  HIPCHECK(hipMalloc(&d_B, mem_size_B));
+  HIPCHECK(hipMalloc(&d_C, mem_size_C));
 
   // copy host memory to device
-  checkCudaErrors(hipMemcpyHtoD(d_A, h_A, mem_size_A));
-  checkCudaErrors(hipMemcpyHtoD(d_B, h_B, mem_size_B));
+  HIPCHECK(hipMemcpyHtoD(d_A, h_A, mem_size_A));
+  HIPCHECK(hipMemcpyHtoD(d_B, h_B, mem_size_B));
 
   // Setup execution parameters
   dim3 threads(block_size, block_size);
@@ -114,10 +114,10 @@ int matrixMultiply(int argc, char **argv, int block_size, dim3 &dimsA,
 
   hipFunction_t kernel_addr;
   if (block_size == 16) {
-    checkCudaErrors(
+    HIPCHECK(
         hipModuleGetFunction(&kernel_addr, module, "matrixMulCUDA_block16"));
   } else {
-    checkCudaErrors(
+    HIPCHECK(
         hipModuleGetFunction(&kernel_addr, module, "matrixMulCUDA_block32"));
   }
 
@@ -128,18 +128,18 @@ int matrixMultiply(int argc, char **argv, int block_size, dim3 &dimsA,
   int nIter = 300;
 
   for (int j = 0; j < nIter; j++) {
-    checkCudaErrors(
+    HIPCHECK(
         hipModuleLaunchKernel(kernel_addr, grid.x, grid.y, grid.z, /* grid dim */
                        threads.x, threads.y, threads.z,     /* block dim */
                        0, 0,    /* shared mem, stream */
                        &arr[0], /* arguments */
                        0));
 
-    checkCudaErrors(hipCtxSynchronize());
+    HIPCHECK(hipCtxSynchronize());
   }
 
   // Copy result from device to host
-  checkCudaErrors(hipMemcpyDtoH(h_C, d_C, mem_size_C));
+  HIPCHECK(hipMemcpyDtoH(h_C, d_C, mem_size_C));
 
   printf("Checking computed result for correctness: ");
 
@@ -174,9 +174,9 @@ int matrixMultiply(int argc, char **argv, int block_size, dim3 &dimsA,
   free(h_B);
   free(h_C);
 
-  checkCudaErrors(hipFree(d_A));
-  checkCudaErrors(hipFree(d_B));
-  checkCudaErrors(hipFree(d_C));
+  HIPCHECK(hipFree(d_A));
+  HIPCHECK(hipFree(d_B));
+  HIPCHECK(hipFree(d_C));
 
   if (correct) {
     return EXIT_SUCCESS;
