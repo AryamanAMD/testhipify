@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,11 +34,7 @@
 //
 // The multithread code is from me.
 
-
-#include <hip/hip_runtime.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <hip/hip_cooperative_groups.h>
 
 namespace cg = cooperative_groups;

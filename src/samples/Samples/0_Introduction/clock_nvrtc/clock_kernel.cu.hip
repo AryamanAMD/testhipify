@@ -37,7 +37,7 @@
 // This kernel computes a standard parallel reduction and evaluates the
 // time it takes to do that for each block. The timing results are stored
 // in device memory.
-
+//#include <hip/hip_cooperative_groups.h>
 extern "C" __global__ void timedReduction(const float *input, float *output,
                                           clock_t *timer) {
   // __shared__ float shared[2 * blockDim.x];
