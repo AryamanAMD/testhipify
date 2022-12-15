@@ -36,8 +36,8 @@
 #include "HIPCHECK.h"
 #include <hip/hip_runtime.h>
 #define CUDA_DRIVER_API
-#include "helper_cuda.h"
-#include "compMalloc.h"
+#include "helper_cuda_hipified.h"
+#include "compMalloc_hipified.h"
 
 __global__ void saxpy(const float a, const float4 *x, const float4 *y, float4 *z, const size_t n)
 {
@@ -171,3 +171,4 @@ int main(int argc, char **argv)
         HIPCHECK(allocateCompressible((void **)&z, size, true));
         compressibleZbuf = 1;
     }
+}

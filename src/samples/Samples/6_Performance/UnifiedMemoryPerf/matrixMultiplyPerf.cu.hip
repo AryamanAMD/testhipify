@@ -27,13 +27,12 @@
 
 
 #include <hip/hip_runtime.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <helper_timer.h>
 #include "commonDefs.hpp"
 #include "commonKernels.hpp"
 #include "HIPCHECK.h"
 #define VERIFY_GPU_CORRECTNESS 0
-
 size_t maxSampleSizeInMb = 64;
 int numKernelRuns = 20;
 int verboseResults = 0;
@@ -697,11 +696,3 @@ int main(int argc, char **argv) {
       "Results may vary when GPU Boost is enabled.\n");
   exit(EXIT_SUCCESS);
 }
-{
-    numKernelRuns =
-        getCmdLineArgumentInt(argc, (const char **)argv, "kernel-iterations");
-  }
-
-  if (checkCmdLineFlag(argc, (const char **)argv, "verbose")) {
-    verboseResults = 1;
-  }

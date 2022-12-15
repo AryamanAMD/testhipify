@@ -45,7 +45,7 @@
 #include <math.h>
 #include <iostream>
 #include <cstring>
-
+#include "HIPCHECK.h"
 // includes, CUDA
 #include <hip/hip_runtime.h>
 #include <builtin_types.h>
@@ -142,7 +142,7 @@ void runTest(int argc, char **argv) {
 
   // allocate device memory for result
   hipDeviceptr_t d_data = (hipDeviceptr_t)NULL;
-  checkCudaErrors(hipMalloc(&d_data, size));
+  HIPCHECK(hipMalloc(&d_data, size));
 
   // allocate array and copy image data
   hipArray_t cu_array;
@@ -151,7 +151,7 @@ void runTest(int argc, char **argv) {
   desc.NumChannels = 1;
   desc.Width = width;
   desc.Height = height;
-  checkCudaErrors(hipArrayCreate(&cu_array, &desc));
+  HIPCHECK(hipArrayCreate(&cu_array, &desc));
   hip_Memcpy2D copyParam;
   memset(&copyParam, 0, sizeof(copyParam));
   copyParam.dstMemoryType = hipMemoryTypeArray;
@@ -161,7 +161,7 @@ void runTest(int argc, char **argv) {
   copyParam.srcPitch = width * sizeof(float);
   copyParam.WidthInBytes = copyParam.srcPitch;
   copyParam.Height = height;
-  checkCudaErrors(hipMemcpyParam2D(&copyParam));
+  HIPCHECK(hipMemcpyParam2D(&copyParam));
 
   // set texture parameters
   hipTextureObject_t TexObject;
@@ -178,7 +178,7 @@ void runTest(int argc, char **argv) {
   TexDesc.filterMode = HIP_TR_FILTER_MODE_LINEAR;
   TexDesc.flags = HIP_TRSF_NORMALIZED_COORDINATES;
 
-  checkCudaErrors(hipTexObjectCreate(&TexObject, &ResDesc, &TexDesc, NULL));
+  HIPCHECK(hipTexObjectCreate(&TexObject, &ResDesc, &TexDesc, NULL));
 
   // There are two ways to launch CUDA kernels via the Driver API.
   // In this CUDA Sample, we illustrate both ways to pass parameters
@@ -191,15 +191,15 @@ void runTest(int argc, char **argv) {
     // Launching (simpler method)
     void *args[5] = {&d_data, &width, &height, &angle, &TexObject};
 
-    checkCudaErrors(hipModuleLaunchKernel(transform, (width / block_size),
+    HIPCHECK(hipModuleLaunchKernel(transform, (width / block_size),
                                    (height / block_size), 1, block_size,
                                    block_size, 1, 0, NULL, args, NULL));
-    checkCudaErrors(hipCtxSynchronize());
+    HIPCHECK(hipCtxSynchronize());
     sdkCreateTimer(&timer);
     sdkStartTimer(&timer);
 
     // launch kernel again for performance measurement
-    checkCudaErrors(hipModuleLaunchKernel(transform, (width / block_size),
+    HIPCHECK(hipModuleLaunchKernel(transform, (width / block_size),
                                    (height / block_size), 1, block_size,
                                    block_size, 1, 0, NULL, args, NULL));
   } else {
@@ -227,20 +227,20 @@ void runTest(int argc, char **argv) {
                                      HIP_LAUNCH_PARAM_END};
 
     // new CUDA 4.0 Driver API Kernel launch call (warmup)
-    checkCudaErrors(hipModuleLaunchKernel(
+    HIPCHECK(hipModuleLaunchKernel(
         transform, (width / block_size), (height / block_size), 1, block_size,
         block_size, 1, 0, NULL, NULL, (void **)&kernel_launch_config));
-    checkCudaErrors(hipCtxSynchronize());
+    HIPCHECK(hipCtxSynchronize());
     sdkCreateTimer(&timer);
     sdkStartTimer(&timer);
 
     // launch kernel again for performance measurement
-    checkCudaErrors(hipModuleLaunchKernel(
+    HIPCHECK(hipModuleLaunchKernel(
         transform, (width / block_size), (height / block_size), 1, block_size,
         block_size, 1, 0, 0, NULL, (void **)&kernel_launch_config));
   }
 
-  checkCudaErrors(hipCtxSynchronize());
+  HIPCHECK(hipCtxSynchronize());
   sdkStopTimer(&timer);
   printf("Processing time: %f (ms)\n", sdkGetTimerValue(&timer));
   printf("%.2f Mpixels/sec\n",
@@ -250,7 +250,7 @@ void runTest(int argc, char **argv) {
   // allocate mem for the result on host side
   float *h_odata = (float *)malloc(size);
   // copy result from device to host
-  checkCudaErrors(hipMemcpyDtoH(h_odata, d_data, size));
+  HIPCHECK(hipMemcpyDtoH(h_odata, d_data, size));
 
   // write result to file
   char output_filename[1024];
@@ -276,14 +276,14 @@ void runTest(int argc, char **argv) {
   }
 
   // cleanup memory
-  checkCudaErrors(hipTexObjectDestroy(TexObject));
-  checkCudaErrors(hipFree(d_data));
-  checkCudaErrors(hipArrayDestroy(cu_array));
+  HIPCHECK(hipTexObjectDestroy(TexObject));
+  HIPCHECK(hipFree(d_data));
+  HIPCHECK(hipArrayDestroy(cu_array));
 
   free(image_path);
   free(ref_path);
 
-  checkCudaErrors(hipCtxDestroy(cuContext));
+  HIPCHECK(hipCtxDestroy(cuContext));
 
   exit(bTestResults ? EXIT_SUCCESS : EXIT_FAILURE);
 }
@@ -302,14 +302,14 @@ static hipError_t initCUDA(int argc, char **argv, hipFunction_t *transform) {
   cuDevice = findCudaDeviceDRV(argc, (const char **)argv);
 
   // get compute capabilities and the devicename
-  checkCudaErrors(hipDeviceGetAttribute(
+  HIPCHECK(hipDeviceGetAttribute(
       &major, hipDeviceAttributeComputeCapabilityMajor, cuDevice));
-  checkCudaErrors(hipDeviceGetAttribute(
+  HIPCHECK(hipDeviceGetAttribute(
       &minor, hipDeviceAttributeComputeCapabilityMinor, cuDevice));
-  checkCudaErrors(hipDeviceGetName(deviceName, sizeof(deviceName), cuDevice));
+  HIPCHECK(hipDeviceGetName(deviceName, sizeof(deviceName), cuDevice));
   printf("> GPU Device has SM %d.%d compute capability\n", major, minor);
 
-  checkCudaErrors(hipCtxCreate(&cuContext, 0, cuDevice));
+  HIPCHECK(hipCtxCreate(&cuContext, 0, cuDevice));
 
   // first search for the module_path before we try to load the results
   std::ostringstream fatbin;
@@ -326,9 +326,9 @@ static hipError_t initCUDA(int argc, char **argv, hipFunction_t *transform) {
   }
 
   // Create module from binary file (FATBIN)
-  checkCudaErrors(hipModuleLoadData(&cuModule, fatbin.str().c_str()));
+  HIPCHECK(hipModuleLoadData(&cuModule, fatbin.str().c_str()));
 
-  checkCudaErrors(
+  HIPCHECK(
       hipModuleGetFunction(&cuFunction, cuModule, "transformKernel"));
 
   *transform = cuFunction;

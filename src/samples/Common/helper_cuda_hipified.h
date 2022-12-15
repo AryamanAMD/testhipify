@@ -63,7 +63,7 @@ static const char *_cudaGetErrorEnum(hipError_t error) {
 static const char *_cudaGetErrorEnum(hipError_t error) {
   static char unknown[] = "<unknown>";
   const char *ret = NULL;
-  cuGetErrorName(error, &ret);
+  hipGetErrorName(error, &ret);
   return ret ? ret : unknown;
 }
 #endif

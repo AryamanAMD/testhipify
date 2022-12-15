@@ -1,9 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -59,8 +53,8 @@
 #include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
 
 // CUDA helper functions
-#include <helper_cuda.h>  // helper functions for CUDA error check
-
+#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+#include "HIPCHECK.h"
 #define MIN_EPSILON_ERROR 5e-3f
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -87,8 +81,9 @@ __global__ void surfaceWriteKernel(float *gIData, int width, int height,
   unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
 
   // read from global memory and write to cuarray (via surface reference)
-  surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y,
-              hipBoundaryModeTrap);
+  //surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y,
+             // hipBoundaryModeTrap);
+  surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
