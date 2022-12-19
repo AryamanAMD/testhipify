@@ -2,6 +2,7 @@ import os
 import argparse
 import fileinput
 import os.path
+import glob
 def getListOfFiles(dirName):
     listOfFile=os.listdir(dirName)
     allFiles=list()
@@ -238,21 +239,35 @@ def apply_patches():
 
 	
 def compilation_1(x):
+	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
 	p=p.replace("\\","/")
-	command='hipcc -I src/samples/Common '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out'
+	for file in os.listdir(p):
+		if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
+			cpp.append(file)
+
+	command='cd '+p
+	command='hipcc -I ../../../Common '+' '.join(cpp)+' '+p+'/'+q+'.hip -o '+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
+
 	os.system(command)
 
 def compilation_2(x):
+	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
 	p=p.replace("\\","/")
-	command='hipcc -I src/samples/Common -use-staticlib '+p+'/'+q+'.hip -o '+os.path.splitext(x)[0]+'.out.static'
+	for file in os.listdir(p):
+		if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
+			cpp.append(file)
+
+	command='cd '+p
+	command='hipcc -I ../../../Common '+' '.join(cpp)+' '+p+'/'+q+'.hip -o '+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
+
 	os.system(command)
 
 def runsample(x):	

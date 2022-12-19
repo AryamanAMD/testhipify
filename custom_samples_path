@@ -32,3 +32,5 @@ src/samples/Samples/0_Introduction/simpleAttributes/simpleAttributes.cu
 src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu
 src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu
 src/samples/Samples/0_Introduction/matrixMul_nvrtc/matrixMul_kernel.cu
+src/samples/Samples/2_Concepts_and_Techniques/EGLStream_CUDA_CrossGPU/kernel.cu
+src/samples/Samples/3_CUDA_Features/cdpAdvancedQuicksort/cdpAdvancedQuicksort.cu
