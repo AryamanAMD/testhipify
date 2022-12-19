@@ -258,7 +258,6 @@ def compilation_2(x):
 	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
-	q=os.path.basename(x)
 	p=p.replace("\\","/")
 	for file in os.listdir(p):
 		if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
@@ -271,7 +270,7 @@ def compilation_2(x):
 	os.system(command)
 
 def runsample(x):	
-	command='./'+os.path.splitext(x)[0]+'.out'
+	command='./'+os.path.dirname(x)+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
 	os.system(command)
 	
