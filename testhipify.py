@@ -354,6 +354,7 @@ def rem(z):
 
 						
 	a.close()
+	"""
 	lines_seen = set()
 	outfile = open('final_ignored_samples.txt', "w")
 	infile = open('samples_to_be_ignored.txt', "r")
@@ -369,6 +370,10 @@ def rem(z):
 	data1 += data2
 	with open ('final_ignored_samples.txt', 'a') as fp:
 		fp.write(data1)
+	"""
+	uniqlines = set(open('samples_to_be_ignored.txt').readlines())	
+	bar = open('final_ignored_samples.txt', 'w').writelines(uniqlines)
+	bar.close()
     
       
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
