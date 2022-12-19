@@ -350,7 +350,7 @@ def rem(z):
 					if any(word in line for word in ignore_list):
 						for file in os.listdir(os.path.dirname(elem)):
 							if file.endswith('.cu'):
-								a.write(elem+"\n")
+								a.write(file+"\n")
 
 						
 	a.close()
