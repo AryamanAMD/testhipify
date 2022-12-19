@@ -250,7 +250,7 @@ def compilation_1(x):
 
 	command='cd '+p
 	os.system(command)
-	command='hipcc -I ../../../Common '+' '.join(cpp)+' '+p+'/'+q+'.hip -o '+os.path.basename(os.path.dirname(x))+'.out'
+	command='hipcc -I ../../../Common '+' '.join(cpp)+' -o '+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
 
 	os.system(command)
