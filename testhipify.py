@@ -344,6 +344,14 @@ def rem(z):
 					if any(word in line for word in ignore_list):
 						#a.write(elem+"\n"+line)
 						a.write(elem+"\n")
+		elif elem.endswith('_hipified.cpp'):
+			with open(elem) as f:
+				for line in f:
+					if any(word in line for word in ignore_list):
+						for file in os.listdir(os.path.dirname(elem)):
+							if file.endswith('.cu'):
+								a.write(elem+"\n")
+
 						
 	a.close()
 	lines_seen = set()
