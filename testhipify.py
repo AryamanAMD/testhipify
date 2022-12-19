@@ -252,7 +252,7 @@ def compilation_1(x):
 	command='hipcc -I src/samples/Common '+' '.join(cpp)+' -o '+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
 
-	#os.system(command)
+	os.system(command)
 
 def compilation_2(x):
 	cpp=[]
