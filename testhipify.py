@@ -248,12 +248,11 @@ def compilation_1(x):
 		if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
 			cpp.append(file)
 
-	command='cd '+p
-	os.system(command)
-	command='hipcc -I ../../../Common '+' '.join(cpp)+' -o '+os.path.basename(os.path.dirname(x))+'.out'
+	cpp = [p+'/'+x for x in cpp]
+	command='hipcc -I src/samples/Common '+' '.join(cpp)+' -o '+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
 
-	os.system(command)
+	#os.system(command)
 
 def compilation_2(x):
 	cpp=[]
