@@ -372,7 +372,8 @@ def rem(z):
 		fp.write(data1)
 	"""
 	uniqlines = set(open('samples_to_be_ignored.txt').readlines())	
-	bar = open('final_ignored_samples.txt', 'w').writelines(uniqlines)
+	bar = open('final_ignored_samples.txt', 'w')
+	bar.writelines(uniqlines)
 	bar.close()
     
       
