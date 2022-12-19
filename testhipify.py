@@ -249,6 +249,7 @@ def compilation_1(x):
 			cpp.append(file)
 
 	command='cd '+p
+	os.system(command)
 	command='hipcc -I ../../../Common '+' '.join(cpp)+' '+p+'/'+q+'.hip -o '+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
 
@@ -265,6 +266,7 @@ def compilation_2(x):
 			cpp.append(file)
 
 	command='cd '+p
+	os.system(command)
 	command='hipcc -I ../../../Common '+' '.join(cpp)+' '+p+'/'+q+'.hip -o '+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
 
