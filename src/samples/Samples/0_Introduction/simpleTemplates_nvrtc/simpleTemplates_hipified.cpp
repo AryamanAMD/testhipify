@@ -43,7 +43,7 @@
 // helper functions and utilities to work with CUDA
 #include "helper_functions.h"
 #include <nvrtc_helper.h>
-
+#include "HIPCHECK.h"
 #ifndef MAX
 #define MAX(a, b) (a > b ? a : b)
 #endif
@@ -153,7 +153,7 @@ hipFunction_t getKernel(hipModule_t in);
 template <>
 hipFunction_t getKernel<int>(hipModule_t in) {
   hipFunction_t kernel_addr;
-  checkCudaErrors(hipModuleGetFunction(&kernel_addr, in, "testInt"));
+  HIPCHECK(hipModuleGetFunction(&kernel_addr, in, "testInt"));
 
   return kernel_addr;
 }
@@ -161,7 +161,7 @@ hipFunction_t getKernel<int>(hipModule_t in) {
 template <>
 hipFunction_t getKernel<float>(hipModule_t in) {
   hipFunction_t kernel_addr;
-  checkCudaErrors(hipModuleGetFunction(&kernel_addr, in, "testFloat"));
+  HIPCHECK(hipModuleGetFunction(&kernel_addr, in, "testFloat"));
 
   return kernel_addr;
 }
@@ -204,14 +204,14 @@ void runTest(int argc, char **argv, int len) {
 
   // allocate device memory
   hipDeviceptr_t d_idata;
-  checkCudaErrors(hipMalloc(&d_idata, mem_size));
+  HIPCHECK(hipMalloc(&d_idata, mem_size));
 
   // copy host memory to device
-  checkCudaErrors(hipMemcpyHtoD(d_idata, h_idata, mem_size));
+  HIPCHECK(hipMemcpyHtoD(d_idata, h_idata, mem_size));
 
   // allocate device memory for result
   hipDeviceptr_t d_odata;
-  checkCudaErrors(hipMalloc(&d_odata, mem_size));
+  HIPCHECK(hipMalloc(&d_odata, mem_size));
 
   // setup execution parameters
   dim3 grid(1, 1, 1);
@@ -221,7 +221,7 @@ void runTest(int argc, char **argv, int len) {
   hipFunction_t kernel_addr = getKernel<T>(module);
 
   void *arr[] = {(void *)&d_idata, (void *)&d_odata};
-  checkCudaErrors(
+  HIPCHECK(
       hipModuleLaunchKernel(kernel_addr, grid.x, grid.y, grid.z, /* grid dim */
                      threads.x, threads.y, threads.z,     /* block dim */
                      mem_size, 0, /* shared mem, stream */
@@ -229,13 +229,13 @@ void runTest(int argc, char **argv, int len) {
                      0));
 
   // check if kernel execution generated and error
-  checkCudaErrors(hipCtxSynchronize());
+  HIPCHECK(hipCtxSynchronize());
 
   // allocate mem for the result on host side
   T *h_odata = (T *)malloc(mem_size);
 
   // copy result from device to host
-  checkCudaErrors(hipMemcpyDtoH(h_odata, d_odata, sizeof(T) * num_threads));
+  HIPCHECK(hipMemcpyDtoH(h_odata, d_odata, sizeof(T) * num_threads));
 
   sdkStopTimer(&timer);
   printf("Processing time: %f (ms)\n", sdkGetTimerValue(&timer));
@@ -267,6 +267,6 @@ void runTest(int argc, char **argv, int len) {
   free(h_idata);
   free(h_odata);
   free(reference);
-  checkCudaErrors(hipFree(d_idata));
-  checkCudaErrors(hipFree(d_odata));
+  HIPCHECK(hipFree(d_idata));
+  HIPCHECK(hipFree(d_odata));
 }

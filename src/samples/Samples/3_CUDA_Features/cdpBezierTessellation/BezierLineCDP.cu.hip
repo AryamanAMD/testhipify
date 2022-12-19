@@ -31,7 +31,7 @@
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
 #include <hip/hip_runtime_api.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <string.h>
 
 __forceinline__ __device__ float2 operator+(float2 a, float2 b) {
