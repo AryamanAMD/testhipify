@@ -363,14 +363,14 @@ def rem(z):
 			outfile.write(line)
 			lines_seen.add(line)
 	outfile.close()
+	"""
 	with open('final_ignored_samples.txt') as fp:
 		data1 = fp.read()	
-	with open('custom_samples_path') as fp:
+	with open('custom_samples_path.txt') as fp:
 		data2 = fp.read()
 	data1 += data2
 	with open ('final_ignored_samples.txt', 'a') as fp:
 		fp.write(data1)
-	"""
 	uniqlines = set(open('samples_to_be_ignored.txt').readlines())	
 	bar = open('final_ignored_samples.txt', 'w')
 	bar.writelines(uniqlines)
