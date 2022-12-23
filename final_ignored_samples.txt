@@ -75,3 +75,4 @@ src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu
 src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu
 src/samples/Samples/2_Concepts_and_Techniques/boxFilter/boxFilter_kernel.cu
 src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu
+src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu
