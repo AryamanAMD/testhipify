@@ -30,7 +30,7 @@
 
 #include <hip/hip_runtime.h>
 
-#include "resize_convert.h"
+#include "resize_convert_hipified.h"
 #include "HIPCHECK.h"
 __global__ void resizeBGRplanarBatchKernel(hipTextureObject_t texSrc,
     float *pDst, int nDstPitch, int nDstHeight, int nSrcHeight,

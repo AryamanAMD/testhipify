@@ -39,7 +39,6 @@
 #include <string.h>
 
 #include <helper_string.h>
-
 #ifndef EXIT_WAIVED
 #define EXIT_WAIVED 2
 #endif
@@ -60,7 +59,7 @@ static const char *_cudaGetErrorEnum(hipError_t error) {
 
 #ifdef CUDA_DRIVER_API
 // CUDA Driver API errors
-static const char *_cudaGetErrorEnum(hipError_t error) {
+static const char *_cudaGetErrorEnum1(hipError_t error) {
   static char unknown[] = "<unknown>";
   const char *ret = NULL;
   hipGetErrorName(error, &ret);

@@ -53,7 +53,7 @@ Run
 
 #include <hip/hip_runtime.h>
 #include <hip/hip_runtime.h>
-
+#include "HIPCHECK.h"
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -63,8 +63,8 @@ Run
 #include <iostream>
 #include <memory>
 
-#include "resize_convert.h"
-#include "utils.h"
+#include "resize_convert_hipified.h"
+#include "utils_hipified.h"
 
 #define TEST_LOOP 20
 
@@ -231,7 +231,7 @@ static int loadNV12Frame(unsigned char *d_inputNV12) {
   // expand one frame to multi frames for batch processing
   d_nv12 = d_inputNV12;
   for (int i = 0; i < g_ctx.batch; i++) {
-    checkCudaErrors(hipMemcpy2D((void *)d_nv12, g_ctx.ctx_pitch,
+    HIPCHECK(hipMemcpy2D((void *)d_nv12, g_ctx.ctx_pitch,
                                  pNV12FrameData, g_ctx.width, g_ctx.width,
                                  g_ctx.ctx_heights, hipMemcpyHostToDevice));
 
@@ -259,18 +259,18 @@ void nv12ResizeAndNV12ToBGR(unsigned char *d_inputNV12) {
   /* allocate device memory for resized nv12 output */
   size = g_ctx.dst_width * ceil(g_ctx.dst_height * 3.0f / 2.0f) * g_ctx.batch *
          sizeof(unsigned char);
-  checkCudaErrors(hipMalloc((void **)&d_resizedNV12, size));
+  HIPCHECK(hipMalloc((void **)&d_resizedNV12, size));
 
   /* allocate device memory for bgr output */
   size = g_ctx.dst_pitch * g_ctx.dst_height * 3 * g_ctx.batch * sizeof(float);
-  checkCudaErrors(hipMalloc((void **)&d_outputBGR, size));
+  HIPCHECK(hipMalloc((void **)&d_outputBGR, size));
 
   hipStream_t stream;
-  checkCudaErrors(hipStreamCreate(&stream));
+  HIPCHECK(hipStreamCreate(&stream));
   /* create cuda event handles */
   hipEvent_t start, stop;
-  checkCudaErrors(hipEventCreate(&start));
-  checkCudaErrors(hipEventCreate(&stop));
+  HIPCHECK(hipEventCreate(&start));
+  HIPCHECK(hipEventCreate(&stop));
   float elapsedTime = 0.0f;
 
   /* resize interlace nv12 */
@@ -320,11 +320,11 @@ void nv12ResizeAndNV12ToBGR(unsigned char *d_inputNV12) {
           g_ctx.batch, (char *)"t1", filename);
 
   /* release resources */
-  checkCudaErrors(hipEventDestroy(start));
-  checkCudaErrors(hipEventDestroy(stop));
-  checkCudaErrors(hipStreamDestroy(stream));
-  checkCudaErrors(hipFree(d_resizedNV12));
-  checkCudaErrors(hipFree(d_outputBGR));
+  HIPCHECK(hipEventDestroy(start));
+  HIPCHECK(hipEventDestroy(stop));
+  HIPCHECK(hipStreamDestroy(stream));
+  HIPCHECK(hipFree(d_resizedNV12));
+  HIPCHECK(hipFree(d_outputBGR));
 }
 
 /*
@@ -339,18 +339,18 @@ void nv12ToBGRandBGRresize(unsigned char *d_inputNV12) {
 
   /* allocate device memory for bgr output */
   size = g_ctx.ctx_pitch * g_ctx.height * 3 * g_ctx.batch * sizeof(float);
-  checkCudaErrors(hipMalloc((void **)&d_bgr, size));
+  HIPCHECK(hipMalloc((void **)&d_bgr, size));
 
   /* allocate device memory for resized bgr output */
   size = g_ctx.dst_width * g_ctx.dst_height * 3 * g_ctx.batch * sizeof(float);
-  checkCudaErrors(hipMalloc((void **)&d_resizedBGR, size));
+  HIPCHECK(hipMalloc((void **)&d_resizedBGR, size));
 
   hipStream_t stream;
-  checkCudaErrors(hipStreamCreate(&stream));
+  HIPCHECK(hipStreamCreate(&stream));
   /* create cuda event handles */
   hipEvent_t start, stop;
-  checkCudaErrors(hipEventCreate(&start));
-  checkCudaErrors(hipEventCreate(&stop));
+  HIPCHECK(hipEventCreate(&start));
+  HIPCHECK(hipEventCreate(&stop));
   float elapsedTime = 0.0f;
 
   /* convert interlace nv12 to bgr 3 progressive planars */
@@ -398,11 +398,11 @@ void nv12ToBGRandBGRresize(unsigned char *d_inputNV12) {
           g_ctx.batch, (char *)"t2", filename);
 
   /* release resources */
-  checkCudaErrors(hipEventDestroy(start));
-  checkCudaErrors(hipEventDestroy(stop));
-  checkCudaErrors(hipStreamDestroy(stream));
-  checkCudaErrors(hipFree(d_bgr));
-  checkCudaErrors(hipFree(d_resizedBGR));
+  HIPCHECK(hipEventDestroy(start));
+  HIPCHECK(hipEventDestroy(stop));
+  HIPCHECK(hipStreamDestroy(stream));
+  HIPCHECK(hipFree(d_bgr));
+  HIPCHECK(hipFree(d_resizedBGR));
 }
 
 int main(int argc, char *argv[]) {
@@ -420,12 +420,12 @@ int main(int argc, char *argv[]) {
 
   /* load nv12 yuv data into d_inputNV12 with batch of copies */
 #if USE_UVM_MEM
-  checkCudaErrors(hipMallocManaged(
+  HIPCHECK(hipMallocManaged(
       (void **)&d_inputNV12,
       (g_ctx.ctx_pitch * g_ctx.ctx_heights * g_ctx.batch), hipMemAttachHost));
   printf("\nUSE_UVM_MEM\n");
 #else
-  checkCudaErrors(
+  HIPCHECK(
       hipMalloc((void **)&d_inputNV12,
                  (g_ctx.ctx_pitch * g_ctx.ctx_heights * g_ctx.batch)));
 #endif
@@ -442,7 +442,7 @@ int main(int argc, char *argv[]) {
   printf("\nTEST#2:\n");
   nv12ToBGRandBGRresize(d_inputNV12);
 
-  checkCudaErrors(hipFree(d_inputNV12));
+  HIPCHECK(hipFree(d_inputNV12));
 
   return EXIT_SUCCESS;
 }
