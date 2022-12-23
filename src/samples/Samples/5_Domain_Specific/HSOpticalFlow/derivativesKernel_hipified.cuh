@@ -128,7 +128,7 @@ static void ComputeDerivatives(const float *I0, const float *I1, int w, int h,
   texDescr.addressMode[1] = hipAddressModeMirror;
   texDescr.readMode = hipReadModeElementType;
 
-  checkCudaErrors(
+  HIPCHECK(
       hipCreateTextureObject(&texSource, &texRes, &texDescr, NULL));
   memset(&texRes, 0, sizeof(hipResourceDesc));
   texRes.resType = hipResourceTypePitch2D;
@@ -137,7 +137,7 @@ static void ComputeDerivatives(const float *I0, const float *I1, int w, int h,
   texRes.res.pitch2D.width = w;
   texRes.res.pitch2D.height = h;
   texRes.res.pitch2D.pitchInBytes = s * sizeof(float);
-  checkCudaErrors(
+  HIPCHECK(
       hipCreateTextureObject(&texTarget, &texRes, &texDescr, NULL));
 
   ComputeDerivativesKernel<<<blocks, threads>>>(w, h, s, Ix, Iy, Iz, texSource,

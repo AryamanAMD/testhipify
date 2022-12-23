@@ -125,7 +125,7 @@ void verifyMatrixData(float *expectedData, float *observedData,
 }
 
 #define BLOCK_SIZE 32
-__global__ void matrixMultiplyKernel(float *C, float *A, float *B,
+__global__ void matrixMultiplyKernel(float *C,float *A,float *B,
                                      unsigned int matrixDim) {
   // Block index
   int bx = blockIdx.x;
@@ -206,9 +206,13 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
                              double *gpuLaunchTransferSyncTimes,
                              double *cpuAccessTimes, double *overallTimes,
                              int device_id) {
-  float *dptrA = NULL, *hptrA = NULL;
-  float *dptrB = NULL, *hptrB = NULL;
-  float *dptrC = NULL, *hptrC = NULL;
+  void *dptrA = NULL,  *hptrA = NULL;
+  void *dptrB = NULL,  *hptrB = NULL;
+  void *dptrC = NULL,  *hptrC = NULL;
+  //float *dptrA = NULL,  *hptrA = NULL;
+  //float *dptrB = NULL,  *hptrB = NULL;
+  //float *dptrC = NULL,  *hptrC = NULL;
+
   float *randValuesX = NULL, *randValuesY = NULL;
   float *randValuesVerifyXmulY = NULL, *randValuesVerifyYmulX = NULL;
   bool copyRequired = false, hintsRequired = false;
@@ -257,8 +261,8 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
   HIPCHECK(
       hipMemcpyAsync(dptrA, randValuesX, size, hipMemcpyHostToDevice));
   HIPCHECK(
-      hipMemcpyAsync(dptrB, randValuesY, size, hipMemcpyHostToDevice));
-  matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
+      hipMemcpyAsync(dptrB, randValuesY, size, hipMemcpyHostToDevice));  
+matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
   HIPCHECK(hipMemcpyAsync(randValuesVerifyXmulY, dptrC, size,
                                   hipMemcpyDeviceToHost));
   HIPCHECK(hipStreamSynchronize(NULL));

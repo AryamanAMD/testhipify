@@ -27,7 +27,7 @@
  */
 
 #include "common.h"
-
+#include "HIPCHECK.h"
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief warp image with a given displacement field, CUDA kernel.
 /// \param[in]  width   image width
@@ -94,7 +94,7 @@ static void WarpImage(const float *src, int w, int h, int s, const float *u,
   texDescr.addressMode[1] = hipAddressModeMirror;
   texDescr.readMode = hipReadModeElementType;
 
-  checkCudaErrors(
+  HIPCHECK(
       hipCreateTextureObject(&texToWarp, &texRes, &texDescr, NULL));
 
   WarpingKernel<<<blocks, threads>>>(w, h, s, u, v, out, texToWarp);

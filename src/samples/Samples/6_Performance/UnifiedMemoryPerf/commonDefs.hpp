@@ -27,7 +27,7 @@
 
 #ifndef _COMMON_DEFS_
 #define _COMMON_DEFS_
-#include <cuda.h>
+//#include <cuda.h>
 
 #define ONE_KB 1024
 #define ONE_MB (ONE_KB * ONE_KB)

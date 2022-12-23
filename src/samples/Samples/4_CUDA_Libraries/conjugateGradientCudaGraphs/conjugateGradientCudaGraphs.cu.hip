@@ -44,8 +44,8 @@
 #include <hipsparse.h>
 
 // Utilities and system includes
-#include <helper_cuda.h>  // helper function CUDA error checking and initialization
-#include <helper_functions.h>  // helper for shared functions common to CUDA Samples
+#include "helper_cuda_hipified.h"  // helper function CUDA error checking and initialization
+#include "helper_functions.h"  // helper for shared functions common to CUDA Samples
 
 const char *sSDKname = "conjugateGradientCudaGraphs";
 
@@ -424,14 +424,3 @@ int main(int argc, char **argv) {
   printf("Test Summary:  Error amount = %f\n", err);
   exit((k <= max_iter) ? 0 : 1);
 }
-rors(hipsparseDestroySpMat(matA));
-  }
-  if (vecx) {
-    checkCudaErrors(hipsparseDestroyDnVec(vecx));
-  }
-  if (vecAx) {
-    checkCudaErrors(hipsparseDestroyDnVec(vecAx));
-  }
-  if (vecp) {
-    checkCudaErrors(hipsparseDestroyDnVec(vecp));
-  }

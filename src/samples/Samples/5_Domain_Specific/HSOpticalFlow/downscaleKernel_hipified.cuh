@@ -27,7 +27,7 @@
  */
 
 #include "common.h"
-
+#include "HIPCHECK.h"
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief downscale image
 ///
@@ -92,7 +92,7 @@ static void Downscale(const float *src, int width, int height, int stride,
   texDescr.addressMode[1] = hipAddressModeMirror;
   texDescr.readMode = hipReadModeElementType;
 
-  checkCudaErrors(hipCreateTextureObject(&texFine, &texRes, &texDescr, NULL));
+  HIPCHECK(hipCreateTextureObject(&texFine, &texRes, &texDescr, NULL));
 
   DownscaleKernel<<<blocks, threads>>>(newWidth, newHeight, newStride, out,
                                        texFine);

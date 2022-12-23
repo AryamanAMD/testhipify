@@ -35,7 +35,7 @@ const float THRESHOLD = 0.05f;
 #include "common.h"
 #include "flowGold.h"
 #include "flowCUDA.h"
-
+#include "helper_cuda_hipified.h"
 #include "helper_functions.h"
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
   printf("%s Starting...\n\n", sSDKsample);
 
   // pick GPU
-  findCudaDevice(argc, (const char **)argv);
+  // findCudaDevice(argc, (const char **)argv);
 
   // find images
   const char *const sourceFrameName = "frame10.ppm";

@@ -1,0 +1,1001 @@
+diff --git a/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.cu.hip b/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.cu.hip
+index e69de29..dc425ee 100644
+--- a/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.cu.hip
++++ b/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.cu.hip
+@@ -0,0 +1,229 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++//
++// This sample demonstrates the use of streams for concurrent execution. It also
++// illustrates how to introduce dependencies between CUDA streams with the
++// hipStreamWaitEvent function.
++//
++
++// Devices of compute capability 2.0 or higher can overlap the kernels
++//
++#include <hip/hip_cooperative_groups.h>
++#include <stdio.h>
++#include "HIPCHECK.h"
++namespace cg = cooperative_groups;
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
++
++// This is a kernel that does no real work but runs at least for a specified
++// number of clocks
++__global__ void clock_block(clock_t *d_o, clock_t clock_count) {
++  unsigned int start_clock = (unsigned int)clock();
++
++  clock_t clock_offset = 0;
++
++  while (clock_offset < clock_count) {
++    unsigned int end_clock = (unsigned int)clock();
++
++    // The code below should work like
++    // this (thanks to modular arithmetics):
++    //
++    // clock_offset = (clock_t) (end_clock > start_clock ?
++    //                           end_clock - start_clock :
++    //                           end_clock + (0xffffffffu - start_clock));
++    //
++    // Indeed, let m = 2^32 then
++    // end - start = end + m - start (mod m).
++
++    clock_offset = (clock_t)(end_clock - start_clock);
++  }
++
++  d_o[0] = clock_offset;
++}
++
++// Single warp reduction kernel
++__global__ void sum(clock_t *d_clocks, int N) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  __shared__ clock_t s_clocks[32];
++
++  clock_t my_sum = 0;
++
++  for (int i = threadIdx.x; i < N; i += blockDim.x) {
++    my_sum += d_clocks[i];
++  }
++
++  s_clocks[threadIdx.x] = my_sum;
++  cg::sync(cta);
++
++  for (int i = 16; i > 0; i /= 2) {
++    if (threadIdx.x < i) {
++      s_clocks[threadIdx.x] += s_clocks[threadIdx.x + i];
++    }
++
++    cg::sync(cta);
++  }
++
++  d_clocks[0] = s_clocks[0];
++}
++
++int main(int argc, char **argv) {
++  int nkernels = 8;             // number of concurrent kernels
++  int nstreams = nkernels + 1;  // use one more stream than concurrent kernel
++  int nbytes = nkernels * sizeof(clock_t);  // number of data bytes
++  float kernel_time = 10;                   // time the kernel should run in ms
++  float elapsed_time;                       // timing variables
++  int cuda_device = 0;
++
++  printf("[%s] - Starting...\n", argv[0]);
++
++  // get number of kernels if overridden on the command line
++  if (checkCmdLineFlag(argc, (const char **)argv, "nkernels")) {
++    nkernels = getCmdLineArgumentInt(argc, (const char **)argv, "nkernels");
++    nstreams = nkernels + 1;
++  }
++
++  // use command-line specified CUDA device, otherwise use device with highest
++  // Gflops/s
++  cuda_device = findCudaDevice(argc, (const char **)argv);
++
++  hipDeviceProp_t deviceProp;
++  HIPCHECK(hipGetDevice(&cuda_device));
++
++  HIPCHECK(hipGetDeviceProperties(&deviceProp, cuda_device));
++
++  if ((deviceProp.concurrentKernels == 0)) {
++    printf("> GPU does not support concurrent kernel execution\n");
++    printf("  CUDA kernel runs will be serialized\n");
++  }
++
++  printf("> Detected Compute SM %d.%d hardware with %d multi-processors\n",
++         deviceProp.major, deviceProp.minor, deviceProp.multiProcessorCount);
++
++  // allocate host memory
++  clock_t *a = 0;  // pointer to the array data in host memory
++  HIPCHECK(hipHostMalloc((void **)&a, nbytes));
++
++  // allocate device memory
++  clock_t *d_a = 0;  // pointers to data and init value in the device memory
++  HIPCHECK(hipMalloc((void **)&d_a, nbytes));
++
++  // allocate and initialize an array of stream handles
++  hipStream_t *streams =
++      (hipStream_t *)malloc(nstreams * sizeof(hipStream_t));
++
++  for (int i = 0; i < nstreams; i++) {
++    HIPCHECK(hipStreamCreate(&(streams[i])));
++  }
++
++  // create CUDA event handles
++  hipEvent_t start_event, stop_event;
++  HIPCHECK(hipEventCreate(&start_event));
++  HIPCHECK(hipEventCreate(&stop_event));
++
++  // the events are used for synchronization only and hence do not need to
++  // record timings this also makes events not introduce global sync points when
++  // recorded which is critical to get overlap
++  hipEvent_t *kernelEvent;
++  kernelEvent = (hipEvent_t *)malloc(nkernels * sizeof(hipEvent_t));
++
++  for (int i = 0; i < nkernels; i++) {
++    HIPCHECK(
++        hipEventCreateWithFlags(&(kernelEvent[i]), hipEventDisableTiming));
++  }
++
++  //////////////////////////////////////////////////////////////////////
++  // time execution with nkernels streams
++  clock_t total_clocks = 0;
++#if defined(__arm__) || defined(__aarch64__)
++  // the kernel takes more time than the channel reset time on arm archs, so to
++  // prevent hangs reduce time_clocks.
++  clock_t time_clocks = (clock_t)(kernel_time * (deviceProp.clockRate / 100));
++#else
++  clock_t time_clocks = (clock_t)(kernel_time * deviceProp.clockRate);
++#endif
++
++  hipEventRecord(start_event, 0);
++
++  // queue nkernels in separate streams and record when they are done
++  for (int i = 0; i < nkernels; ++i) {
++    clock_block<<<1, 1, 0, streams[i]>>>(&d_a[i], time_clocks);
++    total_clocks += time_clocks;
++    HIPCHECK(hipEventRecord(kernelEvent[i], streams[i]));
++
++    // make the last stream wait for the kernel event to be recorded
++    HIPCHECK(
++        hipStreamWaitEvent(streams[nstreams - 1], kernelEvent[i], 0));
++  }
++
++  // queue a sum kernel and a copy back to host in the last stream.
++  // the commands in this stream get dispatched as soon as all the kernel events
++  // have been recorded
++  sum<<<1, 32, 0, streams[nstreams - 1]>>>(d_a, nkernels);
++  checkCudaErrors(hipMemcpyAsync(
++      a, d_a, sizeof(clock_t), hipMemcpyDeviceToHost, streams[nstreams - 1]));
++
++  // at this point the CPU has dispatched all work for the GPU and can continue
++  // processing other tasks in parallel
++
++  // in this sample we just wait until the GPU is done
++  HIPCHECK(hipEventRecord(stop_event, 0));
++  HIPCHECK(hipEventSynchronize(stop_event));
++  HIPCHECK(hipEventElapsedTime(&elapsed_time, start_event, stop_event));
++
++  printf("Expected time for serial execution of %d kernels = %.3fs\n", nkernels,
++         nkernels * kernel_time / 1000.0f);
++  printf("Expected time for concurrent execution of %d kernels = %.3fs\n",
++         nkernels, kernel_time / 1000.0f);
++  printf("Measured time for sample = %.3fs\n", elapsed_time / 1000.0f);
++
++  bool bTestResult = (a[0] > total_clocks);
++
++  // release resources
++  for (int i = 0; i < nkernels; i++) {
++    hipStreamDestroy(streams[i]);
++    hipEventDestroy(kernelEvent[i]);
++  }
++
++  free(streams);
++  free(kernelEvent);
++
++  hipEventDestroy(start_event);
++  hipEventDestroy(stop_event);
++  hipHostFree(a);
++  hipFree(d_a);
++
++  if (!bTestResult) {
++    printf("Test failed!\n");
++    exit(EXIT_FAILURE);
++  }
++
++  printf("Test passed\n");
++  exit(EXIT_SUCCESS);
++}
+diff --git a/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip b/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip
+index 097e148..653c009 100644
+--- a/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip
+@@ -31,14 +31,14 @@
+ 
+ // Includes CUDA
+ #include <hip/hip_runtime.h>
+-#include <cuda/barrier>
++#include "cuda/barrier"
+ #include <hip/hip_cooperative_groups.h>
+ 
+ // Utilities and timing functions
+-#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
++#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+ 
+ // CUDA helper functions
+-#include <helper_cuda.h>  // helper functions for CUDA error check
++#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+ 
+ namespace cg = cooperative_groups;
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobi.cu.hip b/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobi.cu.hip
+index e69de29..7cc0867 100644
+--- a/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobi.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobi.cu.hip
+@@ -0,0 +1,394 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <hip/hip_cooperative_groups.h>
++#include <hip/hip_runtime.h>
++#include <helper_cuda.h>
++#include <vector>
++#include "jacobi.h"
++#include "HIPCHECK.h"
++namespace cg = cooperative_groups;
++
++// 8 Rows of square-matrix A processed by each CTA.
++// This can be max 32 and only power of 2 (i.e., 2/4/8/16/32).
++#define ROWS_PER_CTA 8
++
++#if !defined(__CUDA_ARCH__) || __CUDA_ARCH__ >= 600
++#else
++__device__ double atomicAdd(double *address, double val) {
++  unsigned long long int *address_as_ull = (unsigned long long int *)address;
++  unsigned long long int old = *address_as_ull, assumed;
++
++  do {
++    assumed = old;
++    old = atomicCAS(address_as_ull, assumed,
++                    __double_as_longlong(val + __longlong_as_double(assumed)));
++
++    // Note: uses integer comparison to avoid hang in case of NaN (since NaN !=
++    // NaN)
++  } while (assumed != old);
++
++  return __longlong_as_double(old);
++}
++#endif
++
++static __global__ void JacobiMethod(const float *A, const double *b,
++                                    const float conv_threshold, double *x,
++                                    double *x_new, double *sum) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  __shared__ double x_shared[N_ROWS];  // N_ROWS == n
++  __shared__ double b_shared[ROWS_PER_CTA + 1];
++
++  for (int i = threadIdx.x; i < N_ROWS; i += blockDim.x) {
++    x_shared[i] = x[i];
++  }
++
++  if (threadIdx.x < ROWS_PER_CTA) {
++    int k = threadIdx.x;
++    for (int i = k + (blockIdx.x * ROWS_PER_CTA);
++         (k < ROWS_PER_CTA) && (i < N_ROWS);
++         k += ROWS_PER_CTA, i += ROWS_PER_CTA) {
++      b_shared[i % (ROWS_PER_CTA + 1)] = b[i];
++    }
++  }
++
++  cg::sync(cta);
++
++  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
++
++  for (int k = 0, i = blockIdx.x * ROWS_PER_CTA;
++       (k < ROWS_PER_CTA) && (i < N_ROWS); k++, i++) {
++    double rowThreadSum = 0.0;
++    for (int j = threadIdx.x; j < N_ROWS; j += blockDim.x) {
++      rowThreadSum += (A[i * N_ROWS + j] * x_shared[j]);
++    }
++
++    for (int offset = tile32.size() / 2; offset > 0; offset /= 2) {
++      rowThreadSum += tile32.shfl_down(rowThreadSum, offset);
++    }
++
++    if (tile32.thread_rank() == 0) {
++      atomicAdd(&b_shared[i % (ROWS_PER_CTA + 1)], -rowThreadSum);
++    }
++  }
++
++  cg::sync(cta);
++
++  if (threadIdx.x < ROWS_PER_CTA) {
++    cg::thread_block_tile<ROWS_PER_CTA> tile8 =
++        cg::tiled_partition<ROWS_PER_CTA>(cta);
++    double temp_sum = 0.0;
++
++    int k = threadIdx.x;
++
++    for (int i = k + (blockIdx.x * ROWS_PER_CTA);
++         (k < ROWS_PER_CTA) && (i < N_ROWS);
++         k += ROWS_PER_CTA, i += ROWS_PER_CTA) {
++      double dx = b_shared[i % (ROWS_PER_CTA + 1)];
++      dx /= A[i * N_ROWS + i];
++
++      x_new[i] = (x_shared[i] + dx);
++      temp_sum += fabs(dx);
++    }
++
++    for (int offset = tile8.size() / 2; offset > 0; offset /= 2) {
++      temp_sum += tile8.shfl_down(temp_sum, offset);
++    }
++
++    if (tile8.thread_rank() == 0) {
++      atomicAdd(sum, temp_sum);
++    }
++  }
++}
++
++// Thread block size for finalError kernel should be multiple of 32
++static __global__ void finalError(double *x, double *g_sum) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  extern __shared__ double warpSum[];
++  double sum = 0.0;
++
++  int globalThreadId = blockIdx.x * blockDim.x + threadIdx.x;
++
++  for (int i = globalThreadId; i < N_ROWS; i += blockDim.x * gridDim.x) {
++    double d = x[i] - 1.0;
++    sum += fabs(d);
++  }
++
++  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
++
++  for (int offset = tile32.size() / 2; offset > 0; offset /= 2) {
++    sum += tile32.shfl_down(sum, offset);
++  }
++
++  if (tile32.thread_rank() == 0) {
++    warpSum[threadIdx.x / warpSize] = sum;
++  }
++
++  cg::sync(cta);
++
++  double blockSum = 0.0;
++  if (threadIdx.x < (blockDim.x / warpSize)) {
++    blockSum = warpSum[threadIdx.x];
++  }
++
++  if (threadIdx.x < 32) {
++    for (int offset = tile32.size() / 2; offset > 0; offset /= 2) {
++      blockSum += tile32.shfl_down(blockSum, offset);
++    }
++    if (tile32.thread_rank() == 0) {
++      atomicAdd(g_sum, blockSum);
++    }
++  }
++}
++
++double JacobiMethodGpuCudaGraphExecKernelSetParams(
++    const float *A, const double *b, const float conv_threshold,
++    const int max_iter, double *x, double *x_new, hipStream_t stream) {
++  // CTA size
++  dim3 nthreads(256, 1, 1);
++  // grid size
++  dim3 nblocks((N_ROWS / ROWS_PER_CTA) + 2, 1, 1);
++  hipGraph_t graph;
++  hipGraphExec_t graphExec = NULL;
++
++  double sum = 0.0;
++  double *d_sum = NULL;
++  HIPCHECK(hipMalloc(&d_sum, sizeof(double)));
++
++  std::vector<hipGraphNode_t> nodeDependencies;
++  hipGraphNode_t memcpyNode, jacobiKernelNode, memsetNode;
++  hipMemcpy3DParms memcpyParams = {0};
++  hipMemsetParams memsetParams = {0};
++
++  memsetParams.dst = (void *)d_sum;
++  memsetParams.value = 0;
++  memsetParams.pitch = 0;
++  // elementSize can be max 4 bytes, so we take sizeof(float) and width=2
++  memsetParams.elementSize = sizeof(float);
++  memsetParams.width = 2;
++  memsetParams.height = 1;
++
++  HIPCHECK(hipGraphCreate(&graph, 0));
++  HIPCHECK(
++      hipGraphAddMemsetNode(&memsetNode, graph, NULL, 0, &memsetParams));
++  nodeDependencies.push_back(memsetNode);
++
++  hipKernelNodeParams NodeParams0, NodeParams1;
++  NodeParams0.func = (void *)JacobiMethod;
++  NodeParams0.gridDim = nblocks;
++  NodeParams0.blockDim = nthreads;
++  NodeParams0.sharedMemBytes = 0;
++  void *kernelArgs0[6] = {(void *)&A, (void *)&b,     (void *)&conv_threshold,
++                          (void *)&x, (void *)&x_new, (void *)&d_sum};
++  NodeParams0.kernelParams = kernelArgs0;
++  NodeParams0.extra = NULL;
++
++  HIPCHECK(
++      hipGraphAddKernelNode(&jacobiKernelNode, graph, nodeDependencies.data(),
++                             nodeDependencies.size(), &NodeParams0));
++
++  nodeDependencies.clear();
++  nodeDependencies.push_back(jacobiKernelNode);
++
++  memcpyParams.srcArray = NULL;
++  memcpyParams.srcPos = make_hipPos(0, 0, 0);
++  memcpyParams.srcPtr = make_hipPitchedPtr(d_sum, sizeof(double), 1, 1);
++  memcpyParams.dstArray = NULL;
++  memcpyParams.dstPos = make_hipPos(0, 0, 0);
++  memcpyParams.dstPtr = make_hipPitchedPtr(&sum, sizeof(double), 1, 1);
++  memcpyParams.extent = make_hipExtent(sizeof(double), 1, 1);
++  memcpyParams.kind = hipMemcpyDeviceToHost;
++
++  HIPCHECK(
++      hipGraphAddMemcpyNode(&memcpyNode, graph, nodeDependencies.data(),
++                             nodeDependencies.size(), &memcpyParams));
++
++  HIPCHECK(hipGraphInstantiate(&graphExec, graph, NULL, NULL, 0));
++
++  NodeParams1.func = (void *)JacobiMethod;
++  NodeParams1.gridDim = nblocks;
++  NodeParams1.blockDim = nthreads;
++  NodeParams1.sharedMemBytes = 0;
++  void *kernelArgs1[6] = {(void *)&A,     (void *)&b, (void *)&conv_threshold,
++                          (void *)&x_new, (void *)&x, (void *)&d_sum};
++  NodeParams1.kernelParams = kernelArgs1;
++  NodeParams1.extra = NULL;
++
++  int k = 0;
++  for (k = 0; k < max_iter; k++) {
++    HIPCHECK(hipGraphExecKernelNodeSetParams(
++        graphExec, jacobiKernelNode,
++        ((k & 1) == 0) ? &NodeParams0 : &NodeParams1));
++    HIPCHECK(hipGraphLaunch(graphExec, stream));
++    HIPCHECK(hipStreamSynchronize(stream));
++
++    if (sum <= conv_threshold) {
++      HIPCHECK(hipMemsetAsync(d_sum, 0, sizeof(double), stream));
++      nblocks.x = (N_ROWS / nthreads.x) + 1;
++      size_t sharedMemSize = ((nthreads.x / 32) + 1) * sizeof(double);
++      if ((k & 1) == 0) {
++        finalError<<<nblocks, nthreads, sharedMemSize, stream>>>(x_new, d_sum);
++      } else {
++        finalError<<<nblocks, nthreads, sharedMemSize, stream>>>(x, d_sum);
++      }
++
++      HIPCHECK(hipMemcpyAsync(&sum, d_sum, sizeof(double),
++                                      hipMemcpyDeviceToHost, stream));
++      HIPCHECK(hipStreamSynchronize(stream));
++      printf("GPU iterations : %d\n", k + 1);
++      printf("GPU error : %.3e\n", sum);
++      break;
++    }
++  }
++
++  HIPCHECK(hipFree(d_sum));
++  return sum;
++}
++
++double JacobiMethodGpuCudaGraphExecUpdate(const float *A, const double *b,
++                                          const float conv_threshold,
++                                          const int max_iter, double *x,
++                                          double *x_new, hipStream_t stream) {
++  // CTA size
++  dim3 nthreads(256, 1, 1);
++  // grid size
++  dim3 nblocks((N_ROWS / ROWS_PER_CTA) + 2, 1, 1);
++  hipGraph_t graph;
++  hipGraphExec_t graphExec = NULL;
++
++  double sum = 0.0;
++  double *d_sum;
++  HIPCHECK(hipMalloc(&d_sum, sizeof(double)));
++
++  int k = 0;
++  for (k = 0; k < max_iter; k++) {
++    HIPCHECK(
++        hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal));
++    HIPCHECK(hipMemsetAsync(d_sum, 0, sizeof(double), stream));
++    if ((k & 1) == 0) {
++      JacobiMethod<<<nblocks, nthreads, 0, stream>>>(A, b, conv_threshold, x,
++                                                     x_new, d_sum);
++    } else {
++      JacobiMethod<<<nblocks, nthreads, 0, stream>>>(A, b, conv_threshold,
++                                                     x_new, x, d_sum);
++    }
++    HIPCHECK(hipMemcpyAsync(&sum, d_sum, sizeof(double),
++                                    hipMemcpyDeviceToHost, stream));
++    HIPCHECK(hipStreamEndCapture(stream, &graph));
++
++    if (graphExec == NULL) {
++      HIPCHECK(hipGraphInstantiate(&graphExec, graph, NULL, NULL, 0));
++    } else {
++      hipGraphExecUpdateResult updateResult_out;
++      HIPCHECK(
++          hipGraphExecUpdate(graphExec, graph, NULL, &updateResult_out));
++      if (updateResult_out != hipGraphExecUpdateSuccess) {
++        if (graphExec != NULL) {
++          HIPCHECK(hipGraphExecDestroy(graphExec));
++        }
++        printf("k = %d graph update failed with error - %d\n", k,
++               updateResult_out);
++        HIPCHECK(hipGraphInstantiate(&graphExec, graph, NULL, NULL, 0));
++      }
++    }
++    HIPCHECK(hipGraphLaunch(graphExec, stream));
++    HIPCHECK(hipStreamSynchronize(stream));
++
++    if (sum <= conv_threshold) {
++      HIPCHECK(hipMemsetAsync(d_sum, 0, sizeof(double), stream));
++      nblocks.x = (N_ROWS / nthreads.x) + 1;
++      size_t sharedMemSize = ((nthreads.x / 32) + 1) * sizeof(double);
++      if ((k & 1) == 0) {
++        finalError<<<nblocks, nthreads, sharedMemSize, stream>>>(x_new, d_sum);
++      } else {
++        finalError<<<nblocks, nthreads, sharedMemSize, stream>>>(x, d_sum);
++      }
++
++      HIPCHECK(hipMemcpyAsync(&sum, d_sum, sizeof(double),
++                                      hipMemcpyDeviceToHost, stream));
++      HIPCHECK(hipStreamSynchronize(stream));
++      printf("GPU iterations : %d\n", k + 1);
++      printf("GPU error : %.3e\n", sum);
++      break;
++    }
++  }
++
++  HIPCHECK(hipFree(d_sum));
++  return sum;
++}
++
++double JacobiMethodGpu(const float *A, const double *b,
++                       const float conv_threshold, const int max_iter,
++                       double *x, double *x_new, hipStream_t stream) {
++  // CTA size
++  dim3 nthreads(256, 1, 1);
++  // grid size
++  dim3 nblocks((N_ROWS / ROWS_PER_CTA) + 2, 1, 1);
++
++  double sum = 0.0;
++  double *d_sum;
++  HIPCHECK(hipMalloc(&d_sum, sizeof(double)));
++  int k = 0;
++
++  for (k = 0; k < max_iter; k++) {
++    HIPCHECK(hipMemsetAsync(d_sum, 0, sizeof(double), stream));
++    if ((k & 1) == 0) {
++      JacobiMethod<<<nblocks, nthreads, 0, stream>>>(A, b, conv_threshold, x,
++                                                     x_new, d_sum);
++    } else {
++      JacobiMethod<<<nblocks, nthreads, 0, stream>>>(A, b, conv_threshold,
++                                                     x_new, x, d_sum);
++    }
++    HIPCHECK(hipMemcpyAsync(&sum, d_sum, sizeof(double),
++                                    hipMemcpyDeviceToHost, stream));
++    HIPCHECK(hipStreamSynchronize(stream));
++
++    if (sum <= conv_threshold) {
++      HIPCHECK(hipMemsetAsync(d_sum, 0, sizeof(double), stream));
++      nblocks.x = (N_ROWS / nthreads.x) + 1;
++      size_t sharedMemSize = ((nthreads.x / 32) + 1) * sizeof(double);
++      if ((k & 1) == 0) {
++        finalError<<<nblocks, nthreads, sharedMemSize, stream>>>(x_new, d_sum);
++      } else {
++        finalError<<<nblocks, nthreads, sharedMemSize, stream>>>(x, d_sum);
++      }
++
++      HIPCHECK(hipMemcpyAsync(&sum, d_sum, sizeof(double),
++                                      hipMemcpyDeviceToHost, stream));
++      HIPCHECK(hipStreamSynchronize(stream));
++      printf("GPU iterations : %d\n", k + 1);
++      printf("GPU error : %.3e\n", sum);
++      break;
++    }
++  }
++
++  HIPCHECK(hipFree(d_sum));
++  return sum;
++}
+diff --git a/src/samples/Samples/4_CUDA_Libraries/conjugateGradientCudaGraphs/conjugateGradientCudaGraphs.cu.hip b/src/samples/Samples/4_CUDA_Libraries/conjugateGradientCudaGraphs/conjugateGradientCudaGraphs.cu.hip
+index 3904639..274451d 100644
+--- a/src/samples/Samples/4_CUDA_Libraries/conjugateGradientCudaGraphs/conjugateGradientCudaGraphs.cu.hip
++++ b/src/samples/Samples/4_CUDA_Libraries/conjugateGradientCudaGraphs/conjugateGradientCudaGraphs.cu.hip
+@@ -44,8 +44,8 @@
+ #include <hipsparse.h>
+ 
+ // Utilities and system includes
+-#include <helper_cuda.h>  // helper function CUDA error checking and initialization
+-#include <helper_functions.h>  // helper for shared functions common to CUDA Samples
++#include "helper_cuda_hipified.h"  // helper function CUDA error checking and initialization
++#include "helper_functions.h"  // helper for shared functions common to CUDA Samples
+ 
+ const char *sSDKname = "conjugateGradientCudaGraphs";
+ 
+@@ -424,14 +424,3 @@ int main(int argc, char **argv) {
+   printf("Test Summary:  Error amount = %f\n", err);
+   exit((k <= max_iter) ? 0 : 1);
+ }
+-rors(hipsparseDestroySpMat(matA));
+-  }
+-  if (vecx) {
+-    checkCudaErrors(hipsparseDestroyDnVec(vecx));
+-  }
+-  if (vecAx) {
+-    checkCudaErrors(hipsparseDestroyDnVec(vecAx));
+-  }
+-  if (vecp) {
+-    checkCudaErrors(hipsparseDestroyDnVec(vecp));
+-  }
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/derivativesKernel_hipified.cuh b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/derivativesKernel_hipified.cuh
+index e87cf96..a7f5c77 100644
+--- a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/derivativesKernel_hipified.cuh
++++ b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/derivativesKernel_hipified.cuh
+@@ -128,7 +128,7 @@ static void ComputeDerivatives(const float *I0, const float *I1, int w, int h,
+   texDescr.addressMode[1] = hipAddressModeMirror;
+   texDescr.readMode = hipReadModeElementType;
+ 
+-  checkCudaErrors(
++  HIPCHECK(
+       hipCreateTextureObject(&texSource, &texRes, &texDescr, NULL));
+   memset(&texRes, 0, sizeof(hipResourceDesc));
+   texRes.resType = hipResourceTypePitch2D;
+@@ -137,7 +137,7 @@ static void ComputeDerivatives(const float *I0, const float *I1, int w, int h,
+   texRes.res.pitch2D.width = w;
+   texRes.res.pitch2D.height = h;
+   texRes.res.pitch2D.pitchInBytes = s * sizeof(float);
+-  checkCudaErrors(
++  HIPCHECK(
+       hipCreateTextureObject(&texTarget, &texRes, &texDescr, NULL));
+ 
+   ComputeDerivativesKernel<<<blocks, threads>>>(w, h, s, Ix, Iy, Iz, texSource,
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/downscaleKernel_hipified.cuh b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/downscaleKernel_hipified.cuh
+index d6bd2ca..3dc9f11 100644
+--- a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/downscaleKernel_hipified.cuh
++++ b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/downscaleKernel_hipified.cuh
+@@ -27,7 +27,7 @@
+  */
+ 
+ #include "common.h"
+-
++#include "HIPCHECK.h"
+ ///////////////////////////////////////////////////////////////////////////////
+ /// \brief downscale image
+ ///
+@@ -92,7 +92,7 @@ static void Downscale(const float *src, int width, int height, int stride,
+   texDescr.addressMode[1] = hipAddressModeMirror;
+   texDescr.readMode = hipReadModeElementType;
+ 
+-  checkCudaErrors(hipCreateTextureObject(&texFine, &texRes, &texDescr, NULL));
++  HIPCHECK(hipCreateTextureObject(&texFine, &texRes, &texDescr, NULL));
+ 
+   DownscaleKernel<<<blocks, threads>>>(newWidth, newHeight, newStride, out,
+                                        texFine);
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/flowCUDA.cu.hip b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/flowCUDA.cu.hip
+index 15158aa..e0e1f31 100644
+--- a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/flowCUDA.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/flowCUDA.cu.hip
+@@ -28,14 +28,14 @@
+ 
+ #include <hip/hip_runtime.h>
+ #include "common.h"
+-
++#include "helper_cuda_hipified.h"
+ // include kernels
+-#include "downscaleKernel.cuh"
+-#include "upscaleKernel.cuh"
+-#include "warpingKernel.cuh"
+-#include "derivativesKernel.cuh"
+-#include "solverKernel.cuh"
+-#include "addKernel.cuh"
++#include "downscaleKernel_hipified.cuh"
++#include "upscaleKernel_hipified.cuh"
++#include "warpingKernel_hipified.cuh"
++#include "derivativesKernel_hipified.cuh"
++#include "solverKernel_hipified.cuh"
++#include "addKernel_hipified.cuh"
+ 
+ ///////////////////////////////////////////////////////////////////////////////
+ /// \brief method logic
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/main_hipified.cpp b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/main_hipified.cpp
+index a34ad0c..3047f1b 100644
+--- a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/main_hipified.cpp
++++ b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/main_hipified.cpp
+@@ -35,7 +35,7 @@ const float THRESHOLD = 0.05f;
+ #include "common.h"
+ #include "flowGold.h"
+ #include "flowCUDA.h"
+-
++#include "helper_cuda_hipified.h"
+ #include "helper_functions.h"
+ 
+ ///////////////////////////////////////////////////////////////////////////////
+@@ -159,7 +159,7 @@ int main(int argc, char **argv) {
+   printf("%s Starting...\n\n", sSDKsample);
+ 
+   // pick GPU
+-  findCudaDevice(argc, (const char **)argv);
++  // findCudaDevice(argc, (const char **)argv);
+ 
+   // find images
+   const char *const sourceFrameName = "frame10.ppm";
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/upscaleKernel_hipified.cuh b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/upscaleKernel_hipified.cuh
+index 8147d71..9c6043f 100644
+--- a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/upscaleKernel_hipified.cuh
++++ b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/upscaleKernel_hipified.cuh
+@@ -27,7 +27,7 @@
+  */
+ 
+ #include "common.h"
+-
++#include "HIPCHECK.h"
+ ///////////////////////////////////////////////////////////////////////////////
+ /// \brief upscale one component of a displacement field, CUDA kernel
+ /// \param[in]  width   field width
+@@ -89,7 +89,7 @@ static void Upscale(const float *src, int width, int height, int stride,
+   texDescr.addressMode[1] = hipAddressModeMirror;
+   texDescr.readMode = hipReadModeElementType;
+ 
+-  checkCudaErrors(
++  HIPCHECK(
+       hipCreateTextureObject(&texCoarse, &texRes, &texDescr, NULL));
+ 
+   UpscaleKernel<<<blocks, threads>>>(newWidth, newHeight, newStride, scale, out,
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/warpingKernel_hipified.cuh b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/warpingKernel_hipified.cuh
+index acb6f0b..2c4063a 100644
+--- a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/warpingKernel_hipified.cuh
++++ b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/warpingKernel_hipified.cuh
+@@ -27,7 +27,7 @@
+  */
+ 
+ #include "common.h"
+-
++#include "HIPCHECK.h"
+ ///////////////////////////////////////////////////////////////////////////////
+ /// \brief warp image with a given displacement field, CUDA kernel.
+ /// \param[in]  width   image width
+@@ -94,7 +94,7 @@ static void WarpImage(const float *src, int w, int h, int s, const float *u,
+   texDescr.addressMode[1] = hipAddressModeMirror;
+   texDescr.readMode = hipReadModeElementType;
+ 
+-  checkCudaErrors(
++  HIPCHECK(
+       hipCreateTextureObject(&texToWarp, &texRes, &texDescr, NULL));
+ 
+   WarpingKernel<<<blocks, threads>>>(w, h, s, u, v, out, texToWarp);
+diff --git a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_gold__hipified.cpp b/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_gold__hipified.cpp
+deleted file mode 100644
+index 4847ab3..0000000
+--- a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_gold__hipified.cpp
++++ /dev/null
+@@ -1,120 +0,0 @@
+-/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+- *
+- * Redistribution and use in source and binary forms, with or without
+- * modification, are permitted provided that the following conditions
+- * are met:
+- *  * Redistributions of source code must retain the above copyright
+- *    notice, this list of conditions and the following disclaimer.
+- *  * Redistributions in binary form must reproduce the above copyright
+- *    notice, this list of conditions and the following disclaimer in the
+- *    documentation and/or other materials provided with the distribution.
+- *  * Neither the name of NVIDIA CORPORATION nor the names of its
+- *    contributors may be used to endorse or promote products derived
+- *    from this software without specific prior written permission.
+- *
+- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
+- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+- * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+- * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+- * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+- * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
+- * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+- */
+-
+-#include <stdio.h>
+-#include <math.h>
+-#include "binomialOptions_common.h"
+-#include "realtype.h"
+-
+-///////////////////////////////////////////////////////////////////////////////
+-// Polynomial approximation of cumulative normal distribution function
+-///////////////////////////////////////////////////////////////////////////////
+-static real CND(real d) {
+-  const real A1 = (real)0.31938153;
+-  const real A2 = (real)-0.356563782;
+-  const real A3 = (real)1.781477937;
+-  const real A4 = (real)-1.821255978;
+-  const real A5 = (real)1.330274429;
+-  const real RSQRT2PI = (real)0.39894228040143267793994605993438;
+-
+-  real K = (real)(1.0 / (1.0 + 0.2316419 * (real)fabs(d)));
+-
+-  real cnd = (real)RSQRT2PI * (real)exp(-0.5 * d * d) *
+-             (K * (A1 + K * (A2 + K * (A3 + K * (A4 + K * A5)))));
+-
+-  if (d > 0) cnd = (real)1.0 - cnd;
+-
+-  return cnd;
+-}
+-
+-extern "C" void BlackScholesCall(real &callResult, TOptionData optionData) {
+-  real S = optionData.S;
+-  real X = optionData.X;
+-  real T = optionData.T;
+-  real R = optionData.R;
+-  real V = optionData.V;
+-
+-  real sqrtT = (real)sqrt(T);
+-  real d1 = (real)(log(S / X) + (R + (real)0.5 * V * V) * T) / (V * sqrtT);
+-  real d2 = d1 - V * sqrtT;
+-  real CNDD1 = CND(d1);
+-  real CNDD2 = CND(d2);
+-
+-  // Calculate Call and Put simultaneously
+-  real expRT = (real)exp(-R * T);
+-  callResult = (real)(S * CNDD1 - X * expRT * CNDD2);
+-}
+-
+-////////////////////////////////////////////////////////////////////////////////
+-// Process an array of OptN options on CPU
+-// Note that CPU code is for correctness testing only and not for benchmarking.
+-////////////////////////////////////////////////////////////////////////////////
+-static real expiryCallValue(real S, real X, real vDt, int i) {
+-  real d = S * (real)exp(vDt * (real)(2 * i - NUM_STEPS)) - X;
+-  return (d > (real)0) ? d : (real)0;
+-}
+-
+-extern "C" void binomialOptionsCPU(real &callResult, TOptionData optionData) {
+-  static real Call[NUM_STEPS + 1];
+-
+-  const real S = optionData.S;
+-  const real X = optionData.X;
+-  const real T = optionData.T;
+-  const real R = optionData.R;
+-  const real V = optionData.V;
+-
+-  const real dt = T / (real)NUM_STEPS;
+-  const real vDt = (real)V * (real)sqrt(dt);
+-  const real rDt = R * dt;
+-  // Per-step interest and discount factors
+-  const real If = (real)exp(rDt);
+-  const real Df = (real)exp(-rDt);
+-  // Values and pseudoprobabilities of upward and downward moves
+-  const real u = (real)exp(vDt);
+-  const real d = (real)exp(-vDt);
+-  const real pu = (If - d) / (u - d);
+-  const real pd = (real)1.0 - pu;
+-  const real puByDf = pu * Df;
+-  const real pdByDf = pd * Df;
+-
+-  ///////////////////////////////////////////////////////////////////////
+-  // Compute values at expiration date:
+-  // call option value at period end is V(T) = S(T) - X
+-  // if S(T) is greater than X, or zero otherwise.
+-  // The computation is similar for put options.
+-  ///////////////////////////////////////////////////////////////////////
+-  for (int i = 0; i <= NUM_STEPS; i++) Call[i] = expiryCallValue(S, X, vDt, i);
+-
+-  ////////////////////////////////////////////////////////////////////////
+-  // Walk backwards up binomial tree
+-  ////////////////////////////////////////////////////////////////////////
+-  for (int i = NUM_STEPS; i > 0; i--)
+-    for (int j = 0; j <= i - 1; j++)
+-      Call[j] = puByDf * Call[j + 1] + pdByDf * Call[j];
+-
+-  callResult = (real)Call[0];
+-}
+diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/commonDefs.hpp b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/commonDefs.hpp
+index 9efbdc5..f3d03bd 100644
+--- a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/commonDefs.hpp
++++ b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/commonDefs.hpp
+@@ -27,7 +27,7 @@
+ 
+ #ifndef _COMMON_DEFS_
+ #define _COMMON_DEFS_
+-#include <cuda.h>
++//#include <cuda.h>
+ 
+ #define ONE_KB 1024
+ #define ONE_MB (ONE_KB * ONE_KB)
+diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+index 0a750f2..59148ed 100644
+--- a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
++++ b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+@@ -125,7 +125,7 @@ void verifyMatrixData(float *expectedData, float *observedData,
+ }
+ 
+ #define BLOCK_SIZE 32
+-__global__ void matrixMultiplyKernel(float *C, float *A, float *B,
++__global__ void matrixMultiplyKernel(float *C,float *A,float *B,
+                                      unsigned int matrixDim) {
+   // Block index
+   int bx = blockIdx.x;
+@@ -206,9 +206,13 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
+                              double *gpuLaunchTransferSyncTimes,
+                              double *cpuAccessTimes, double *overallTimes,
+                              int device_id) {
+-  float *dptrA = NULL, *hptrA = NULL;
+-  float *dptrB = NULL, *hptrB = NULL;
+-  float *dptrC = NULL, *hptrC = NULL;
++  void *dptrA = NULL,  *hptrA = NULL;
++  void *dptrB = NULL,  *hptrB = NULL;
++  void *dptrC = NULL,  *hptrC = NULL;
++  //float *dptrA = NULL,  *hptrA = NULL;
++  //float *dptrB = NULL,  *hptrB = NULL;
++  //float *dptrC = NULL,  *hptrC = NULL;
++
+   float *randValuesX = NULL, *randValuesY = NULL;
+   float *randValuesVerifyXmulY = NULL, *randValuesVerifyYmulX = NULL;
+   bool copyRequired = false, hintsRequired = false;
+@@ -257,8 +261,8 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
+   HIPCHECK(
+       hipMemcpyAsync(dptrA, randValuesX, size, hipMemcpyHostToDevice));
+   HIPCHECK(
+-      hipMemcpyAsync(dptrB, randValuesY, size, hipMemcpyHostToDevice));
+-  matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
++      hipMemcpyAsync(dptrB, randValuesY, size, hipMemcpyHostToDevice));  
++matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
+   HIPCHECK(hipMemcpyAsync(randValuesVerifyXmulY, dptrC, size,
+                                   hipMemcpyDeviceToHost));
+   HIPCHECK(hipStreamSynchronize(NULL));

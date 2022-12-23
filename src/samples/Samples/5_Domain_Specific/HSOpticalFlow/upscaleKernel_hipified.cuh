@@ -27,7 +27,7 @@
  */
 
 #include "common.h"
-
+#include "HIPCHECK.h"
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief upscale one component of a displacement field, CUDA kernel
 /// \param[in]  width   field width
@@ -89,7 +89,7 @@ static void Upscale(const float *src, int width, int height, int stride,
   texDescr.addressMode[1] = hipAddressModeMirror;
   texDescr.readMode = hipReadModeElementType;
 
-  checkCudaErrors(
+  HIPCHECK(
       hipCreateTextureObject(&texCoarse, &texRes, &texDescr, NULL));
 
   UpscaleKernel<<<blocks, threads>>>(newWidth, newHeight, newStride, scale, out,
