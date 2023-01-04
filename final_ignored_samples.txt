@@ -84,3 +84,5 @@ src/samples/Samples/3_CUDA_Features/memMapIPCDrv/memMapIpc_kernel.cu
 src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu
 src/samples/Samples/4_CUDA_Libraries/cudaNvSci/imageKernels.cu
 src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu
+src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTexture_kernel.cu
+src/samples/Samples/0_Introduction/vectorAddDrv/vectorAdd_kernel.cu
