@@ -244,15 +244,24 @@ def compilation_1(x):
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
 	p=p.replace("\\","/")
-	for file in os.listdir(p):
-		if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
-			cpp.append(file)
+	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu':
+		command='hipcc -I../../../Common simpleMPI.cu.hip simpleMPI_hipified.cpp -lmpi -o simpleMPI.out'
+		print(command)
+		os.system(command)
+	else:
+		for file in os.listdir(p):
+			if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
+				cpp.append(file)
+			
+		
 
-	cpp = [p+'/'+x for x in cpp]
-	command='hipcc -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
-	print(command)
+		cpp = [p+'/'+x for x in cpp]
+		command='hipcc -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+		print(command)
 
-	os.system(command)
+		os.system(command)	
+
+	
 
 def compilation_2(x):
 	cpp=[]
