@@ -82,3 +82,5 @@ src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu
 src/samples/Samples/4_CUDA_Libraries/lineOfSight/lineOfSight.cu
 src/samples/Samples/3_CUDA_Features/memMapIPCDrv/memMapIpc_kernel.cu
 src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu
+src/samples/Samples/4_CUDA_Libraries/cudaNvSci/imageKernels.cu
+src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu
