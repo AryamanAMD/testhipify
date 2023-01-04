@@ -249,7 +249,7 @@ def compilation_1(x):
 			cpp.append(file)
 
 	cpp = [p+'/'+x for x in cpp]
-	command='hipcc -I src/samples/Common '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+	command='hipcc -I src/samples/Common  -I /usr/local/cuda-12.0/targets/x86_64-linux/include'+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
 
 	os.system(command)
@@ -264,7 +264,7 @@ def compilation_2(x):
 			cpp.append(file)
 
 	cpp = [p+'/'+x for x in cpp]
-	command='hipcc -I src/samples/Common '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+	command='hipcc -I src/samples/Common  -I /usr/local/cuda-12.0/targets/x86_64-linux/include'+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
 
 	os.system(command)
