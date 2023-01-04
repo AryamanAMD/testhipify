@@ -29,8 +29,8 @@
 #include <hip/hip_runtime.h>
 #include "helper_cuda_hipified.h"
 #include <helper_timer.h>
-#include "commonDefs.hpp"
-#include "commonKernels.hpp"
+#include "commonDefs_hipified.hpp"
+#include "commonKernels_hipified.hpp"
 #include "HIPCHECK.h"
 #define VERIFY_GPU_CORRECTNESS 0
 size_t maxSampleSizeInMb = 64;

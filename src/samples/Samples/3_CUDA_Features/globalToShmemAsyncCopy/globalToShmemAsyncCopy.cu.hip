@@ -42,10 +42,9 @@
 // System includes
 #include <stdio.h>
 #include <assert.h>
-
 // CUDA runtime
 #include <hip/hip_runtime.h>
-#include <cuda/pipeline>
+#include "cuda/pipeline"
 
 #if __CUDA_ARCH__ >= 700
 #include <cuda/barrier>
@@ -55,8 +54,8 @@
 namespace cg = cooperative_groups;
 
 // Helper functions and utilities to work with CUDA
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
 
 enum kernels {
   AsyncCopyMultiStageLargeChunk = 0,
