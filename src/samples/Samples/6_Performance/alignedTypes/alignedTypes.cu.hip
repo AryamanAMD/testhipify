@@ -40,15 +40,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
+#include <hip/hip_runtime.h>
 // includes, project
 #include "helper_cuda_hipified.h"  // helper functions for CUDA error checking and initialization
 #include "helper_functions.h"  // helper utility functions
-#include "hip/hip_runtime.h"
 #include "HIPCHECK.h"
-#include "hip/hip_runtime_api.h"
 #include <hip/hip_cooperative_groups.h>
-#include <hip/nvidia_detail/nvidia_hip_runtime_api.h>
 ////////////////////////////////////////////////////////////////////////////////
 // Misaligned types
 ////////////////////////////////////////////////////////////////////////////////
