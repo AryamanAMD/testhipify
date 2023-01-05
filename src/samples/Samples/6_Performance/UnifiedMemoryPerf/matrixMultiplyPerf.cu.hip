@@ -1,3 +1,4 @@
+
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -24,15 +25,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
-
 #include <hip/hip_runtime.h>
 #include "helper_cuda_hipified.h"
 #include <helper_timer.h>
-#include "commonDefs_hipified.hpp"
-#include "commonKernels_hipified.hpp"
+#include "commonDefs.hpp"
+#include "commonKernels.hpp"
 #include "HIPCHECK.h"
 #define VERIFY_GPU_CORRECTNESS 0
+#include "hip_runtime_api_modified.h"
 size_t maxSampleSizeInMb = 64;
 int numKernelRuns = 20;
 int verboseResults = 0;
@@ -125,7 +125,7 @@ void verifyMatrixData(float *expectedData, float *observedData,
 }
 
 #define BLOCK_SIZE 32
-__global__ void matrixMultiplyKernel(float *C,float *A,float *B,
+__global__ void matrixMultiplyKernel(float *C, float *A, float *B,
                                      unsigned int matrixDim) {
   // Block index
   int bx = blockIdx.x;
@@ -206,12 +206,15 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
                              double *gpuLaunchTransferSyncTimes,
                              double *cpuAccessTimes, double *overallTimes,
                              int device_id) {
-  void *dptrA = NULL,  *hptrA = NULL;
-  void *dptrB = NULL,  *hptrB = NULL;
-  void *dptrC = NULL,  *hptrC = NULL;
-  //float *dptrA = NULL,  *hptrA = NULL;
-  //float *dptrB = NULL,  *hptrB = NULL;
-  //float *dptrC = NULL,  *hptrC = NULL;
+  float *dptrA = NULL, *hptrA = NULL;
+  float *dptrB = NULL, *hptrB = NULL;
+  float *dptrC = NULL, *hptrC = NULL;
+  void *dptrA1=(void*)dptrA;
+  void *dptrB1=(void*)dptrB;
+  void *dptrC1=(void*)dptrC;
+  void *hptrA1=(void*)hptrA;
+  void *hptrB1=(void*)hptrB;
+  void *hptrC1=(void*)hptrC;
 
   float *randValuesX = NULL, *randValuesY = NULL;
   float *randValuesVerifyXmulY = NULL, *randValuesVerifyYmulX = NULL;
@@ -261,8 +264,8 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
   HIPCHECK(
       hipMemcpyAsync(dptrA, randValuesX, size, hipMemcpyHostToDevice));
   HIPCHECK(
-      hipMemcpyAsync(dptrB, randValuesY, size, hipMemcpyHostToDevice));  
-matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
+      hipMemcpyAsync(dptrB, randValuesY, size, hipMemcpyHostToDevice));
+  matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
   HIPCHECK(hipMemcpyAsync(randValuesVerifyXmulY, dptrC, size,
                                   hipMemcpyDeviceToHost));
   HIPCHECK(hipStreamSynchronize(NULL));
@@ -318,9 +321,9 @@ matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
       HIPCHECK(hipHostMalloc(&hptrA, size));
       HIPCHECK(hipHostMalloc(&hptrB, size));
       HIPCHECK(hipHostMalloc(&hptrC, size));
-      HIPCHECK(hipHostGetDevicePointer(&dptrA, hptrA, 0));
-      HIPCHECK(hipHostGetDevicePointer(&dptrB, hptrB, 0));
-      HIPCHECK(hipHostGetDevicePointer(&dptrC, hptrC, 0));
+      HIPCHECK(hipHostGetDevicePointer(&dptrA1, hptrA1, 0));
+      HIPCHECK(hipHostGetDevicePointer(&dptrB1, hptrB1, 0));
+      HIPCHECK(hipHostGetDevicePointer(&dptrC1, hptrC1, 0));
       break;
 
     case USE_MANAGED_MEMORY:

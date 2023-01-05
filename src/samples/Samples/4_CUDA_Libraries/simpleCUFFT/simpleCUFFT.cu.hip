@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,8 +31,6 @@
 // includes, system
 #include <math.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <string.h>
 
@@ -107,41 +106,41 @@ void runTest(int argc, char **argv) {
 
   // Allocate device memory for signal
   Complex *d_signal;
-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_signal), mem_size));
+  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_signal), mem_size));
   // Copy host memory to device
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(d_signal, h_padded_signal, mem_size, hipMemcpyHostToDevice));
 
   // Allocate device memory for filter kernel
   Complex *d_filter_kernel;
-  HIPCHECK(
+  checkCudaErrors(
       hipMalloc(reinterpret_cast<void **>(&d_filter_kernel), mem_size));
 
   // Copy host memory to device
-  HIPCHECK(hipMemcpy(d_filter_kernel, h_padded_filter_kernel, mem_size,
+  checkCudaErrors(hipMemcpy(d_filter_kernel, h_padded_filter_kernel, mem_size,
                              hipMemcpyHostToDevice));
 
   // CUFFT plan simple API
   hipfftHandle plan;
-  HIPCHECK(hipfftPlan1d(&plan, new_size, HIPFFT_C2C, 1));
+  checkCudaErrors(hipfftPlan1d(&plan, new_size, HIPFFT_C2C, 1));
 
   // CUFFT plan advanced API
   hipfftHandle plan_adv;
   size_t workSize;
   long long int new_size_long = new_size;
 
-  HIPCHECK(hipfftCreate(&plan_adv));
-  HIPCHECK(cufftXtMakePlanMany(plan_adv, 1, &new_size_long, NULL, 1, 1,
+  checkCudaErrors(hipfftCreate(&plan_adv));
+  checkCudaErrors(cufftXtMakePlanMany(plan_adv, 1, &new_size_long, NULL, 1, 1,
                                       HIPBLAS_C_32F, NULL, 1, 1, HIPBLAS_C_32F, 1,
                                       &workSize, HIPBLAS_C_32F));
   printf("Temporary buffer size %li bytes\n", workSize);
 
   // Transform signal and kernel
-  printf("Transforming signal cufftExecC2C\n");
-  HIPCHECK(hipfftExecC2C(plan, reinterpret_cast<hipfftComplex *>(d_signal),
+  printf("Transforming signal hipfftExecC2C\n");
+  checkCudaErrors(hipfftExecC2C(plan, reinterpret_cast<hipfftComplex *>(d_signal),
                                reinterpret_cast<hipfftComplex *>(d_signal),
                                HIPFFT_FORWARD));
-  HIPCHECK(hipfftExecC2C(
+  checkCudaErrors(hipfftExecC2C(
       plan_adv, reinterpret_cast<hipfftComplex *>(d_filter_kernel),
       reinterpret_cast<hipfftComplex *>(d_filter_kernel), HIPFFT_FORWARD));
 
@@ -154,14 +153,14 @@ void runTest(int argc, char **argv) {
   getLastCudaError("Kernel execution failed [ ComplexPointwiseMulAndScale ]");
 
   // Transform signal back
-  printf("Transforming signal back cufftExecC2C\n");
-  HIPCHECK(hipfftExecC2C(plan, reinterpret_cast<hipfftComplex *>(d_signal),
+  printf("Transforming signal back hipfftExecC2C\n");
+  checkCudaErrors(hipfftExecC2C(plan, reinterpret_cast<hipfftComplex *>(d_signal),
                                reinterpret_cast<hipfftComplex *>(d_signal),
                                HIPFFT_BACKWARD));
 
   // Copy device memory to host
   Complex *h_convolved_signal = h_padded_signal;
-  HIPCHECK(hipMemcpy(h_convolved_signal, d_signal, mem_size,
+  checkCudaErrors(hipMemcpy(h_convolved_signal, d_signal, mem_size,
                              hipMemcpyDeviceToHost));
 
   // Allocate host memory for the convolution result
@@ -178,8 +177,8 @@ void runTest(int argc, char **argv) {
       reinterpret_cast<float *>(h_convolved_signal), 2 * SIGNAL_SIZE, 1e-5f);
 
   // Destroy CUFFT context
-  HIPCHECK(hipfftDestroy(plan));
-  HIPCHECK(hipfftDestroy(plan_adv));
+  checkCudaErrors(hipfftDestroy(plan));
+  checkCudaErrors(hipfftDestroy(plan_adv));
 
   // cleanup memory
   free(h_signal);
@@ -187,8 +186,8 @@ void runTest(int argc, char **argv) {
   free(h_padded_signal);
   free(h_padded_filter_kernel);
   free(h_convolved_signal_ref);
-  HIPCHECK(hipFree(d_signal));
-  HIPCHECK(hipFree(d_filter_kernel));
+  checkCudaErrors(hipFree(d_signal));
+  checkCudaErrors(hipFree(d_filter_kernel));
 
   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }
@@ -286,6 +285,3 @@ static __global__ void ComplexPointwiseMulAndScale(Complex *a, const Complex *b,
     a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
   }
 }
-i = threadID; i < size; i += numThreads) {
-    a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
-  }
