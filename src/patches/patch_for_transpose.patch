@@ -1,0 +1,115 @@
+diff --git a/src/samples/Samples/6_Performance/transpose/transpose.cu.hip b/src/samples/Samples/6_Performance/transpose/transpose.cu.hip
+index c5c786c..17d876e 100644
+--- a/src/samples/Samples/6_Performance/transpose/transpose.cu.hip
++++ b/src/samples/Samples/6_Performance/transpose/transpose.cu.hip
+@@ -1,4 +1,4 @@
+-
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -46,7 +46,7 @@ namespace cg = cooperative_groups;
+ #include <helper_string.h>    // helper for string parsing
+ #include <helper_image.h>     // helper for image and data comparison
+ #include "helper_cuda_hipified.h"      // helper for cuda error checking functions
+-#include "hip/hip_runtime.h"
++#include "HIPCHECK.h"
+ const char *sSDKsample = "Transpose";
+ 
+ // Each block transposes/copies a tile of TILE_DIM x TILE_DIM elements
+@@ -367,8 +367,8 @@ int main(int argc, char **argv) {
+   hipDeviceProp_t deviceProp;
+ 
+   // get number of SMs on this GPU
+-  checkCudaErrors(hipGetDevice(&devID));
+-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, devID));
++  HIPCHECK(hipGetDevice(&devID));
++  HIPCHECK(hipGetDeviceProperties(&deviceProp, devID));
+ 
+   // compute the scaling factor (for GPUs with fewer MPs)
+   float scale_factor, total_tiles;
+@@ -458,8 +458,8 @@ int main(int argc, char **argv) {
+ 
+   // allocate device memory
+   float *d_idata, *d_odata;
+-  checkCudaErrors(hipMalloc((void **)&d_idata, mem_size));
+-  checkCudaErrors(hipMalloc((void **)&d_odata, mem_size));
++  HIPCHECK(hipMalloc((void **)&d_idata, mem_size));
++  HIPCHECK(hipMalloc((void **)&d_odata, mem_size));
+ 
+   // initialize host data
+   for (int i = 0; i < (size_x * size_y); ++i) {
+@@ -467,7 +467,7 @@ int main(int argc, char **argv) {
+   }
+ 
+   // copy host data to device
+-  checkCudaErrors(
++  HIPCHECK(
+       hipMemcpy(d_idata, h_idata, mem_size, hipMemcpyHostToDevice));
+ 
+   // Compute reference transpose solution
+@@ -481,8 +481,8 @@ int main(int argc, char **argv) {
+       TILE_DIM, BLOCK_ROWS);
+ 
+   // initialize events
+-  checkCudaErrors(hipEventCreate(&start));
+-  checkCudaErrors(hipEventCreate(&stop));
++  HIPCHECK(hipEventCreate(&start));
++  HIPCHECK(hipEventCreate(&stop));
+ 
+   //
+   // loop over different kernels
+@@ -546,26 +546,26 @@ int main(int argc, char **argv) {
+     }
+ 
+     // Clear error status
+-    checkCudaErrors(hipGetLastError());
++    HIPCHECK(hipGetLastError());
+ 
+     // warmup to avoid timing startup
+     kernel<<<grid, threads>>>(d_odata, d_idata, size_x, size_y);
+ 
+     // take measurements for loop over kernel launches
+-    checkCudaErrors(hipEventRecord(start, 0));
++    HIPCHECK(hipEventRecord(start, 0));
+ 
+     for (int i = 0; i < NUM_REPS; i++) {
+       kernel<<<grid, threads>>>(d_odata, d_idata, size_x, size_y);
+       // Ensure no launch failure
+-      checkCudaErrors(hipGetLastError());
++      HIPCHECK(hipGetLastError());
+     }
+ 
+-    checkCudaErrors(hipEventRecord(stop, 0));
+-    checkCudaErrors(hipEventSynchronize(stop));
++    HIPCHECK(hipEventRecord(stop, 0));
++    HIPCHECK(hipEventSynchronize(stop));
+     float kernelTime;
+-    checkCudaErrors(hipEventElapsedTime(&kernelTime, start, stop));
++    HIPCHECK(hipEventElapsedTime(&kernelTime, start, stop));
+ 
+-    checkCudaErrors(
++    HIPCHECK(
+         hipMemcpy(h_odata, d_odata, mem_size, hipMemcpyDeviceToHost));
+     bool res = compareData(gold, h_odata, size_x * size_y, 0.01f, 0.0f);
+ 
+@@ -575,7 +575,7 @@ int main(int argc, char **argv) {
+     }
+ 
+     // take measurements for loop inside kernel
+-    checkCudaErrors(
++    HIPCHECK(
+         hipMemcpy(h_odata, d_odata, mem_size, hipMemcpyDeviceToHost));
+     res = compareData(gold, h_odata, size_x * size_y, 0.01f, 0.0f);
+ 
+@@ -601,8 +601,8 @@ int main(int argc, char **argv) {
+   hipFree(d_idata);
+   hipFree(d_odata);
+ 
+-  checkCudaErrors(hipEventDestroy(start));
+-  checkCudaErrors(hipEventDestroy(stop));
++  HIPCHECK(hipEventDestroy(start));
++  HIPCHECK(hipEventDestroy(stop));
+ 
+   if (!success) {
+     printf("Test failed!\n");
