@@ -248,6 +248,10 @@ def compilation_1(x):
 		command='hipcc -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
 		print(command)
 		os.system(command)
+	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu':
+		command='hipcc -I src/samples/Common -fgpu-rdc simpleDeviceLibrary.cu.hip simpleSeparateCompilation.cu.hip -o simpleSeparateCompilation.out'
+		print(command)
+		os.system(command)	
 	else:
 		for file in os.listdir(p):
 			if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
@@ -271,6 +275,10 @@ def compilation_2(x):
 	p=p.replace("\\","/")
 	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu':
 		command='hipcc -use-staticlib -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
+		print(command)
+		os.system(command)
+	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu':
+		command='hipcc -use-staticlib -I src/samples/Common -fgpu-rdc simpleDeviceLibrary.cu.hip simpleSeparateCompilation.cu.hip -o simpleSeparateCompilation.out'
 		print(command)
 		os.system(command)
 	else:
