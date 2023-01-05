@@ -285,6 +285,10 @@ def compilation_2(x):
 		command='hipcc -use-staticlib -I src/samples/Common -fgpu-rdc simpleDeviceLibrary.cu.hip simpleSeparateCompilation.cu.hip -o simpleSeparateCompilation.out'
 		print(command)
 		os.system(command)
+	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu':
+		command='hipcc -use-staticlib -I../../../Common -fopenmp cudaOpenMP.cu.hip -o cudaOpenMP.out'
+		print(command)
+		os.system(command)	
 	else:
 		for file in os.listdir(p):
 			if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
