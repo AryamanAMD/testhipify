@@ -14,7 +14,6 @@ src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics
 src/samples/Samples/0_Introduction/simpleAttributes/simpleAttributes.cu
 src/samples/Samples/5_Domain_Specific/SLID3D10Texture/texture_2d.cu
 src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu
-src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D10Texture/texture_3d.cu
 src/samples/Samples/5_Domain_Specific/simpleVulkan/SineWaveSimulation.cu
 src/samples/Samples/5_Domain_Specific/simpleGLES/simpleGLES.cu
