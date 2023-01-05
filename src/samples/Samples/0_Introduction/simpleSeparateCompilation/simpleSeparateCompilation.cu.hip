@@ -43,7 +43,11 @@
 //#include <helper_cuda.h>
 
 // Device library includes.
-#include "simpleDeviceLibrary.cuh"
+#include "simpleDeviceLibrary_hipified.cuh"
+
+extern __device__ float multiplyByTwo(float number);
+
+extern __device__ float divideByTwo(float number);
 
 using std::cout;
 using std::endl;

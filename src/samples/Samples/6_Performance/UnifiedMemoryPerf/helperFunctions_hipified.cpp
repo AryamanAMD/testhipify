@@ -27,7 +27,7 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "commonDefs.hpp"
+#include "commonDefs_hipified.hpp"
 #define CU_INIT_UUID
 #include <cmath>
 
