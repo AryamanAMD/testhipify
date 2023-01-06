@@ -2,7 +2,7 @@ import os
 import argparse
 import fileinput
 import os.path
-import glob
+from sys import platform
 def getListOfFiles(dirName):
     listOfFile=os.listdir(dirName)
     allFiles=list()
@@ -427,7 +427,11 @@ def rem(z):
 	os.remove('final_ignored_samples.txt')
 	os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
 	os.remove('samples_to_be_ignored.txt')
-        
+	if platform=="linux" or platform == "linux2":
+		os.system('sort final_ignored_samples.txt')
+
+    
+
     
 
 
