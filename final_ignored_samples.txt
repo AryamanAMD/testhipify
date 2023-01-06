@@ -96,3 +96,4 @@ src/samples/Samples/5_Domain_Specific/simpleD3D9/simpleD3D9_kernel.cu
 src/samples/Samples/2_Concepts_and_Techniques/convolutionTexture/convolutionTexture.cu
 src/samples/Samples/5_Domain_Specific/volumeFiltering/volumeFilter_kernel.cu
 src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu
+src/samples/Samples/0_Introduction/vectorAdd_nvrtc/vectorAdd_kernel.cu
