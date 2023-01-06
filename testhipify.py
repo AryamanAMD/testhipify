@@ -437,15 +437,17 @@ def rem(z):
 			outfile.write(line)
 			lines_seen.add(line)
 	outfile.close()
-	
 	os.remove('final_ignored_samples.txt')
-	#os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
-	os.remove('samples_to_be_ignored.txt')
 	if platform=="linux" or platform == "linux2":
 		os.system('sort final_ignored_samples1.txt > final_ignored_samples.txt')
 		#os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
+		os.remove('final_ignored_samples1.txt')
 	else:
-		sorting('final_ignored_samples1.txt')	
+		sorting('final_ignored_samples1.txt')
+	
+	#os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
+	os.remove('samples_to_be_ignored.txt')
+		
 
 
     
