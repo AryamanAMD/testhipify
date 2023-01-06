@@ -244,6 +244,7 @@ def compilation_1(x):
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
 	p=p.replace("\\","/")
+	print('Processing Sample:'+x)
 	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu':
 		command='hipcc -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
 		print(command)
@@ -277,6 +278,7 @@ def compilation_2(x):
 	p=os.path.dirname(x)
 	q=os.path.basename(x)
 	p=p.replace("\\","/")
+	print('Processing Sample:'+x)
 	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu':
 		command='hipcc -use-staticlib -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
 		print(command)
