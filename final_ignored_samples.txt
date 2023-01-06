@@ -6,7 +6,8 @@ src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.c
 src/samples/Samples/5_Domain_Specific/postProcessGL/postProcessGL.cu
 src/samples/Samples/3_CUDA_Features/bindlessTexture/bindlessTexture_kernel.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D11/sinewave_cuda.cu
-src/samples/Samples/0_Introduction/vectorAddMMAP/vectorAdd_kernel.cusrc/samples/Samples/2_Concepts_and_Techniques/EGLStream_CUDA_CrossGPU/kernel.cu
+src/samples/Samples/0_Introduction/vectorAddMMAP/vectorAdd_kernel.cu
+src/samples/Samples/2_Concepts_and_Techniques/EGLStream_CUDA_CrossGPU/kernel.cu
 src/samples/Samples/2_Concepts_and_Techniques/radixSortThrust/radixSortThrust.cu
 src/samples/Samples/5_Domain_Specific/marchingCubes/marchingCubes_kernel.cu
 src/samples/Samples/0_Introduction/simpleAssert_nvrtc/simpleAssert_kernel.cu
@@ -94,3 +95,4 @@ src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D9/simpleD3D9_kernel.cu
 src/samples/Samples/2_Concepts_and_Techniques/convolutionTexture/convolutionTexture.cu
 src/samples/Samples/5_Domain_Specific/volumeFiltering/volumeFilter_kernel.cu
+src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu

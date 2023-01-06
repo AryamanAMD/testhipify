@@ -55,3 +55,5 @@ src/samples/Samples/0_Introduction/vectorAdd_nvrtc/vectorAdd_nvrtc.cu
 src/samples/Samples/0_Introduction/simpleTemplates_nvrtc/simpleTemplates_kernel.cu
 src/samples/Samples/0_Introduction/matrixMulDrv/matrixMul_kernel.cu
 src/samples/Samples/0_Introduction/vectorAddMMAP/vectorAdd_kernel.cu
+src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu
+src/samples/Samples/0_Introduction/vectorAdd_nvrtc/vectorAdd_kernel.cu
