@@ -34,8 +34,8 @@
 #include <thrust/generate.h>
 #include <thrust/detail/type_traits.h>
 
-#include <helper_cuda.h>
-
+#include "helper_cuda.h"
+#include "hip/hip_runtime_api.h"
 #include <algorithm>
 #include <time.h>
 #include <limits.h>
