@@ -362,9 +362,9 @@ def fall(y):
 def rem(z):
 	print("This script automates sample exclusion.Please backup any paths provided by you to avoid loss or overwriting.")
 	input("Press Enter to continue...")
-	a=open("samples_to_be_ignored.txt","r+")
+	a=open("samples_to_be_ignored.txt","w")
 	a.truncate(0)	
-	b=open("final_ignored_samples.txt", 'w')
+	b=open("final_ignored_samples.txt","w")
 	b.close()
 	z=z.replace('"','')
 	#ignore_list = ['<GL/', '<screen', '<drm.h>','FDTD3dGPU.h','#include <d312.h>\n',' #include <GLES3/gl31.h>\n','#include <windows.h>\n','#include <omp.h>\n','#include "nvmedia_image_nvscibuf.h"\n','#include "graphics_interface.c"\n','#include <DirectXMath.h>\n']
@@ -423,6 +423,7 @@ def rem(z):
 			outfile.write(line)
 			lines_seen.add(line)
 	outfile.close()
+	
 	os.remove('final_ignored_samples.txt')
 	os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
 	os.remove('samples_to_be_ignored.txt')
