@@ -408,19 +408,12 @@ def rem(z):
 	bar = open('final_ignored_samples.txt', 'w')
 	bar.writelines(uniqlines)
 	bar.close()
-	#read input file
 	fin = open('final_ignored_samples.txt', "rt")
-	#read file contents to string
 	data = fin.read()
-	#replace all occurrences of the required string
 	data = data.replace('\\', '/')
-	#close the input file
 	fin.close()
-	#open the input file in write mode
 	fin = open("final_ignored_samples.txt", "wt")
-	#overrite the input file with the resulting data
 	fin.write(data)
-	#close the file
 	fin.close()
 	lines_seen = set() # holds lines already seen
 	outfile = open('final_ignored_samples1.txt', "w")
@@ -432,6 +425,7 @@ def rem(z):
 	outfile.close()
 	os.remove('final_ignored_samples.txt')
 	os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
+	os.remove('samples_to_be_ignored.txt')
         
     
 
