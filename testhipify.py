@@ -442,8 +442,8 @@ def rem(z):
 	#os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
 	os.remove('samples_to_be_ignored.txt')
 	if platform=="linux" or platform == "linux2":
-		os.system('sort final_ignored_samples.txt > final_ignored_samples1.txt')
-		os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
+		os.system('sort final_ignored_samples1.txt > final_ignored_samples.txt')
+		#os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
 	else:
 		sorting('final_ignored_samples1.txt')	
 
