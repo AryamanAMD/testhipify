@@ -77,10 +77,11 @@ const char *sSDKsample = "threadFenceReduction";
 
 #if CUDART_VERSION >= 2020
 #include "threadFenceReduction_kernel_hipified.cuh"
+#include "threadFenceReduction_hipified.h"
 #else
 #pragma comment(user, "CUDA 2.2 is required to build for threadFenceReduction")
 #endif
-#include "threadFenceReduction_hipified.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 // declaration, forward
 bool runTest(int argc, char **argv);
