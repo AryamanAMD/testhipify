@@ -69,6 +69,7 @@ src/samples/Samples/5_Domain_Specific/nbody/bodysystemcuda.cu
 src/samples/Samples/5_Domain_Specific/nbody_opengles/bodysystemcuda.cu
 src/samples/Samples/5_Domain_Specific/nbody_screen/bodysystemcuda.cu
 src/samples/Samples/5_Domain_Specific/postProcessGL/postProcessGL.cu
+src/samples/Samples/5_Domain_Specific/quasirandomGenerator_nvrtc/quasirandomGenerator_kernel.cu
 src/samples/Samples/5_Domain_Specific/recursiveGaussian/recursiveGaussian_cuda.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D10/simpleD3D10_kernel.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D10RenderTarget/simpleD3D10RenderTarget_kernel.cu
