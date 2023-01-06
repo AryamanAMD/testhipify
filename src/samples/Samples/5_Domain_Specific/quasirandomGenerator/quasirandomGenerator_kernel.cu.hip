@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,10 +30,8 @@
 #define QUASIRANDOMGENERATOR_KERNEL_CUH
 
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include "quasirandomGenerator_common.h"
 
 // Fast integer multiplication
@@ -66,8 +65,8 @@ static __global__ void quasirandomGeneratorKernel(float *d_Output,
 // Table initialization routine
 extern "C" void initTableGPU(
     unsigned int tableCPU[QRNG_DIMENSIONS][QRNG_RESOLUTION]) {
-  HIP_SYMBOL(c_Table)(hipMemcpyToSymbol(
-      c_Table, tableCPU,
+  checkCudaErrors(hipMemcpyToSymbol(HIP_SYMBOL(
+      c_Table), tableCPU,
       QRNG_DIMENSIONS * QRNG_RESOLUTION * sizeof(unsigned int)));
 }
 
