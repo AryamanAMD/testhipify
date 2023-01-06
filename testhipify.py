@@ -15,7 +15,21 @@ def getListOfFiles(dirName):
                 
     return allFiles
 
-
+def sorting(filename):
+  infile = open(filename)
+  words = []
+  for line in infile:
+    temp = line.split()
+    for i in temp:
+      words.append(i)
+  infile.close()
+  words.sort()
+  outfile = open("final_ignored_samples1.txt", "w")
+  for i in words:
+    outfile.writelines(i)
+    outfile.writelines("\n")
+  outfile.close()
+  os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
 """
 def prepend_line(file_name, line):
 	#line='#include "HIPCHECK.h"'
@@ -425,11 +439,13 @@ def rem(z):
 	outfile.close()
 	
 	os.remove('final_ignored_samples.txt')
-	os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
+	#os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
 	os.remove('samples_to_be_ignored.txt')
 	if platform=="linux" or platform == "linux2":
 		os.system('sort final_ignored_samples.txt > final_ignored_samples1.txt')
 		os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
+	else:
+		sorting('final_ignored_samples1.txt')	
 
 
     
