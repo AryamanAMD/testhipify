@@ -3,16 +3,11 @@ src/samples/Samples/0_Introduction/c++11_cuda/c++11_cuda.cu
 src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu
 src/samples/Samples/0_Introduction/matrixMulDrv/matrixMul_kernel.cu
 src/samples/Samples/0_Introduction/matrixMul_nvrtc/matrixMul_kernel.cu
-src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu
 src/samples/Samples/0_Introduction/simpleAssert_nvrtc/simpleAssert_kernel.cu
-src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu
 src/samples/Samples/0_Introduction/simpleAttributes/simpleAttributes.cu
 src/samples/Samples/0_Introduction/simpleCUDA2GL/simpleCUDA2GL.cu
 src/samples/Samples/0_Introduction/simpleDrvRuntime/vectorAdd_kernel.cu
-src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.cu
-src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu
 src/samples/Samples/0_Introduction/simpleTemplates_nvrtc/simpleTemplates_kernel.cu
-src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu
 src/samples/Samples/0_Introduction/simpleTexture3D/simpleTexture3D_kernel.cu
 src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTexture_kernel.cu
 src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu
@@ -34,7 +29,6 @@ src/samples/Samples/2_Concepts_and_Techniques/particles/particleSystem_cuda.cu
 src/samples/Samples/2_Concepts_and_Techniques/radixSortThrust/radixSortThrust.cu
 src/samples/Samples/2_Concepts_and_Techniques/segmentationTreeThrust/segmentationTreeThrust.cu
 src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu
-src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_kernel.cu
 src/samples/Samples/3_CUDA_Features/bindlessTexture/bindlessTexture_kernel.cu
 src/samples/Samples/3_CUDA_Features/cdpAdvancedQuicksort/cdpAdvancedQuicksort.cu
 src/samples/Samples/3_CUDA_Features/cdpAdvancedQuicksort/cdpBitonicSort.cu

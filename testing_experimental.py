@@ -81,7 +81,7 @@ file1 = open('final_ignored_samples.txt', 'r')
 Lines = file1.readlines()
 for line in Lines:
 	line = line.strip('\n')
-	#generate(line)
+	generate(line)
 	#compilation_1(line)
-	runsample(line)
+	#runsample(line)
 
