@@ -216,7 +216,7 @@ def generate(x):
 		"""
 	#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
 	#command="hipify-clang -Isrc/samples/Common "+x+" > "+x+".hip"
-	command="hipify-perl -Isrc/samples/Common "+x+" > "+x+".hip"
+	command="hipify-perl "+x+" > "+x+".hip"
 	print(command)
 	os.system(command)
 	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"\n')

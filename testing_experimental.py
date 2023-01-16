@@ -8,7 +8,7 @@ def generate(x):
 	q=os.path.basename(x)
 	p=p.replace("\\","/")
 	os.system("cd "+p)
-	command="hipify-perl -Isrc/samples/Common "+x+" > "+x+".hip"
+	command="hipify-perl "+x+" > "+x+".hip"
 	print(command)
 	os.system(command)
 	textToSearch="checkCudaErrors"
