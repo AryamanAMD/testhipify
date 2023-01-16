@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -62,10 +63,8 @@
 
 #include <assert.h>
 #include <hip/hip_runtime.h>
-#include <mma.h>
+#include "rocwmma.hpp"
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 // helper functions and utilities to work with CUDA
 #include <helper_cuda.h>
@@ -176,8 +175,8 @@
     }                                                       \
   } while (0)
 
-using namespace nvcuda;
-
+//using namespace nvcuda;
+using namespace rocwmma;
 __host__ void init_host_matrices(half *a, half *b, float *c) {
   for (int i = 0; i < M_GLOBAL; i++) {
     for (int j = 0; j < K_GLOBAL; j++) {
@@ -486,7 +485,7 @@ int main(int argc, char **argv) {
   int dev = findCudaDevice(argc, (const char **)argv);
 
   hipDeviceProp_t deviceProp;
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
 
   // Tensor cores require a GPU of Volta (SM7X) architecture or higher.
   if (deviceProp.major < 7) {
@@ -521,13 +520,13 @@ int main(int argc, char **argv) {
   float *C = NULL;
   float *D = NULL;
 
-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&A),
+  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&A),
                              sizeof(half) * M_GLOBAL * K_GLOBAL));
-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&B),
+  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&B),
                              sizeof(half) * N_GLOBAL * K_GLOBAL));
-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&C),
+  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&C),
                              sizeof(float) * M_GLOBAL * N_GLOBAL));
-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&D),
+  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&D),
                              sizeof(float) * M_GLOBAL * N_GLOBAL));
 
   assert(((unsigned long long)A) % 128 == 0);
@@ -539,13 +538,13 @@ int main(int argc, char **argv) {
 
   printf("Preparing data for GPU...\n");
 
-  HIPCHECK(hipMemcpy(A, A_h, sizeof(half) * M_GLOBAL * K_GLOBAL,
+  checkCudaErrors(hipMemcpy(A, A_h, sizeof(half) * M_GLOBAL * K_GLOBAL,
                              hipMemcpyHostToDevice));
-  HIPCHECK(hipMemcpy(B, B_h, sizeof(half) * N_GLOBAL * K_GLOBAL,
+  checkCudaErrors(hipMemcpy(B, B_h, sizeof(half) * N_GLOBAL * K_GLOBAL,
                              hipMemcpyHostToDevice));
-  HIPCHECK(hipMemcpy(C, C_h, sizeof(float) * M_GLOBAL * N_GLOBAL,
+  checkCudaErrors(hipMemcpy(C, C_h, sizeof(float) * M_GLOBAL * N_GLOBAL,
                              hipMemcpyHostToDevice));
-  HIPCHECK(hipMemset(D, 0, sizeof(float) * M_GLOBAL * N_GLOBAL));
+  checkCudaErrors(hipMemset(D, 0, sizeof(float) * M_GLOBAL * N_GLOBAL));
 
   enum {
     // Compute the right amount of shared memory to request.
@@ -567,21 +566,21 @@ int main(int argc, char **argv) {
 
   hipEvent_t start, stop;
 
-  HIPCHECK(hipEventCreate(&start));
-  HIPCHECK(hipEventCreate(&stop));
-  HIPCHECK(hipEventRecord(start));
+  checkCudaErrors(hipEventCreate(&start));
+  checkCudaErrors(hipEventCreate(&stop));
+  checkCudaErrors(hipEventRecord(start));
 
   // If enough shared memory available on the GPU use high performant kernel
   if (deviceProp.sharedMemPerMultiprocessor >= SHMEM_SZ) {
     printf("Computing... using high performance kernel compute_gemm \n");
 
-    HIPCHECK(hipFuncSetAttribute(
+    checkCudaErrors(hipFuncSetAttribute(
         compute_gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
     checkKernelErrors(
         (compute_gemm<<<deviceProp.multiProcessorCount, THREADS_PER_BLOCK,
                         SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
 #if CPU_DEBUG
-    HIPCHECK(hipMemcpy(result_hD, D,
+    checkCudaErrors(hipMemcpy(result_hD, D,
                                sizeof(float) * M_GLOBAL * N_GLOBAL,
                                hipMemcpyDeviceToHost));
 #endif
@@ -602,14 +601,14 @@ int main(int argc, char **argv) {
     simple_wmma_gemm<<<gridDim, blockDim>>>(A, B, C, D, M_GLOBAL, N_GLOBAL,
                                             K_GLOBAL, alpha, beta);
 #if CPU_DEBUG
-    HIPCHECK(hipMemcpy(result_hD, D,
+    checkCudaErrors(hipMemcpy(result_hD, D,
                                sizeof(float) * M_GLOBAL * N_GLOBAL,
                                hipMemcpyDeviceToHost));
 #endif
   }
 
-  HIPCHECK(hipEventRecord(stop));
-  HIPCHECK(hipEventSynchronize(stop));
+  checkCudaErrors(hipEventRecord(stop));
+  checkCudaErrors(hipEventSynchronize(stop));
 
 #if CPU_DEBUG
   printf("Verifying correctness of the computations...\n");
@@ -630,7 +629,7 @@ int main(int argc, char **argv) {
 
   float milliseconds = 0;
 
-  HIPCHECK(hipEventElapsedTime(&milliseconds, start, stop));
+  checkCudaErrors(hipEventElapsedTime(&milliseconds, start, stop));
 
   printf("Time: %f ms\n", milliseconds);
   printf("TFLOPS: %.2f\n", static_cast<double>((static_cast<double>(M_GLOBAL) *
@@ -641,10 +640,10 @@ int main(int argc, char **argv) {
   free(A_h);
   free(B_h);
   free(C_h);
-  HIPCHECK(hipFree(reinterpret_cast<void *>(A)));
-  HIPCHECK(hipFree(reinterpret_cast<void *>(B)));
-  HIPCHECK(hipFree(reinterpret_cast<void *>(C)));
-  HIPCHECK(hipFree(reinterpret_cast<void *>(D)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(A)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(B)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
 
   return 0;
 }

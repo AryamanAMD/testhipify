@@ -39,13 +39,13 @@
 
 // Include CUDA runtime and CUFFT
 #include <hip/hip_runtime.h>
-#include <hipfft.h>
+#include <hipfft/hipfft.h>
 
 // Helper functions for CUDA
 #include "helper_functions.h"
 #include "helper_cuda_hipified.h"
-
-#include "convolutionFFT2D_common.h"
+#include "HIPCHECK.h"
+#include "convolutionFFT2D_common_hipified.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -107,20 +107,20 @@ bool test0(void) {
   h_ResultCPU = (float *)malloc(dataH * dataW * sizeof(float));
   h_ResultGPU = (float *)malloc(fftH * fftW * sizeof(float));
 
-  checkCudaErrors(hipMalloc((void **)&d_Data, dataH * dataW * sizeof(float)));
-  checkCudaErrors(
+  HIPCHECK(hipMalloc((void **)&d_Data, dataH * dataW * sizeof(float)));
+  HIPCHECK(
       hipMalloc((void **)&d_Kernel, kernelH * kernelW * sizeof(float)));
 
-  checkCudaErrors(
+  HIPCHECK(
       hipMalloc((void **)&d_PaddedData, fftH * fftW * sizeof(float)));
-  checkCudaErrors(
+  HIPCHECK(
       hipMalloc((void **)&d_PaddedKernel, fftH * fftW * sizeof(float)));
 
-  checkCudaErrors(hipMalloc((void **)&d_DataSpectrum,
+  HIPCHECK(hipMalloc((void **)&d_DataSpectrum,
                              fftH * (fftW / 2 + 1) * sizeof(fComplex)));
-  checkCudaErrors(hipMalloc((void **)&d_KernelSpectrum,
+  HIPCHECK(hipMalloc((void **)&d_KernelSpectrum,
                              fftH * (fftW / 2 + 1) * sizeof(fComplex)));
-  checkCudaErrors(hipMemset(d_KernelSpectrum, 0,
+  HIPCHECK(hipMemset(d_KernelSpectrum, 0,
                              fftH * (fftW / 2 + 1) * sizeof(fComplex)));
 
   printf("...generating random input data\n");
@@ -135,17 +135,17 @@ bool test0(void) {
   }
 
   printf("...creating R2C & C2R FFT plans for %i x %i\n", fftH, fftW);
-  checkCudaErrors(hipfftPlan2d(&fftPlanFwd, fftH, fftW, HIPFFT_R2C));
-  checkCudaErrors(hipfftPlan2d(&fftPlanInv, fftH, fftW, HIPFFT_C2R));
+  HIPCHECK(hipfftPlan2d(&fftPlanFwd, fftH, fftW, HIPFFT_R2C));
+  HIPCHECK(hipfftPlan2d(&fftPlanInv, fftH, fftW, HIPFFT_C2R));
 
   printf("...uploading to GPU and padding convolution kernel and input data\n");
-  checkCudaErrors(hipMemcpy(d_Kernel, h_Kernel,
+  HIPCHECK(hipMemcpy(d_Kernel, h_Kernel,
                              kernelH * kernelW * sizeof(float),
                              hipMemcpyHostToDevice));
-  checkCudaErrors(hipMemcpy(d_Data, h_Data, dataH * dataW * sizeof(float),
+  HIPCHECK(hipMemcpy(d_Data, h_Data, dataH * dataW * sizeof(float),
                              hipMemcpyHostToDevice));
-  checkCudaErrors(hipMemset(d_PaddedKernel, 0, fftH * fftW * sizeof(float)));
-  checkCudaErrors(hipMemset(d_PaddedData, 0, fftH * fftW * sizeof(float)));
+  HIPCHECK(hipMemset(d_PaddedKernel, 0, fftH * fftW * sizeof(float)));
+  HIPCHECK(hipMemset(d_PaddedData, 0, fftH * fftW * sizeof(float)));
 
   padKernel(d_PaddedKernel, d_Kernel, fftH, fftW, kernelH, kernelW, kernelY,
             kernelX);
@@ -156,27 +156,27 @@ bool test0(void) {
   // Not including kernel transformation into time measurement,
   // since convolution kernel is not changed very frequently
   printf("...transforming convolution kernel\n");
-  checkCudaErrors(hipfftExecR2C(fftPlanFwd, (hipfftReal *)d_PaddedKernel,
+  HIPCHECK(hipfftExecR2C(fftPlanFwd, (hipfftReal *)d_PaddedKernel,
                                (hipfftComplex *)d_KernelSpectrum));
 
   printf("...running GPU FFT convolution: ");
-  checkCudaErrors(hipDeviceSynchronize());
+  HIPCHECK(hipDeviceSynchronize());
   sdkResetTimer(&hTimer);
   sdkStartTimer(&hTimer);
-  checkCudaErrors(hipfftExecR2C(fftPlanFwd, (hipfftReal *)d_PaddedData,
+  HIPCHECK(hipfftExecR2C(fftPlanFwd, (hipfftReal *)d_PaddedData,
                                (hipfftComplex *)d_DataSpectrum));
   modulateAndNormalize(d_DataSpectrum, d_KernelSpectrum, fftH, fftW, 1);
-  checkCudaErrors(hipfftExecC2R(fftPlanInv, (hipfftComplex *)d_DataSpectrum,
+  HIPCHECK(hipfftExecC2R(fftPlanInv, (hipfftComplex *)d_DataSpectrum,
                                (hipfftReal *)d_PaddedData));
 
-  checkCudaErrors(hipDeviceSynchronize());
+  HIPCHECK(hipDeviceSynchronize());
   sdkStopTimer(&hTimer);
   double gpuTime = sdkGetTimerValue(&hTimer);
   printf("%f MPix/s (%f ms)\n",
          (double)dataH * (double)dataW * 1e-6 / (gpuTime * 0.001), gpuTime);
 
   printf("...reading back GPU convolution results\n");
-  checkCudaErrors(hipMemcpy(h_ResultGPU, d_PaddedData,
+  HIPCHECK(hipMemcpy(h_ResultGPU, d_PaddedData,
                              fftH * fftW * sizeof(float),
                              hipMemcpyDeviceToHost));
 
@@ -212,15 +212,15 @@ bool test0(void) {
   printf("...shutting down\n");
   sdkDeleteTimer(&hTimer);
 
-  checkCudaErrors(hipfftDestroy(fftPlanInv));
-  checkCudaErrors(hipfftDestroy(fftPlanFwd));
+  HIPCHECK(hipfftDestroy(fftPlanInv));
+  HIPCHECK(hipfftDestroy(fftPlanFwd));
 
-  checkCudaErrors(hipFree(d_DataSpectrum));
-  checkCudaErrors(hipFree(d_KernelSpectrum));
-  checkCudaErrors(hipFree(d_PaddedData));
-  checkCudaErrors(hipFree(d_PaddedKernel));
-  checkCudaErrors(hipFree(d_Data));
-  checkCudaErrors(hipFree(d_Kernel));
+  HIPCHECK(hipFree(d_DataSpectrum));
+  HIPCHECK(hipFree(d_KernelSpectrum));
+  HIPCHECK(hipFree(d_PaddedData));
+  HIPCHECK(hipFree(d_PaddedKernel));
+  HIPCHECK(hipFree(d_Data));
+  HIPCHECK(hipFree(d_Kernel));
 
   free(h_ResultGPU);
   free(h_ResultCPU);
@@ -261,23 +261,23 @@ bool test1(void) {
   h_ResultCPU = (float *)malloc(dataH * dataW * sizeof(float));
   h_ResultGPU = (float *)malloc(fftH * fftW * sizeof(float));
 
-  checkCudaErrors(hipMalloc((void **)&d_Data, dataH * dataW * sizeof(float)));
-  checkCudaErrors(
+  HIPCHECK(hipMalloc((void **)&d_Data, dataH * dataW * sizeof(float)));
+  HIPCHECK(
       hipMalloc((void **)&d_Kernel, kernelH * kernelW * sizeof(float)));
 
-  checkCudaErrors(
+  HIPCHECK(
       hipMalloc((void **)&d_PaddedData, fftH * fftW * sizeof(float)));
-  checkCudaErrors(
+  HIPCHECK(
       hipMalloc((void **)&d_PaddedKernel, fftH * fftW * sizeof(float)));
 
-  checkCudaErrors(hipMalloc((void **)&d_DataSpectrum0,
+  HIPCHECK(hipMalloc((void **)&d_DataSpectrum0,
                              fftH * (fftW / 2) * sizeof(fComplex)));
-  checkCudaErrors(hipMalloc((void **)&d_KernelSpectrum0,
+  HIPCHECK(hipMalloc((void **)&d_KernelSpectrum0,
                              fftH * (fftW / 2) * sizeof(fComplex)));
-  checkCudaErrors(
+  HIPCHECK(
       hipMalloc((void **)&d_DataSpectrum,
                  fftH * (fftW / 2 + fftPadding) * sizeof(fComplex)));
-  checkCudaErrors(
+  HIPCHECK(
       hipMalloc((void **)&d_KernelSpectrum,
                  fftH * (fftW / 2 + fftPadding) * sizeof(fComplex)));
 
@@ -293,16 +293,16 @@ bool test1(void) {
   }
 
   printf("...creating C2C FFT plan for %i x %i\n", fftH, fftW / 2);
-  checkCudaErrors(hipfftPlan2d(&fftPlan, fftH, fftW / 2, HIPFFT_C2C));
+  HIPCHECK(hipfftPlan2d(&fftPlan, fftH, fftW / 2, HIPFFT_C2C));
 
   printf("...uploading to GPU and padding convolution kernel and input data\n");
-  checkCudaErrors(hipMemcpy(d_Data, h_Data, dataH * dataW * sizeof(float),
+  HIPCHECK(hipMemcpy(d_Data, h_Data, dataH * dataW * sizeof(float),
                              hipMemcpyHostToDevice));
-  checkCudaErrors(hipMemcpy(d_Kernel, h_Kernel,
+  HIPCHECK(hipMemcpy(d_Kernel, h_Kernel,
                              kernelH * kernelW * sizeof(float),
                              hipMemcpyHostToDevice));
-  checkCudaErrors(hipMemset(d_PaddedData, 0, fftH * fftW * sizeof(float)));
-  checkCudaErrors(hipMemset(d_PaddedKernel, 0, fftH * fftW * sizeof(float)));
+  HIPCHECK(hipMemset(d_PaddedData, 0, fftH * fftW * sizeof(float)));
+  HIPCHECK(hipMemset(d_PaddedKernel, 0, fftH * fftW * sizeof(float)));
 
   padDataClampToBorder(d_PaddedData, d_Data, fftH, fftW, dataH, dataW, kernelH,
                        kernelW, kernelY, kernelX);
@@ -316,17 +316,17 @@ bool test1(void) {
   // Not including kernel transformation into time measurement,
   // since convolution kernel is not changed very frequently
   printf("...transforming convolution kernel\n");
-  checkCudaErrors(hipfftExecC2C(fftPlan, (hipfftComplex *)d_PaddedKernel,
+  HIPCHECK(hipfftExecC2C(fftPlan, (hipfftComplex *)d_PaddedKernel,
                                (hipfftComplex *)d_KernelSpectrum0, FFT_DIR));
   spPostprocess2D(d_KernelSpectrum, d_KernelSpectrum0, fftH, fftW / 2,
                   fftPadding, FFT_DIR);
 
   printf("...running GPU FFT convolution: ");
-  checkCudaErrors(hipDeviceSynchronize());
+  HIPCHECK(hipDeviceSynchronize());
   sdkResetTimer(&hTimer);
   sdkStartTimer(&hTimer);
 
-  checkCudaErrors(hipfftExecC2C(fftPlan, (hipfftComplex *)d_PaddedData,
+  HIPCHECK(hipfftExecC2C(fftPlan, (hipfftComplex *)d_PaddedData,
                                (hipfftComplex *)d_DataSpectrum0, FFT_DIR));
 
   spPostprocess2D(d_DataSpectrum, d_DataSpectrum0, fftH, fftW / 2, fftPadding,
@@ -336,17 +336,17 @@ bool test1(void) {
   spPreprocess2D(d_DataSpectrum0, d_DataSpectrum, fftH, fftW / 2, fftPadding,
                  -FFT_DIR);
 
-  checkCudaErrors(hipfftExecC2C(fftPlan, (hipfftComplex *)d_DataSpectrum0,
+  HIPCHECK(hipfftExecC2C(fftPlan, (hipfftComplex *)d_DataSpectrum0,
                                (hipfftComplex *)d_PaddedData, -FFT_DIR));
 
-  checkCudaErrors(hipDeviceSynchronize());
+  HIPCHECK(hipDeviceSynchronize());
   sdkStopTimer(&hTimer);
   double gpuTime = sdkGetTimerValue(&hTimer);
   printf("%f MPix/s (%f ms)\n",
          (double)dataH * (double)dataW * 1e-6 / (gpuTime * 0.001), gpuTime);
 
   printf("...reading back GPU FFT results\n");
-  checkCudaErrors(hipMemcpy(h_ResultGPU, d_PaddedData,
+  HIPCHECK(hipMemcpy(h_ResultGPU, d_PaddedData,
                              fftH * fftW * sizeof(float),
                              hipMemcpyDeviceToHost));
 
@@ -381,16 +381,16 @@ bool test1(void) {
 
   printf("...shutting down\n");
   sdkDeleteTimer(&hTimer);
-  checkCudaErrors(hipfftDestroy(fftPlan));
+  HIPCHECK(hipfftDestroy(fftPlan));
 
-  checkCudaErrors(hipFree(d_KernelSpectrum));
-  checkCudaErrors(hipFree(d_DataSpectrum));
-  checkCudaErrors(hipFree(d_KernelSpectrum0));
-  checkCudaErrors(hipFree(d_DataSpectrum0));
-  checkCudaErrors(hipFree(d_PaddedKernel));
-  checkCudaErrors(hipFree(d_PaddedData));
-  checkCudaErrors(hipFree(d_Kernel));
-  checkCudaErrors(hipFree(d_Data));
+  HIPCHECK(hipFree(d_KernelSpectrum));
+  HIPCHECK(hipFree(d_DataSpectrum));
+  HIPCHECK(hipFree(d_KernelSpectrum0));
+  HIPCHECK(hipFree(d_DataSpectrum0));
+  HIPCHECK(hipFree(d_PaddedKernel));
+  HIPCHECK(hipFree(d_PaddedData));
+  HIPCHECK(hipFree(d_Kernel));
+  HIPCHECK(hipFree(d_Data));
 
   free(h_ResultGPU);
   free(h_ResultCPU);
@@ -429,18 +429,18 @@ bool test2(void) {
   h_ResultCPU = (float *)malloc(dataH * dataW * sizeof(float));
   h_ResultGPU = (float *)malloc(fftH * fftW * sizeof(float));
 
-  checkCudaErrors(hipMalloc((void **)&d_Data, dataH * dataW * sizeof(float)));
-  checkCudaErrors(
+  HIPCHECK(hipMalloc((void **)&d_Data, dataH * dataW * sizeof(float)));
+  HIPCHECK(
       hipMalloc((void **)&d_Kernel, kernelH * kernelW * sizeof(float)));
 
-  checkCudaErrors(
+  HIPCHECK(
       hipMalloc((void **)&d_PaddedData, fftH * fftW * sizeof(float)));
-  checkCudaErrors(
+  HIPCHECK(
       hipMalloc((void **)&d_PaddedKernel, fftH * fftW * sizeof(float)));
 
-  checkCudaErrors(hipMalloc((void **)&d_DataSpectrum0,
+  HIPCHECK(hipMalloc((void **)&d_DataSpectrum0,
                              fftH * (fftW / 2) * sizeof(fComplex)));
-  checkCudaErrors(hipMalloc((void **)&d_KernelSpectrum0,
+  HIPCHECK(hipMalloc((void **)&d_KernelSpectrum0,
                              fftH * (fftW / 2) * sizeof(fComplex)));
 
   printf("...generating random input data\n");
@@ -455,16 +455,16 @@ bool test2(void) {
   }
 
   printf("...creating C2C FFT plan for %i x %i\n", fftH, fftW / 2);
-  checkCudaErrors(hipfftPlan2d(&fftPlan, fftH, fftW / 2, HIPFFT_C2C));
+  HIPCHECK(hipfftPlan2d(&fftPlan, fftH, fftW / 2, HIPFFT_C2C));
 
   printf("...uploading to GPU and padding convolution kernel and input data\n");
-  checkCudaErrors(hipMemcpy(d_Data, h_Data, dataH * dataW * sizeof(float),
+  HIPCHECK(hipMemcpy(d_Data, h_Data, dataH * dataW * sizeof(float),
                              hipMemcpyHostToDevice));
-  checkCudaErrors(hipMemcpy(d_Kernel, h_Kernel,
+  HIPCHECK(hipMemcpy(d_Kernel, h_Kernel,
                              kernelH * kernelW * sizeof(float),
                              hipMemcpyHostToDevice));
-  checkCudaErrors(hipMemset(d_PaddedData, 0, fftH * fftW * sizeof(float)));
-  checkCudaErrors(hipMemset(d_PaddedKernel, 0, fftH * fftW * sizeof(float)));
+  HIPCHECK(hipMemset(d_PaddedData, 0, fftH * fftW * sizeof(float)));
+  HIPCHECK(hipMemset(d_PaddedKernel, 0, fftH * fftW * sizeof(float)));
 
   padDataClampToBorder(d_PaddedData, d_Data, fftH, fftW, dataH, dataW, kernelH,
                        kernelW, kernelY, kernelX);
@@ -478,29 +478,29 @@ bool test2(void) {
   // Not including kernel transformation into time measurement,
   // since convolution kernel is not changed very frequently
   printf("...transforming convolution kernel\n");
-  checkCudaErrors(hipfftExecC2C(fftPlan, (hipfftComplex *)d_PaddedKernel,
+  HIPCHECK(hipfftExecC2C(fftPlan, (hipfftComplex *)d_PaddedKernel,
                                (hipfftComplex *)d_KernelSpectrum0, FFT_DIR));
 
   printf("...running GPU FFT convolution: ");
-  checkCudaErrors(hipDeviceSynchronize());
+  HIPCHECK(hipDeviceSynchronize());
   sdkResetTimer(&hTimer);
   sdkStartTimer(&hTimer);
 
-  checkCudaErrors(hipfftExecC2C(fftPlan, (hipfftComplex *)d_PaddedData,
+  HIPCHECK(hipfftExecC2C(fftPlan, (hipfftComplex *)d_PaddedData,
                                (hipfftComplex *)d_DataSpectrum0, FFT_DIR));
   spProcess2D(d_DataSpectrum0, d_DataSpectrum0, d_KernelSpectrum0, fftH,
               fftW / 2, FFT_DIR);
-  checkCudaErrors(hipfftExecC2C(fftPlan, (hipfftComplex *)d_DataSpectrum0,
+  HIPCHECK(hipfftExecC2C(fftPlan, (hipfftComplex *)d_DataSpectrum0,
                                (hipfftComplex *)d_PaddedData, -FFT_DIR));
 
-  checkCudaErrors(hipDeviceSynchronize());
+  HIPCHECK(hipDeviceSynchronize());
   sdkStopTimer(&hTimer);
   double gpuTime = sdkGetTimerValue(&hTimer);
   printf("%f MPix/s (%f ms)\n",
          (double)dataH * (double)dataW * 1e-6 / (gpuTime * 0.001), gpuTime);
 
   printf("...reading back GPU FFT results\n");
-  checkCudaErrors(hipMemcpy(h_ResultGPU, d_PaddedData,
+  HIPCHECK(hipMemcpy(h_ResultGPU, d_PaddedData,
                              fftH * fftW * sizeof(float),
                              hipMemcpyDeviceToHost));
 
@@ -536,14 +536,14 @@ bool test2(void) {
 
   printf("...shutting down\n");
   sdkDeleteTimer(&hTimer);
-  checkCudaErrors(hipfftDestroy(fftPlan));
+  HIPCHECK(hipfftDestroy(fftPlan));
 
-  checkCudaErrors(hipFree(d_KernelSpectrum0));
-  checkCudaErrors(hipFree(d_DataSpectrum0));
-  checkCudaErrors(hipFree(d_PaddedKernel));
-  checkCudaErrors(hipFree(d_PaddedData));
-  checkCudaErrors(hipFree(d_Kernel));
-  checkCudaErrors(hipFree(d_Data));
+  HIPCHECK(hipFree(d_KernelSpectrum0));
+  HIPCHECK(hipFree(d_DataSpectrum0));
+  HIPCHECK(hipFree(d_PaddedKernel));
+  HIPCHECK(hipFree(d_PaddedData));
+  HIPCHECK(hipFree(d_Kernel));
+  HIPCHECK(hipFree(d_Data));
 
   free(h_ResultGPU);
   free(h_ResultCPU);

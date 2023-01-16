@@ -25,17 +25,13 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#include <hip/hip_runtime.h>
 #include <assert.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <string.h>
 #include <helper_cuda.h>
-#include "convolutionFFT2D_common.h"
-#include "convolutionFFT2D.cuh"
+#include "convolutionFFT2D_common_hipified.h"
+#include "convolutionFFT2D_hipified.cuh"
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Position convolution kernel center at (0, 0) in the image
@@ -65,7 +61,7 @@ extern "C" void padKernel(float *d_Dst, float *d_Src, int fftH, int fftW,
   texDescr.addressMode[0] = hipAddressModeWrap;
   texDescr.readMode = hipReadModeElementType;
 
-  HIPCHECK(hipCreateTextureObject(&texFloat, &texRes, &texDescr, NULL));
+  checkCudaErrors(hipCreateTextureObject(&texFloat, &texRes, &texDescr, NULL));
 #endif
 
   padKernel_kernel<<<grid, threads>>>(d_Dst, d_Src, fftH, fftW, kernelH,
@@ -78,7 +74,7 @@ extern "C" void padKernel(float *d_Dst, float *d_Src, int fftH, int fftW,
   getLastCudaError("padKernel_kernel<<<>>> execution failed\n");
 
 #if (USE_TEXTURE)
-  HIPCHECK(hipDestroyTextureObject(texFloat));
+  checkCudaErrors(hipDestroyTextureObject(texFloat));
 #endif
 }
 
@@ -111,7 +107,7 @@ extern "C" void padDataClampToBorder(float *d_Dst, float *d_Src, int fftH,
   texDescr.addressMode[0] = hipAddressModeWrap;
   texDescr.readMode = hipReadModeElementType;
 
-  HIPCHECK(hipCreateTextureObject(&texFloat, &texRes, &texDescr, NULL));
+  checkCudaErrors(hipCreateTextureObject(&texFloat, &texRes, &texDescr, NULL));
 #endif
 
   padDataClampToBorder_kernel<<<grid, threads>>>(
@@ -124,7 +120,7 @@ extern "C" void padDataClampToBorder(float *d_Dst, float *d_Src, int fftH,
   getLastCudaError("padDataClampToBorder_kernel<<<>>> execution failed\n");
 
 #if (USE_TEXTURE)
-  HIPCHECK(hipDestroyTextureObject(texFloat));
+  checkCudaErrors(hipDestroyTextureObject(texFloat));
 #endif
 }
 
@@ -181,7 +177,7 @@ extern "C" void spPostprocess2D(void *d_Dst, void *d_Src, uint DY, uint DX,
   texDescr.addressMode[0] = hipAddressModeWrap;
   texDescr.readMode = hipReadModeElementType;
 
-  HIPCHECK(
+  checkCudaErrors(
       hipCreateTextureObject(&texComplex, &texRes, &texDescr, NULL));
 #endif
 
@@ -196,7 +192,7 @@ extern "C" void spPostprocess2D(void *d_Dst, void *d_Src, uint DY, uint DX,
   getLastCudaError("spPostprocess2D_kernel<<<>>> execution failed\n");
 
 #if (USE_TEXTURE)
-  HIPCHECK(hipDestroyTextureObject(texComplex));
+  checkCudaErrors(hipDestroyTextureObject(texComplex));
 #endif
 }
 
@@ -233,7 +229,7 @@ extern "C" void spPreprocess2D(void *d_Dst, void *d_Src, uint DY, uint DX,
   texDescr.addressMode[0] = hipAddressModeWrap;
   texDescr.readMode = hipReadModeElementType;
 
-  HIPCHECK(
+  checkCudaErrors(
       hipCreateTextureObject(&texComplex, &texRes, &texDescr, NULL));
 #endif
   spPreprocess2D_kernel<<<iDivUp(threadCount, BLOCKDIM), BLOCKDIM>>>(
@@ -247,7 +243,7 @@ extern "C" void spPreprocess2D(void *d_Dst, void *d_Src, uint DY, uint DX,
   getLastCudaError("spPreprocess2D_kernel<<<>>> execution failed\n");
 
 #if (USE_TEXTURE)
-  HIPCHECK(hipDestroyTextureObject(texComplex));
+  checkCudaErrors(hipDestroyTextureObject(texComplex));
 #endif
 }
 
@@ -286,7 +282,7 @@ extern "C" void spProcess2D(void *d_Dst, void *d_SrcA, void *d_SrcB, uint DY,
   texDescr.addressMode[0] = hipAddressModeWrap;
   texDescr.readMode = hipReadModeElementType;
 
-  HIPCHECK(
+  checkCudaErrors(
       hipCreateTextureObject(&texComplexA, &texRes, &texDescr, NULL));
 
   memset(&texRes, 0, sizeof(hipResourceDesc));
@@ -303,7 +299,7 @@ extern "C" void spProcess2D(void *d_Dst, void *d_SrcA, void *d_SrcB, uint DY,
   texDescr.addressMode[0] = hipAddressModeWrap;
   texDescr.readMode = hipReadModeElementType;
 
-  HIPCHECK(
+  checkCudaErrors(
       hipCreateTextureObject(&texComplexB, &texRes, &texDescr, NULL));
 #endif
   spProcess2D_kernel<<<iDivUp(threadCount, BLOCKDIM), BLOCKDIM>>>(
@@ -317,7 +313,7 @@ extern "C" void spProcess2D(void *d_Dst, void *d_SrcA, void *d_SrcB, uint DY,
   getLastCudaError("spProcess2D_kernel<<<>>> execution failed\n");
 
 #if (USE_TEXTURE)
-  HIPCHECK(hipDestroyTextureObject(texComplexA));
-  HIPCHECK(hipDestroyTextureObject(texComplexB));
+  checkCudaErrors(hipDestroyTextureObject(texComplexA));
+  checkCudaErrors(hipDestroyTextureObject(texComplexB));
 #endif
 }

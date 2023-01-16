@@ -38,13 +38,9 @@
  */
 
 const static char *sSDKsample = "Interval Computing";
-
-
-#include <hip/hip_runtime.h>
+#include "hip/hip_runtime.h"
 #include <iostream>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "helper_cuda_hipified.h"
 #include "interval_hipified.h"
 #include "cuda_interval_hipified.h"
@@ -99,7 +95,7 @@ int main(int argc, char *argv[]) {
 
   // We need L1 cache to store the stack (only applicable to sm_20 and higher)
   CHECKED_CALL(
-      hipFuncSetCacheConfig(test_interval_newton<T>, hipFuncCachePreferL1));
+      hipFuncSetCacheConfig((const void*)test_interval_newton<T>, hipFuncCachePreferL1));
 
   // Increase the stack size large enough for the non-inlined and recursive
   // function calls (only applicable to sm_20 and higher)

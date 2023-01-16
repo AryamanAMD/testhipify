@@ -26,7 +26,7 @@
  */
 
 #include <assert.h>
-#include "convolutionFFT2D_common.h"
+#include "convolutionFFT2D_common_hipified.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Reference straightforward CPU convolution

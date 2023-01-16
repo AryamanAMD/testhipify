@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -40,8 +41,6 @@
 // System includes
 #include <stdlib.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 #include <string.h>
 #include <math.h>
@@ -79,7 +78,7 @@ int main(int argc, char **argv) {
       "starting...\n\n");
 
   int GPU_N;
-  HIPCHECK(hipGetDeviceCount(&GPU_N));
+  checkCudaErrors(hipGetDeviceCount(&GPU_N));
 
   if (GPU_N < GPU_COUNT) {
     printf("No. of GPU on node %d\n", GPU_N);
@@ -95,7 +94,7 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < GPU_N; i++) {
     hipDeviceProp_t deviceProp;
-    HIPCHECK(hipGetDeviceProperties(&deviceProp, i));
+    checkCudaErrors(hipGetDeviceProperties(&deviceProp, i));
     major_minor[i * 2] = deviceProp.major;
     major_minor[i * 2 + 1] = deviceProp.minor;
     printf("GPU Device %d: \"%s\" with compute capability %d.%d\n", i,
@@ -163,7 +162,7 @@ int main(int argc, char **argv) {
     h_f[i].y = 0.0f;
   }
 
-  // cufftCreate() - Create an empty plan
+  // hipfftCreate() - Create an empty plan
   hipfftResult result;
   hipfftHandle planComplex;
   result = hipfftCreate(&planComplex);
@@ -180,7 +179,7 @@ int main(int argc, char **argv) {
     printf("No such board was found. Waiving sample.\n");
     exit(EXIT_WAIVED);
   } else if (result != HIPFFT_SUCCESS) {
-    printf("hipfftXtSetGPUs failed\n");
+    printf("cufftXtSetGPUs failed\n");
     exit(EXIT_FAILURE);
   }
 
@@ -188,7 +187,7 @@ int main(int argc, char **argv) {
   printf("\nRunning on GPUs\n");
   for (int i = 0; i < 2; i++) {
     hipDeviceProp_t deviceProp;
-    HIPCHECK(hipGetDeviceProperties(&deviceProp, whichGPUs[i]));
+    checkCudaErrors(hipGetDeviceProperties(&deviceProp, whichGPUs[i]));
     printf("GPU Device %d: \"%s\" with compute capability %d.%d\n",
            whichGPUs[i], deviceProp.name, deviceProp.major, deviceProp.minor);
   }
@@ -196,7 +195,7 @@ int main(int argc, char **argv) {
   size_t *worksize;
   worksize = (size_t *)malloc(sizeof(size_t) * nGPUs);
 
-  // cufftMakePlan2d() - Create the plan
+  // hipfftMakePlan2d() - Create the plan
   result = hipfftMakePlan2d(planComplex, N, N, HIPFFT_C2C, worksize);
   if (result != HIPFFT_SUCCESS) {
     printf("*MakePlan* failed\n");
@@ -323,7 +322,7 @@ int main(int argc, char **argv) {
     exit(EXIT_FAILURE);
   }
 
-  // cufftDestroy() - Destroy FFT plan
+  // hipfftDestroy() - Destroy FFT plan
   result = hipfftDestroy(planComplex);
   if (result != HIPFFT_SUCCESS) {
     printf("hipfftDestroy failed: code %d\n", (int)result);
@@ -380,5 +379,3 @@ __global__ void solvePoisson(hipfftComplex *ft, hipfftComplex *ft_k, float *k,
     ft_k[index].y = -ft[index].y * 1 / k2;
   }
 }
-x].y * 1 / k2;
-  }

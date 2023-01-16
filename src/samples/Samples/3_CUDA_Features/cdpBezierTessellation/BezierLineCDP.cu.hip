@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,15 +26,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#include <hip/hip_runtime.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <hip/hip_runtime_api.h>
-#include "helper_cuda_hipified.h"
+#include <helper_cuda.h>
 #include <string.h>
-
+#include "HIPCHECK.h"
 __forceinline__ __device__ float2 operator+(float2 a, float2 b) {
   float2 c;
   c.x = a.x + b.x;
