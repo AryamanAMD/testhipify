@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,14 +26,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#include <hip/hip_runtime.h>
 #include <iostream>
 #include <cstdio>
 #include "helper_cuda_hipified.h"
 #include <helper_string.h>
-#include "HIPCHECK.h"
-#include <hip/hip_runtime_api.h>
+
 #define MAX_DEPTH 16
 #define INSERTION_SORT 32
 
@@ -132,7 +130,7 @@ __global__ void cdp_simple_quicksort(unsigned int *data, int left, int right,
 ////////////////////////////////////////////////////////////////////////////////
 void run_qsort(unsigned int *data, unsigned int nitems) {
   // Prepare CDP for the max depth 'MAX_DEPTH'.
-  HIPCHECK(cudaDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, MAX_DEPTH));
+  HIPCHECK(hipDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, MAX_DEPTH));
 
   // Launch on device
   int left = 0;
@@ -244,6 +242,10 @@ int main(int argc, char **argv) {
 
   free(h_data);
   HIPCHECK(hipFree(d_data));
+
+  exit(EXIT_SUCCESS);
+}
+rrors(hipFree(d_data));
 
   exit(EXIT_SUCCESS);
 }

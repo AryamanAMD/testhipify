@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -356,4 +354,8 @@ extern "C" void advectParticles(GLuint vbo, cData *v, int dx, int dy,
   getLastCudaError("advectParticles_k failed.");
 
   HIPCHECK(hipGraphicsUnmapResources(1, &cuda_vbo_resource, 0));
+}
+;
+
+  checkCudaErrors(hipGraphicsUnmapResources(1, &cuda_vbo_resource, 0));
 }

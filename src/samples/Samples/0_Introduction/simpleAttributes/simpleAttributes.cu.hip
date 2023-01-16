@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +29,6 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
 
@@ -38,12 +37,12 @@
 
 // includes, project
 #include "helper_cuda_hipified.h"
-#include "helper_functions.h"  // helper functions for SDK examples
+#include <helper_functions.h>  // helper functions for SDK examples
 
 ////////////////////////////////////////////////////////////////////////////////
 // declaration, forward
 void runTest(int argc, char **argv);
-#define cudaStreamAttrValue cudaLaunchAttributeValue
+
 hipAccessPolicyWindow initAccessPolicyWindow(void) {
   hipAccessPolicyWindow accessPolicyWindow = {0};
   accessPolicyWindow.base_ptr = (void *)0;
@@ -141,7 +140,7 @@ void runTest(int argc, char **argv) {
 
   // Set the amount of l2 cache that will be persisting to maximum the device
   // can support
-  HIPCHECK(cudaDeviceSetLimit(cudaLimitPersistingL2CacheSize,
+  HIPCHECK(hipDeviceSetLimit(cudaLimitPersistingL2CacheSize,
                                      deviceProp.persistingL2CacheMaxSize));
 
   // Stream attribute to set
@@ -210,6 +209,11 @@ void runTest(int argc, char **argv) {
 
   sdkStopTimer(&timer);
   printf("Processing time: %f (ms)\n", sdkGetTimerValue(&timer));
+  sdkDeleteTimer(&timer);
+
+  exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+%f (ms)\n", sdkGetTimerValue(&timer));
   sdkDeleteTimer(&timer);
 
   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);

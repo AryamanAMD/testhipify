@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -32,7 +33,7 @@
 
 #include "helper_cuda_hipified.h"
 #include <helper_math.h>
-#include "HIPCHECK.h"
+
 typedef unsigned int uint;
 typedef unsigned char uchar;
 
@@ -304,10 +305,12 @@ extern "C" void render_kernel(dim3 gridSize, dim3 blockSize, uint *d_output,
 }
 
 extern "C" void copyInvViewMatrix(float *invViewMatrix, size_t sizeofMatrix) {
-  HIP_SYMBOL(c_invViewMatrix)(
-      hipMemcpyToSymbol(c_invViewMatrix, invViewMatrix, sizeofMatrix));
+  HIPCHECK(
+      hipMemcpyToSymbol(HIP_SYMBOL(c_invViewMatrix), invViewMatrix, sizeofMatrix));
 }
 
 #endif  // #ifndef _VOLUMERENDER_KERNEL_CU_
-trix, invViewMatrix, sizeofMatrix));
+ViewMatrix), invViewMatrix, sizeofMatrix));
 }
+
+#endif  // #ifndef _VOLUMERENDER_KERNEL_CU_

@@ -51,9 +51,9 @@ static hipArray *array = NULL;
 
 // This will output the proper CUDA error strings in the event that a CUDA host
 // call returns an error
-#define checkCudaErrors(err) __checkCudaErrors(err, __FILE__, __LINE__)
+#define HIPCHECK(err) __HIPCHECK(err, __FILE__, __LINE__)
 
-inline void __checkCudaErrors(hipError_t err, const char *file, const int line) {
+inline void __HIPCHECK(hipError_t err, const char *file, const int line) {
   if (hipSuccess != err) {
     fprintf(stderr, "%s(%i) : CUDA Runtime API error %d: %s.\n", file, line,
             (int)err, hipGetErrorString(err));
@@ -230,8 +230,8 @@ extern "C" void setupTexture(int iw, int ih, Pixel *data, int Bpp) {
     desc = hipCreateChannelDesc<uchar4>();
   }
 
-  checkCudaErrors(hipMallocArray(&array, &desc, iw, ih));
-  checkCudaErrors(hipMemcpy2DToArray(
+  HIPCHECK(hipMallocArray(&array, &desc, iw, ih));
+  HIPCHECK(hipMemcpy2DToArray(
       array, 0, 0, data, iw * Bpp * sizeof(Pixel), iw * Bpp * sizeof(Pixel), ih,
       hipMemcpyHostToDevice));
 
@@ -249,13 +249,13 @@ extern "C" void setupTexture(int iw, int ih, Pixel *data, int Bpp) {
   texDescr.addressMode[0] = hipAddressModeWrap;
   texDescr.readMode = hipReadModeElementType;
 
-  checkCudaErrors(
+  HIPCHECK(
       hipCreateTextureObject(&texObject, &texRes, &texDescr, NULL));
 }
 
 extern "C" void deleteTexture(void) {
-  checkCudaErrors(hipFreeArray(array));
-  checkCudaErrors(hipDestroyTextureObject(texObject));
+  HIPCHECK(hipFreeArray(array));
+  HIPCHECK(hipDestroyTextureObject(texObject));
 }
 
 // Wrapper for the __global__ call that sets up the texture and threads
@@ -288,6 +288,10 @@ extern "C" void sobelFilter(Pixel *odata, int iw, int ih,
                                                   BlockWidth, SharedPitch,
 #endif
                                                   iw, ih, fScale, texObject);
+    } break;
+  }
+}
+         iw, ih, fScale, texObject);
     } break;
   }
 }

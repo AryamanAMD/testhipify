@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -202,3 +200,10 @@ void sortParticles(uint *dGridParticleHash, uint *dGridParticleIndex,
       thrust::device_ptr<uint>(dGridParticleHash + numParticles),
       thrust::device_ptr<uint>(dGridParticleIndex));
 }
+
+}  // extern "C"
+articles),
+      thrust::device_ptr<uint>(dGridParticleIndex));
+}
+
+}  // extern "C"

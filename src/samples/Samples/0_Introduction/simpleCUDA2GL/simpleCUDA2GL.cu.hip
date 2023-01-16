@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,9 +28,7 @@
 
 // Utilities and system includes
 
-
-#include <hip/hip_runtime.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 
 // clamp x to range [a, b]
 __device__ float clamp(float x, float a, float b) { return max(a, min(b, x)); }

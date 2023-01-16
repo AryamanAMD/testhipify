@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,11 +26,9 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#include <hip/hip_runtime.h>
 #include "SineWaveSimulation.h"
 #include <algorithm>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 
 __global__ void sinewave(float *heightMap, unsigned int width,
                          unsigned int height, float time) {
@@ -133,4 +132,6 @@ void SineWaveSimulation::stepSimulation(float time, hipStream_t stream) {
   sinewave<<<m_blocks, m_threads, 0, stream>>>(m_heightMap, m_width, m_height,
                                                time);
   getLastCudaError("Failed to launch CUDA simulation");
+}
+or("Failed to launch CUDA simulation");
 }

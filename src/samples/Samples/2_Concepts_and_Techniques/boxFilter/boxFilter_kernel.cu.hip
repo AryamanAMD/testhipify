@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,8 +28,8 @@
 
 #ifndef _BOXFILTER_KERNEL_CH_
 #define _BOXFILTER_KERNEL_CH_
-#include <hip/hip_cooperative_groups.h>
-//#include <helper_math.h>
+
+#include <helper_math.h>
 #include "helper_functions.h"
 
 hipTextureObject_t tex;
@@ -494,3 +495,5 @@ ned int), height, hipMemcpyDeviceToDevice));
 
   return ((dKernelTime / 1000.) / (double)iterations);
 }
+
+#endif  // #ifndef _BOXFILTER_KERNEL_H_

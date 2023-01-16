@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,24 +27,20 @@
  */
 
 // System includes
-
-#include <hip/hip_runtime.h>
 #include <assert.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 // helper functions and utilities to work with CUDA
-#include <helper_cuda.h>
-#include <helper_functions.h>
+#include "helper_cuda_hipified.h"
+#include "helper_functions.h"
 
 #define NUM_GRAPHS 8
 #define THREADS_PER_BLOCK 512
 
 void printMemoryFootprint(int device) {
   size_t footprint;
-  HIPCHECK(cudaDeviceGetGraphMemAttribute(
-      device, (cudaGraphMemAttributeType)0, &footprint));
+  HIPCHECK(hipDeviceGetGraphMemAttribute(
+      device, (hipGraphMemAttributeType)0, &footprint));
   printf("    FOOTPRINT: %lu bytes\n", footprint);
 }
 
@@ -338,7 +335,7 @@ void unfreedAllocations(size_t bytes, int device) {
 
   HIPCHECK(hipStreamSynchronize(stream));
 
-  HIPCHECK(cudaDeviceGraphMemTrim(device));
+  HIPCHECK(hipDeviceGraphMemTrim(device));
   printf(
       "\nTrimming does not impact the memory footprint since the un-freed "
       "allocations are still holding onto the memory.\n");
@@ -350,7 +347,7 @@ void unfreedAllocations(size_t bytes, int device) {
   printf("\nFreeing the allocations does not shrink the footprint.\n");
   printMemoryFootprint(device);
 
-  HIPCHECK(cudaDeviceGraphMemTrim(device));
+  HIPCHECK(hipDeviceGraphMemTrim(device));
   printf(
       "\nSince the allocations are now freed, trimming does reduce the "
       "footprint even when the graph execs are not yet destroyed.\n");
@@ -363,7 +360,7 @@ void unfreedAllocations(size_t bytes, int device) {
 }
 
 void cleanupMemory(int device) {
-  HIPCHECK(cudaDeviceGraphMemTrim(device));
+  HIPCHECK(hipDeviceGraphMemTrim(device));
   printf("\nCleaning up example by trimming device memory.\n");
   printMemoryFootprint(device);
   printf("\n");
@@ -395,6 +392,21 @@ int main(int argc, char **argv) {
   }
 
   virtualAddressReuseSingleGraph(bytes, device);
+  cleanupMemory(device);
+
+  physicalMemoryReuseSingleStream(bytes, device);
+  cleanupMemory(device);
+
+  simultaneousStreams(bytes, device);
+  cleanupMemory(device);
+
+  unfreedAllocations(bytes, device);
+  cleanupMemory(device);
+
+  printf("================================\n");
+  printf("Sample complete.\n");
+}
+e);
   cleanupMemory(device);
 
   physicalMemoryReuseSingleStream(bytes, device);

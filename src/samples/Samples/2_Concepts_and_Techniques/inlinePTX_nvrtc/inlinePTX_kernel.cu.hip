@@ -1,5 +1,4 @@
-
-#include <hip/hip_runtime.h>
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -34,7 +33,7 @@ extern "C" __global__ void sequence_gpu(int *d_ptr, int length) {
     unsigned int laneid;
 
     // This command gets the lane ID within the current warp
-    asm("mov.u32  %0, %%laneid;" : "=r"(laneid));
+    asm("mov.u32 %0, %%laneid;" : "=r"(laneid));
 
     d_ptr[elemID] = laneid;
   }

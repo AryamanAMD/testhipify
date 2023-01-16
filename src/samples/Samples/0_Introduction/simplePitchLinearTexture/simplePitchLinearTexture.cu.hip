@@ -1,4 +1,3 @@
-#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -52,10 +51,10 @@
 #include <hip/hip_runtime.h>
 
 // Utilities and timing functions
-#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
 
 // CUDA helper functions
-#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+#include <helper_cuda.h>  // helper functions for CUDA error check
 
 #define NUM_REPS 100  // number of repetitions performed
 #define TILE_DIM 16   // tile/block size
@@ -310,4 +309,11 @@ void runTest(int argc, char **argv) {
 
   HIPCHECK(hipEventDestroy(start));
   HIPCHECK(hipEventDestroy(stop));
+}
+dataPL));
+  checkCudaErrors(hipFreeArray(d_idataArray));
+  checkCudaErrors(hipFree(d_odata));
+
+  checkCudaErrors(hipEventDestroy(start));
+  checkCudaErrors(hipEventDestroy(stop));
 }

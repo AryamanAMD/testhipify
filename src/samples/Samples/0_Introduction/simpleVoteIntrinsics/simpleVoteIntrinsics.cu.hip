@@ -28,8 +28,6 @@
 // System includes
 #include <assert.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 // CUDA runtime
 #include <hip/hip_runtime.h>
@@ -37,7 +35,7 @@
 // helper functions and utilities to work with CUDA
 #include "helper_cuda_hipified.h"
 #include "helper_functions.h"
-//#include <hipify/__clang_cuda_intrinsics.h>
+
 #ifndef MAX
 #define MAX(a, b) (a > b ? a : b)
 #endif
@@ -306,6 +304,10 @@ int main(int argc, char **argv) {
   printf("\tShutting down...\n");
 
   return (error_count[0] == 0 && error_count[1] == 0 && error_count[2] == 0)
+             ? EXIT_SUCCESS
+             : EXIT_FAILURE;
+}
+_count[1] == 0 && error_count[2] == 0)
              ? EXIT_SUCCESS
              : EXIT_FAILURE;
 }

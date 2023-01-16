@@ -47,7 +47,7 @@
 
 namespace cg = cooperative_groups;
 
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <helper_string.h>
 #include "cdpQuicksort.h"
 
@@ -350,30 +350,30 @@ float run_quicksort_cdp(unsigned *gpudata, unsigned *scratchdata,
 
   // This is the stack, for atomic tracking of each sort's status
   qsortAtomicData *gpustack;
-  checkCudaErrors(
+  HIPCHECK(
       hipMalloc((void **)&gpustack, stacksize * sizeof(qsortAtomicData)));
-  checkCudaErrors(hipMemset(
+  HIPCHECK(hipMemset(
       gpustack, 0, sizeof(qsortAtomicData)));  // Only need set first entry to 0
 
   // Create the memory ringbuffer used for handling the stack.
   // Initialise everything to where it needs to be.
   qsortRingbuf buf;
   qsortRingbuf *ringbuf;
-  checkCudaErrors(hipMalloc((void **)&ringbuf, sizeof(qsortRingbuf)));
+  HIPCHECK(hipMalloc((void **)&ringbuf, sizeof(qsortRingbuf)));
   buf.head = 1;  // We start with one allocation
   buf.tail = 0;
   buf.count = 0;
   buf.max = 0;
   buf.stacksize = stacksize;
   buf.stackbase = gpustack;
-  checkCudaErrors(
+  HIPCHECK(
       hipMemcpy(ringbuf, &buf, sizeof(buf), hipMemcpyHostToDevice));
 
   // Timing events...
   hipEvent_t ev1, ev2;
-  checkCudaErrors(hipEventCreate(&ev1));
-  checkCudaErrors(hipEventCreate(&ev2));
-  checkCudaErrors(hipEventRecord(ev1));
+  HIPCHECK(hipEventCreate(&ev1));
+  HIPCHECK(hipEventCreate(&ev2));
+  HIPCHECK(hipEventRecord(ev1));
 
   // Now we trivially launch the qsort kernel
   if (count > BITONICSORT_LEN) {
@@ -385,19 +385,19 @@ float run_quicksort_cdp(unsigned *gpudata, unsigned *scratchdata,
     bitonicsort<<<1, BITONICSORT_LEN>>>(gpudata, gpudata, 0, count);
   }
 
-  checkCudaErrors(hipGetLastError());
-  checkCudaErrors(hipEventRecord(ev2));
-  checkCudaErrors(hipDeviceSynchronize());
+  HIPCHECK(hipGetLastError());
+  HIPCHECK(hipEventRecord(ev2));
+  HIPCHECK(hipDeviceSynchronize());
 
   float elapse = 0.0f;
 
   if (hipPeekAtLastError() != hipSuccess)
     printf("Launch failure: %s\n", hipGetErrorString(hipGetLastError()));
   else
-    checkCudaErrors(hipEventElapsedTime(&elapse, ev1, ev2));
+    HIPCHECK(hipEventElapsedTime(&elapse, ev1, ev2));
 
   // Sanity check that the stack allocator is doing the right thing
-  checkCudaErrors(
+  HIPCHECK(
       hipMemcpy(&buf, ringbuf, sizeof(*ringbuf), hipMemcpyDeviceToHost));
 
   if (count > BITONICSORT_LEN && buf.head != buf.tail) {
@@ -409,8 +409,8 @@ float run_quicksort_cdp(unsigned *gpudata, unsigned *scratchdata,
   }
 
   // Release our stack data once we're done
-  checkCudaErrors(hipFree(ringbuf));
-  checkCudaErrors(hipFree(gpustack));
+  HIPCHECK(hipFree(ringbuf));
+  HIPCHECK(hipFree(gpustack));
 
   return elapse;
 }
@@ -422,8 +422,8 @@ int run_qsort(unsigned int size, int seed, int debug, int loop, int verbose) {
 
   // Create and set up our test
   unsigned *gpudata, *scratchdata;
-  checkCudaErrors(hipMalloc((void **)&gpudata, size * sizeof(unsigned)));
-  checkCudaErrors(hipMalloc((void **)&scratchdata, size * sizeof(unsigned)));
+  HIPCHECK(hipMalloc((void **)&gpudata, size * sizeof(unsigned)));
+  HIPCHECK(hipMalloc((void **)&scratchdata, size * sizeof(unsigned)));
 
   // Create CPU data.
   unsigned *data = new unsigned[size];
@@ -458,7 +458,7 @@ int run_qsort(unsigned int size, int seed, int debug, int loop, int verbose) {
 
     if (verbose) printf("\n");
 
-    checkCudaErrors(hipMemcpy(gpudata, data, size * sizeof(unsigned),
+    HIPCHECK(hipMemcpy(gpudata, data, size * sizeof(unsigned),
                                hipMemcpyHostToDevice));
 
     // So we're now populated and ready to go! We size our launch as
@@ -468,10 +468,10 @@ int run_qsort(unsigned int size, int seed, int debug, int loop, int verbose) {
     elapse = run_quicksort_cdp(gpudata, scratchdata, size, NULL);
 
     // run_bitonicsort<SORTTYPE>(gpudata, scratchdata, size, verbose);
-    checkCudaErrors(hipDeviceSynchronize());
+    HIPCHECK(hipDeviceSynchronize());
 
     // Copy back the data and verify correct sort
-    checkCudaErrors(hipMemcpy(data, gpudata, size * sizeof(unsigned),
+    HIPCHECK(hipMemcpy(data, gpudata, size * sizeof(unsigned),
                                hipMemcpyDeviceToHost));
 
     if (verbose) {
@@ -508,8 +508,8 @@ int run_qsort(unsigned int size, int seed, int debug, int loop, int verbose) {
   }
 
   // Release everything and we're done
-  checkCudaErrors(hipFree(scratchdata));
-  checkCudaErrors(hipFree(gpudata));
+  HIPCHECK(hipFree(scratchdata));
+  HIPCHECK(hipFree(gpudata));
   delete (data);
   return 0;
 }
@@ -561,7 +561,7 @@ int main(int argc, char *argv[]) {
   // Get device properties
   int cuda_device = findCudaDevice(argc, (const char **)argv);
   hipDeviceProp_t properties;
-  checkCudaErrors(hipGetDeviceProperties(&properties, cuda_device));
+  HIPCHECK(hipGetDeviceProperties(&properties, cuda_device));
   int cdpCapable =
       (properties.major == 3 && properties.minor >= 5) || properties.major >= 4;
 
@@ -576,6 +576,13 @@ int main(int argc, char *argv[]) {
   }
 
   printf("Running qsort on %d elements with seed %d, on %s\n", size, seed,
+         properties.name);
+
+  run_qsort(size, seed, debug, loop, verbose);
+
+  exit(EXIT_SUCCESS);
+}
+rt on %d elements with seed %d, on %s\n", size, seed,
          properties.name);
 
   run_qsort(size, seed, debug, loop, verbose);

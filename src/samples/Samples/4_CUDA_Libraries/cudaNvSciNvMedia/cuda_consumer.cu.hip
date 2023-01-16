@@ -1,9 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -427,6 +421,13 @@ void runCudaOperation(Blit2DTest *ctx, cudaResources &cudaResObj,
         ctx->widthSurface * ctx->xScalePtr[k] * ctx->bytesPerPixel,
         ctx->widthSurface * ctx->xScalePtr[k] * ctx->bytesPerPixel,
         ctx->heightSurface * ctx->yScalePtr[k], hipMemcpyHostToDevice));
+  }
+  // run cuda kernel over surface object of the LUMA surface part to extract
+  // grayscale.
+  yuvToGrayscaleCudaKernelNonNvSci(cudaResObj, deviceId, ctx->widthSurface,
+                                   ctx->heightSurface);
+}
+], hipMemcpyHostToDevice));
   }
   // run cuda kernel over surface object of the LUMA surface part to extract
   // grayscale.

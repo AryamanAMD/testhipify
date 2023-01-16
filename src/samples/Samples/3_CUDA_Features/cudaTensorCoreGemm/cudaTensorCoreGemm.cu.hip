@@ -63,7 +63,7 @@
 
 #include <assert.h>
 #include <hip/hip_runtime.h>
-#include "rocwmma.hpp"
+#include <mma.h>
 #include <stdio.h>
 
 // helper functions and utilities to work with CUDA
@@ -175,8 +175,8 @@
     }                                                       \
   } while (0)
 
-//using namespace nvcuda;
-using namespace rocwmma;
+using namespace nvcuda;
+
 __host__ void init_host_matrices(half *a, half *b, float *c) {
   for (int i = 0; i < M_GLOBAL; i++) {
     for (int j = 0; j < K_GLOBAL; j++) {

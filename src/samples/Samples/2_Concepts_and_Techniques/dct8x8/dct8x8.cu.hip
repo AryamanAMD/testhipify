@@ -39,8 +39,6 @@
 * 3. Output execution timings and calculate CUDA speedup.
 */
 
-
-#include <hip/hip_runtime.h>
 #include "Common.h"
 #include "DCT8x8_Gold.h"
 #include "BmpUtil.h"
@@ -669,3 +667,7 @@ finalize
     printf("Test failed!\n");
     exit(EXIT_FAILURE);
   }
+
+  printf("Test passed\n");
+  exit(EXIT_SUCCESS);
+}

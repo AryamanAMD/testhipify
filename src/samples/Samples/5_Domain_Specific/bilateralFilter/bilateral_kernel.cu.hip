@@ -28,7 +28,7 @@
 
 #include <helper_math.h>
 #include "helper_functions.h"
-#include "helper_cuda_hipified.h"  // CUDA device initialization helper functions
+#include <helper_cuda.h>  // CUDA device initialization helper functions
 
 __constant__ float cGaussian[64];  // gaussian array in device side
 
@@ -263,3 +263,6 @@ extern "C" double bilateralFilterRGBA(uint *dDest, int width, int height,
 emcpyDeviceToDevice));
     }
   }
+
+  return ((dKernelTime / 1000.) / (double)iterations);
+}

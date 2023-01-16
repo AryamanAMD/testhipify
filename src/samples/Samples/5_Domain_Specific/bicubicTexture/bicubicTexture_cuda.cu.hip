@@ -30,14 +30,12 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <string.h>
 
 #include <helper_math.h>
 
 // includes, cuda
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 
 typedef unsigned int uint;
 typedef unsigned char uchar;
@@ -132,3 +130,5 @@ extern "C" void render(int width, int height, float tx, float ty, float scale,
 
   getLastCudaError("kernel failed");
 }
+
+#endif

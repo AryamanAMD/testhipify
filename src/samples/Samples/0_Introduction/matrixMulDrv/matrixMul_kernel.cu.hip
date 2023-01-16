@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +34,6 @@
 #define _MATRIXMUL_KERNEL_H_
 
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 #define AS(i, j) As[i][j]
 #define BS(i, j) Bs[i][j]

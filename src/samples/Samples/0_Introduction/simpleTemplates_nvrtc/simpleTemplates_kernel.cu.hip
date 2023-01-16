@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +27,6 @@
  */
 
 // includes, kernels
-
-#include <hip/hip_runtime.h>
 #include "sharedmem.cuh"
 
 ////////////////////////////////////////////////////////////////////////////////

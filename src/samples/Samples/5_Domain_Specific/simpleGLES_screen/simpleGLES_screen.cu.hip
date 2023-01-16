@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -601,4 +599,6 @@ int main(int argc, char **argv) {
          (g_TotalErrors == 0) ? "OK" : "ERROR!");
 
   exit(g_TotalErrors == 0 ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+_SUCCESS : EXIT_FAILURE);
 }

@@ -152,11 +152,11 @@ int runTest(int argc, char **argv) {
   hipChannelFormatDesc channelDesc =
       hipCreateChannelDesc(32, 0, 0, 0, hipChannelFormatKindFloat);
   hipArray *heightFieldArray;
-  checkCudaErrors(
+  HIPCHECK(
       hipMallocArray(&heightFieldArray, &channelDesc, dim.x, dim.y));
 
   // Initialize device memory
-  checkCudaErrors(hipMemcpy2DToArray(
+  HIPCHECK(hipMemcpy2DToArray(
       heightFieldArray, 0, 0, heightField.height, dim.x * sizeof(float),
       dim.x * sizeof(float), dim.y, hipMemcpyHostToDevice));
 
@@ -175,7 +175,7 @@ int runTest(int argc, char **argv) {
   texDescr.addressMode[1] = hipAddressModeClamp;
   texDescr.readMode = hipReadModeElementType;
 
-  checkCudaErrors(
+  HIPCHECK(
       hipCreateTextureObject(&heightFieldTex, &texRes, &texDescr, NULL));
 
   //////////////////////////////////////////////////////////////////////////////
@@ -256,7 +256,7 @@ int runTest(int argc, char **argv) {
   sdkResetTimer(&timer);
 
   // Cleanup memory
-  checkCudaErrors(hipFreeArray(heightFieldArray));
+  HIPCHECK(hipFreeArray(heightFieldArray));
   return res;
 }
 
@@ -343,4 +343,6 @@ __device__ __host__ float getAngle(const Ray ray, float2 location,
                                    float height) {
   float2 dir = location - make_float2(ray.origin.x, ray.origin.y);
   return atanf((height - ray.origin.z) / length(dir));
+}
+origin.z) / length(dir));
 }

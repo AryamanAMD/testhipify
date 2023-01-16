@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +27,6 @@
  */
 
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 
 #include <hip/hip_runtime.h>
@@ -359,4 +358,6 @@ extern "C" void advectParticles(GLuint vbo, cData *v, int dx, int dy,
 
   hipGraphicsUnmapResources(1, &cuda_vbo_resource, 0);
   getLastCudaError("hipGraphicsUnmapResources failed");
+}
+getLastCudaError("hipGraphicsUnmapResources failed");
 }

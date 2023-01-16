@@ -35,16 +35,11 @@
  * See supplied whitepaper for more explanations.
  */
 
-
-#include <hip/hip_runtime.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <string.h>
 #include "helper_cuda_hipified.h"
-#include "imageDenoising_hipified.h"
-#include <hip/hip_cooperative_groups.h>
+#include "imageDenoising.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions
@@ -80,10 +75,10 @@ hipArray *a_Src;
 ////////////////////////////////////////////////////////////////////////////////
 // Filtering kernels
 ////////////////////////////////////////////////////////////////////////////////
-#include "imageDenoising_copy_kernel_hipified.cuh"
-#include "imageDenoising_knn_kernel_hipified.cuh"
-#include "imageDenoising_nlm_kernel_hipified.cuh"
-#include "imageDenoising_nlm2_kernel_hipified.cuh"
+#include "imageDenoising_copy_kernel.cuh"
+#include "imageDenoising_knn_kernel.cuh"
+#include "imageDenoising_nlm_kernel.cuh"
+#include "imageDenoising_nlm2_kernel.cuh"
 
 extern "C" hipError_t CUDA_MallocArray(uchar4 **h_Src, int imageW,
                                         int imageH) {
@@ -115,3 +110,4 @@ extern "C" hipError_t CUDA_MallocArray(uchar4 **h_Src, int imageW,
 }
 
 extern "C" hipError_t CUDA_FreeArray() { return hipFreeArray(a_Src); }
+rc); }

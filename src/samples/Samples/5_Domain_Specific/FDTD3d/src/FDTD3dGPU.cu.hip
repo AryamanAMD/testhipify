@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,8 +29,8 @@
 
 #include <iostream>
 #include <algorithm>
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
 
 #include "FDTD3dGPUKernel.cuh"
 
@@ -265,3 +263,11 @@ bool fdtdGPU(float *output, const float *input, const float *coeff,
 }
 CudaErrors(hipEventDestroy(profileStart));
   }
+
+  if (profileEnd) {
+    checkCudaErrors(hipEventDestroy(profileEnd));
+  }
+
+#endif
+  return true;
+}

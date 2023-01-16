@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -583,6 +581,11 @@ void checkResultCuda(int argc, char **argv, const GLuint &vbo)
 
         HIPCHECK(hipGraphicsGLRegisterBuffer(&cuda_vbo_resource, vbo,
                                                      cudaGraphicsMapFlagsWriteDiscard));
+
+        SDK_CHECK_ERROR_GL();
+    }
+}
+MapFlagsWriteDiscard));
 
         SDK_CHECK_ERROR_GL();
     }

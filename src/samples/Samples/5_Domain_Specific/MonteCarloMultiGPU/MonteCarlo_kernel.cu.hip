@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,16 +29,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 // Global types
 ////////////////////////////////////////////////////////////////////////////////
-
-#include <hip/hip_runtime.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <hip/hip_cooperative_groups.h>
 
 namespace cg = cooperative_groups;
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <hiprand_kernel.h>
 #include "MonteCarlo_common.h"
 
@@ -226,5 +223,9 @@ extern "C" void MonteCarloGPU(TOptionPlan *plan, hipStream_t stream) {
                                   plan->optionCount * sizeof(__TOptionValue),
                                   hipMemcpyDeviceToHost, stream));
 
-  // cudaDeviceSynchronize();
+  // hipDeviceSynchronize();
+}
+                          hipMemcpyDeviceToHost, stream));
+
+  // hipDeviceSynchronize();
 }

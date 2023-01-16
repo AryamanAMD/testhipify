@@ -49,7 +49,7 @@
 
 #include <vector>
 
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <helper_math.h>
 
 #include "bindlessTexture.h"
@@ -134,7 +134,7 @@ extern "C" void renderAtlasImage(dim3 gridSize, dim3 blockSize,
   d_render<<<gridSize, blockSize>>>(d_output, imageW, imageH, lod,
                                     atlasImage.textureObject);
 
-  checkCudaErrors(hipGetLastError());
+  HIPCHECK(hipGetLastError());
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -177,7 +177,7 @@ void generateMipMaps(hipMipmappedArray_t mipmapArray, hipExtent size) {
 
 #ifdef SHOW_MIPMAPS
   hipArray_t levelFirst;
-  checkCudaErrors(hipGetMipmappedArrayLevel(&levelFirst, mipmapArray, 0));
+  HIPCHECK(hipGetMipmappedArrayLevel(&levelFirst, mipmapArray, 0));
 #endif
 
   uint level = 0;
@@ -189,13 +189,13 @@ void generateMipMaps(hipMipmappedArray_t mipmapArray, hipExtent size) {
     height = MAX((size_t)1, height);
 
     hipArray_t levelFrom;
-    checkCudaErrors(hipGetMipmappedArrayLevel(&levelFrom, mipmapArray, level));
+    HIPCHECK(hipGetMipmappedArrayLevel(&levelFrom, mipmapArray, level));
     hipArray_t levelTo;
-    checkCudaErrors(
+    HIPCHECK(
         hipGetMipmappedArrayLevel(&levelTo, mipmapArray, level + 1));
 
     hipExtent levelToSize;
-    checkCudaErrors(cudaArrayGetInfo(NULL, &levelToSize, NULL, levelTo));
+    HIPCHECK(cudaArrayGetInfo(NULL, &levelToSize, NULL, levelTo));
     checkHost(levelToSize.width == width);
     checkHost(levelToSize.height == height);
     checkHost(levelToSize.depth == 0);
@@ -220,7 +220,7 @@ void generateMipMaps(hipMipmappedArray_t mipmapArray, hipExtent size) {
 
     texDescr.readMode = hipReadModeNormalizedFloat;
 
-    checkCudaErrors(
+    HIPCHECK(
         hipCreateTextureObject(&texInput, &texRes, &texDescr, NULL));
 
     // generate surface object for writing
@@ -231,7 +231,7 @@ void generateMipMaps(hipMipmappedArray_t mipmapArray, hipExtent size) {
     surfRes.resType = hipResourceTypeArray;
     surfRes.res.array.array = levelTo;
 
-    checkCudaErrors(hipCreateSurfaceObject(&surfOutput, &surfRes));
+    HIPCHECK(hipCreateSurfaceObject(&surfOutput, &surfRes));
 
     // run mipmap kernel
     dim3 blockSize(16, 16, 1);
@@ -241,12 +241,12 @@ void generateMipMaps(hipMipmappedArray_t mipmapArray, hipExtent size) {
     d_mipmap<<<gridSize, blockSize>>>(surfOutput, texInput, (uint)width,
                                       (uint)height);
 
-    checkCudaErrors(hipDeviceSynchronize());
-    checkCudaErrors(hipGetLastError());
+    HIPCHECK(hipDeviceSynchronize());
+    HIPCHECK(hipGetLastError());
 
-    checkCudaErrors(hipDestroySurfaceObject(surfOutput));
+    HIPCHECK(hipDestroySurfaceObject(surfOutput));
 
-    checkCudaErrors(hipDestroyTextureObject(texInput));
+    HIPCHECK(hipDestroyTextureObject(texInput));
 
 #ifdef SHOW_MIPMAPS
     // we blit the current mipmap back into first level
@@ -255,7 +255,7 @@ void generateMipMaps(hipMipmappedArray_t mipmapArray, hipExtent size) {
     copyParams.srcArray = levelTo;
     copyParams.extent = make_hipExtent(width, height, 1);
     copyParams.kind = hipMemcpyDeviceToDevice;
-    checkCudaErrors(hipMemcpy3D(&copyParams));
+    HIPCHECK(hipMemcpy3D(&copyParams));
 #endif
 
     level++;
@@ -300,7 +300,7 @@ extern "C" void randomizeAtlas() {
   copyParams.extent = atlasImage.size;
   copyParams.extent.depth = 1;
   copyParams.kind = hipMemcpyHostToDevice;
-  checkCudaErrors(hipMemcpy3D(&copyParams));
+  HIPCHECK(hipMemcpy3D(&copyParams));
 };
 
 extern "C" void deinitAtlasAndImages() {
@@ -312,11 +312,11 @@ extern "C" void deinitAtlasAndImages() {
     }
 
     if (image.textureObject) {
-      checkCudaErrors(hipDestroyTextureObject(image.textureObject));
+      HIPCHECK(hipDestroyTextureObject(image.textureObject));
     }
 
     if (image.mipmapArray) {
-      checkCudaErrors(hipFreeMipmappedArray(image.mipmapArray));
+      HIPCHECK(hipFreeMipmappedArray(image.mipmapArray));
     }
   }
 
@@ -325,11 +325,11 @@ extern "C" void deinitAtlasAndImages() {
   }
 
   if (atlasImage.textureObject) {
-    checkCudaErrors(hipDestroyTextureObject(atlasImage.textureObject));
+    HIPCHECK(hipDestroyTextureObject(atlasImage.textureObject));
   }
 
   if (atlasImage.dataArray) {
-    checkCudaErrors(hipFreeArray(atlasImage.dataArray));
+    HIPCHECK(hipFreeArray(atlasImage.dataArray));
   }
 }
 
@@ -349,12 +349,12 @@ extern "C" void initAtlasAndImages(const Image *images, size_t numImages,
     highestLod = MAX(highestLod, (float)levels - 1);
 
     hipChannelFormatDesc desc = hipCreateChannelDesc<uchar4>();
-    checkCudaErrors(hipMallocMipmappedArray(&image.mipmapArray, &desc,
+    HIPCHECK(hipMallocMipmappedArray(&image.mipmapArray, &desc,
                                              image.size, levels));
 
     // upload level 0
     hipArray_t level0;
-    checkCudaErrors(hipGetMipmappedArrayLevel(&level0, image.mipmapArray, 0));
+    HIPCHECK(hipGetMipmappedArrayLevel(&level0, image.mipmapArray, 0));
 
     hipMemcpy3DParms copyParams = {0};
     copyParams.srcPtr =
@@ -364,7 +364,7 @@ extern "C" void initAtlasAndImages(const Image *images, size_t numImages,
     copyParams.extent = image.size;
     copyParams.extent.depth = 1;
     copyParams.kind = hipMemcpyHostToDevice;
-    checkCudaErrors(hipMemcpy3D(&copyParams));
+    HIPCHECK(hipMemcpy3D(&copyParams));
 
     // compute rest of mipmaps based on level 0
     generateMipMaps(image.mipmapArray, image.size);
@@ -392,13 +392,13 @@ extern "C" void initAtlasAndImages(const Image *images, size_t numImages,
 
     texDescr.readMode = hipReadModeNormalizedFloat;
 
-    checkCudaErrors(hipCreateTextureObject(&image.textureObject, &resDescr,
+    HIPCHECK(hipCreateTextureObject(&image.textureObject, &resDescr,
                                             &texDescr, NULL));
   }
 
   // create atlas array
   hipChannelFormatDesc channelDesc = hipCreateChannelDesc<uint2>();
-  checkCudaErrors(hipMallocArray(&atlasImage.dataArray, &channelDesc,
+  HIPCHECK(hipMallocArray(&atlasImage.dataArray, &channelDesc,
                                   atlasSize.width, atlasSize.height));
   atlasImage.h_data =
       malloc(atlasSize.width * atlasSize.height * sizeof(uint2));
@@ -421,7 +421,14 @@ extern "C" void initAtlasAndImages(const Image *images, size_t numImages,
   texDescr.addressMode[1] = hipAddressModeClamp;
   texDescr.readMode = hipReadModeElementType;
 
-  checkCudaErrors(hipCreateTextureObject(&atlasImage.textureObject, &texRes,
+  HIPCHECK(hipCreateTextureObject(&atlasImage.textureObject, &texRes,
+                                          &texDescr, NULL));
+
+  randomizeAtlas();
+}
+
+#endif  // #ifndef _SIMPLETEXTURE3D_KERNEL_CU_
+mage.textureObject, &texRes,
                                           &texDescr, NULL));
 
   randomizeAtlas();

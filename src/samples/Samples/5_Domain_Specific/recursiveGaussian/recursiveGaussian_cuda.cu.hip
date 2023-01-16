@@ -51,12 +51,10 @@
 
 #include <stdlib.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <string.h>
 
 #include <hip/hip_runtime.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <helper_math.h>
 
 #include "recursiveGaussian_kernel.cuh"

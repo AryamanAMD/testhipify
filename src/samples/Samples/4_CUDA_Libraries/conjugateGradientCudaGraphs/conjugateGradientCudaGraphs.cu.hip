@@ -134,7 +134,7 @@ int main(int argc, char **argv) {
     exit(EXIT_SUCCESS);
   }
 
-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, devID));
+  HIPCHECK(hipGetDeviceProperties(&deviceProp, devID));
 
   // Statistics about the GPU device
   printf(
@@ -144,12 +144,12 @@ int main(int argc, char **argv) {
   /* Generate a random tridiagonal symmetric matrix in CSR format */
   N = 1048576;
   nz = (N - 2) * 3 + 4;
-  checkCudaErrors(hipHostMalloc(&I, sizeof(int) * (N + 1)));
-  checkCudaErrors(hipHostMalloc(&J, sizeof(int) * nz));
-  checkCudaErrors(hipHostMalloc(&val, sizeof(float) * nz));
+  HIPCHECK(hipHostMalloc(&I, sizeof(int) * (N + 1)));
+  HIPCHECK(hipHostMalloc(&J, sizeof(int) * nz));
+  HIPCHECK(hipHostMalloc(&val, sizeof(float) * nz));
   genTridiag(I, J, val, N, nz);
 
-  checkCudaErrors(hipHostMalloc(&x, sizeof(float) * N));
+  HIPCHECK(hipHostMalloc(&x, sizeof(float) * N));
   rhs = (float *)malloc(sizeof(float) * N);
 
   for (int i = 0; i < N; i++) {
@@ -162,68 +162,68 @@ int main(int argc, char **argv) {
   hipblasStatus_t hipblasStatus_t;
   hipblasStatus_t = hipblasCreate(&cublasHandle);
 
-  checkCudaErrors(hipblasStatus_t);
+  HIPCHECK(hipblasStatus_t);
 
   /* Get handle to the CUSPARSE context */
   hipsparseHandle_t cusparseHandle = 0;
   hipsparseStatus_t cusparseStatus;
   cusparseStatus = hipsparseCreate(&cusparseHandle);
 
-  checkCudaErrors(cusparseStatus);
+  HIPCHECK(cusparseStatus);
 
-  checkCudaErrors(hipStreamCreate(&stream1));
+  HIPCHECK(hipStreamCreate(&stream1));
 
-  checkCudaErrors(hipMalloc((void **)&d_col, nz * sizeof(int)));
-  checkCudaErrors(hipMalloc((void **)&d_row, (N + 1) * sizeof(int)));
-  checkCudaErrors(hipMalloc((void **)&d_val, nz * sizeof(float)));
-  checkCudaErrors(hipMalloc((void **)&d_x, N * sizeof(float)));
-  checkCudaErrors(hipMalloc((void **)&d_r, N * sizeof(float)));
-  checkCudaErrors(hipMalloc((void **)&d_p, N * sizeof(float)));
-  checkCudaErrors(hipMalloc((void **)&d_Ax, N * sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_col, nz * sizeof(int)));
+  HIPCHECK(hipMalloc((void **)&d_row, (N + 1) * sizeof(int)));
+  HIPCHECK(hipMalloc((void **)&d_val, nz * sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_x, N * sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_r, N * sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_p, N * sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_Ax, N * sizeof(float)));
 
   float *d_r1, *d_r0, *d_dot, *d_a, *d_na, *d_b;
-  checkCudaErrors(hipMalloc((void **)&d_r1, sizeof(float)));
-  checkCudaErrors(hipMalloc((void **)&d_r0, sizeof(float)));
-  checkCudaErrors(hipMalloc((void **)&d_dot, sizeof(float)));
-  checkCudaErrors(hipMalloc((void **)&d_a, sizeof(float)));
-  checkCudaErrors(hipMalloc((void **)&d_na, sizeof(float)));
-  checkCudaErrors(hipMalloc((void **)&d_b, sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_r1, sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_r0, sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_dot, sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_a, sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_na, sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_b, sizeof(float)));
 
   /* Wrap raw data into cuSPARSE generic API objects */
   hipsparseSpMatDescr_t matA = NULL;
-  checkCudaErrors(hipsparseCreateCsr(&matA, N, N, nz, d_row, d_col, d_val,
+  HIPCHECK(hipsparseCreateCsr(&matA, N, N, nz, d_row, d_col, d_val,
                                     HIPSPARSE_INDEX_32I, HIPSPARSE_INDEX_32I,
                                     HIPSPARSE_INDEX_BASE_ZERO, HIPBLAS_R_32F));
   hipsparseDnVecDescr_t vecx = NULL;
-  checkCudaErrors(hipsparseCreateDnVec(&vecx, N, d_x, HIPBLAS_R_32F));
+  HIPCHECK(hipsparseCreateDnVec(&vecx, N, d_x, HIPBLAS_R_32F));
   hipsparseDnVecDescr_t vecp = NULL;
-  checkCudaErrors(hipsparseCreateDnVec(&vecp, N, d_p, HIPBLAS_R_32F));
+  HIPCHECK(hipsparseCreateDnVec(&vecp, N, d_p, HIPBLAS_R_32F));
   hipsparseDnVecDescr_t vecAx = NULL;
-  checkCudaErrors(hipsparseCreateDnVec(&vecAx, N, d_Ax, HIPBLAS_R_32F));
+  HIPCHECK(hipsparseCreateDnVec(&vecAx, N, d_Ax, HIPBLAS_R_32F));
 
   /* Allocate workspace for cuSPARSE */
   size_t bufferSize = 0;
-  checkCudaErrors(hipsparseSpMV_bufferSize(
+  HIPCHECK(hipsparseSpMV_bufferSize(
       cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, vecx,
       &beta, vecAx, HIPBLAS_R_32F, HIPSPARSE_SPMV_ALG_DEFAULT, &bufferSize));
   void *buffer = NULL;
-  checkCudaErrors(hipMalloc(&buffer, bufferSize));
+  HIPCHECK(hipMalloc(&buffer, bufferSize));
 
   hipsparseMatDescr_t descr = 0;
-  checkCudaErrors(hipsparseCreateMatDescr(&descr));
+  HIPCHECK(hipsparseCreateMatDescr(&descr));
 
-  checkCudaErrors(hipsparseSetMatType(descr, HIPSPARSE_MATRIX_TYPE_GENERAL));
-  checkCudaErrors(hipsparseSetMatIndexBase(descr, HIPSPARSE_INDEX_BASE_ZERO));
+  HIPCHECK(hipsparseSetMatType(descr, HIPSPARSE_MATRIX_TYPE_GENERAL));
+  HIPCHECK(hipsparseSetMatIndexBase(descr, HIPSPARSE_INDEX_BASE_ZERO));
 
   int numBlocks = 0, blockSize = 0;
-  checkCudaErrors(
+  HIPCHECK(
       hipOccupancyMaxPotentialBlockSize(&numBlocks, &blockSize, initVectors));
 
-  checkCudaErrors(hipMemcpyAsync(d_col, J, nz * sizeof(int),
+  HIPCHECK(hipMemcpyAsync(d_col, J, nz * sizeof(int),
                                   hipMemcpyHostToDevice, stream1));
-  checkCudaErrors(hipMemcpyAsync(d_row, I, (N + 1) * sizeof(int),
+  HIPCHECK(hipMemcpyAsync(d_row, I, (N + 1) * sizeof(int),
                                   hipMemcpyHostToDevice, stream1));
-  checkCudaErrors(hipMemcpyAsync(d_val, val, nz * sizeof(float),
+  HIPCHECK(hipMemcpyAsync(d_val, val, nz * sizeof(float),
                                   hipMemcpyHostToDevice, stream1));
 
   initVectors<<<numBlocks, blockSize, 0, stream1>>>(d_r, d_x, N);
@@ -232,141 +232,141 @@ int main(int argc, char **argv) {
   alpham1 = -1.0;
   beta = 0.0;
 
-  checkCudaErrors(hipsparseSetStream(cusparseHandle, stream1));
-  checkCudaErrors(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
+  HIPCHECK(hipsparseSetStream(cusparseHandle, stream1));
+  HIPCHECK(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
                                &alpha, matA, vecx, &beta, vecAx, HIPBLAS_R_32F,
                                HIPSPARSE_SPMV_ALG_DEFAULT, buffer));
 
-  checkCudaErrors(hipblasSetStream(cublasHandle, stream1));
-  checkCudaErrors(hipblasSaxpy(cublasHandle, N, &alpham1, d_Ax, 1, d_r, 1));
+  HIPCHECK(hipblasSetStream(cublasHandle, stream1));
+  HIPCHECK(hipblasSaxpy(cublasHandle, N, &alpham1, d_Ax, 1, d_r, 1));
 
-  checkCudaErrors(
+  HIPCHECK(
       hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_DEVICE));
-  checkCudaErrors(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+  HIPCHECK(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
 
   k = 1;
   // First Iteration when k=1 starts
-  checkCudaErrors(hipblasScopy(cublasHandle, N, d_r, 1, d_p, 1));
-  checkCudaErrors(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
+  HIPCHECK(hipblasScopy(cublasHandle, N, d_r, 1, d_p, 1));
+  HIPCHECK(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
                                &alpha, matA, vecp, &beta, vecAx, HIPBLAS_R_32F,
                                HIPSPARSE_SPMV_ALG_DEFAULT, buffer));
 
-  checkCudaErrors(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
+  HIPCHECK(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
 
   r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_dot, d_a);
 
-  checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
+  HIPCHECK(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
 
   a_minus<<<1, 1, 0, stream1>>>(d_a, d_na);
 
-  checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
+  HIPCHECK(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
 
-  checkCudaErrors(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
+  HIPCHECK(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
                                   hipMemcpyDeviceToDevice, stream1));
 
-  checkCudaErrors(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+  HIPCHECK(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
 
-  checkCudaErrors(hipMemcpyAsync(&r1, d_r1, sizeof(float),
+  HIPCHECK(hipMemcpyAsync(&r1, d_r1, sizeof(float),
                                   hipMemcpyDeviceToHost, stream1));
-  checkCudaErrors(hipStreamSynchronize(stream1));
+  HIPCHECK(hipStreamSynchronize(stream1));
   printf("iteration = %3d, residual = %e\n", k, sqrt(r1));
   // First Iteration when k=1 ends
   k++;
 
 #if WITH_GRAPH
   hipGraph_t initGraph;
-  checkCudaErrors(hipStreamCreate(&streamForGraph));
-  checkCudaErrors(hipblasSetStream(cublasHandle, stream1));
-  checkCudaErrors(hipsparseSetStream(cusparseHandle, stream1));
-  checkCudaErrors(hipStreamBeginCapture(stream1, hipStreamCaptureModeGlobal));
+  HIPCHECK(hipStreamCreate(&streamForGraph));
+  HIPCHECK(hipblasSetStream(cublasHandle, stream1));
+  HIPCHECK(hipsparseSetStream(cusparseHandle, stream1));
+  HIPCHECK(hipStreamBeginCapture(stream1, hipStreamCaptureModeGlobal));
 
   r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_r0, d_b);
   hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_DEVICE);
-  checkCudaErrors(hipblasSscal(cublasHandle, N, d_b, d_p, 1));
+  HIPCHECK(hipblasSscal(cublasHandle, N, d_b, d_p, 1));
   hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_HOST);
-  checkCudaErrors(hipblasSaxpy(cublasHandle, N, &alpha, d_r, 1, d_p, 1));
+  HIPCHECK(hipblasSaxpy(cublasHandle, N, &alpha, d_r, 1, d_p, 1));
   hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_DEVICE);
 
-  checkCudaErrors(
+  HIPCHECK(
       hipsparseSetPointerMode(cusparseHandle, HIPSPARSE_POINTER_MODE_HOST));
-  checkCudaErrors(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
+  HIPCHECK(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
                                &alpha, matA, vecp, &beta, vecAx, HIPBLAS_R_32F,
                                HIPSPARSE_SPMV_ALG_DEFAULT, buffer));
 
-  checkCudaErrors(hipMemsetAsync(d_dot, 0, sizeof(float), stream1));
-  checkCudaErrors(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
+  HIPCHECK(hipMemsetAsync(d_dot, 0, sizeof(float), stream1));
+  HIPCHECK(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
 
   r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_dot, d_a);
 
-  checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
+  HIPCHECK(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
 
   a_minus<<<1, 1, 0, stream1>>>(d_a, d_na);
 
-  checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
+  HIPCHECK(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
 
-  checkCudaErrors(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
+  HIPCHECK(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
                                   hipMemcpyDeviceToDevice, stream1));
-  checkCudaErrors(hipMemsetAsync(d_r1, 0, sizeof(float), stream1));
+  HIPCHECK(hipMemsetAsync(d_r1, 0, sizeof(float), stream1));
 
-  checkCudaErrors(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+  HIPCHECK(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
 
-  checkCudaErrors(hipMemcpyAsync((float *)&r1, d_r1, sizeof(float),
+  HIPCHECK(hipMemcpyAsync((float *)&r1, d_r1, sizeof(float),
                                   hipMemcpyDeviceToHost, stream1));
 
-  checkCudaErrors(hipStreamEndCapture(stream1, &initGraph));
+  HIPCHECK(hipStreamEndCapture(stream1, &initGraph));
   hipGraphExec_t graphExec;
-  checkCudaErrors(hipGraphInstantiate(&graphExec, initGraph, NULL, NULL, 0));
+  HIPCHECK(hipGraphInstantiate(&graphExec, initGraph, NULL, NULL, 0));
 #endif
 
-  checkCudaErrors(hipblasSetStream(cublasHandle, stream1));
-  checkCudaErrors(hipsparseSetStream(cusparseHandle, stream1));
+  HIPCHECK(hipblasSetStream(cublasHandle, stream1));
+  HIPCHECK(hipsparseSetStream(cusparseHandle, stream1));
 
   while (r1 > tol * tol && k <= max_iter) {
 #if WITH_GRAPH
-    checkCudaErrors(hipGraphLaunch(graphExec, streamForGraph));
-    checkCudaErrors(hipStreamSynchronize(streamForGraph));
+    HIPCHECK(hipGraphLaunch(graphExec, streamForGraph));
+    HIPCHECK(hipStreamSynchronize(streamForGraph));
 #else
     r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_r0, d_b);
     hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_DEVICE);
-    checkCudaErrors(hipblasSscal(cublasHandle, N, d_b, d_p, 1));
+    HIPCHECK(hipblasSscal(cublasHandle, N, d_b, d_p, 1));
 
     hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_HOST);
-    checkCudaErrors(hipblasSaxpy(cublasHandle, N, &alpha, d_r, 1, d_p, 1));
+    HIPCHECK(hipblasSaxpy(cublasHandle, N, &alpha, d_r, 1, d_p, 1));
 
-    checkCudaErrors(hipsparseSpMV(
+    HIPCHECK(hipsparseSpMV(
         cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, vecp,
         &beta, vecAx, HIPBLAS_R_32F, HIPSPARSE_SPMV_ALG_DEFAULT, buffer));
 
     hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_DEVICE);
-    checkCudaErrors(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
+    HIPCHECK(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
 
     r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_dot, d_a);
 
-    checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
+    HIPCHECK(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
 
     a_minus<<<1, 1, 0, stream1>>>(d_a, d_na);
-    checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
+    HIPCHECK(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
 
-    checkCudaErrors(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
+    HIPCHECK(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
                                     hipMemcpyDeviceToDevice, stream1));
 
-    checkCudaErrors(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
-    checkCudaErrors(hipMemcpyAsync((float *)&r1, d_r1, sizeof(float),
+    HIPCHECK(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+    HIPCHECK(hipMemcpyAsync((float *)&r1, d_r1, sizeof(float),
                                     hipMemcpyDeviceToHost, stream1));
-    checkCudaErrors(hipStreamSynchronize(stream1));
+    HIPCHECK(hipStreamSynchronize(stream1));
 #endif
     printf("iteration = %3d, residual = %e\n", k, sqrt(r1));
     k++;
   }
 
 #if WITH_GRAPH
-  checkCudaErrors(hipMemcpyAsync(x, d_x, N * sizeof(float),
+  HIPCHECK(hipMemcpyAsync(x, d_x, N * sizeof(float),
                                   hipMemcpyDeviceToHost, streamForGraph));
-  checkCudaErrors(hipStreamSynchronize(streamForGraph));
+  HIPCHECK(hipStreamSynchronize(streamForGraph));
 #else
-  checkCudaErrors(hipMemcpyAsync(x, d_x, N * sizeof(float),
+  HIPCHECK(hipMemcpyAsync(x, d_x, N * sizeof(float),
                                   hipMemcpyDeviceToHost, stream1));
-  checkCudaErrors(hipStreamSynchronize(stream1));
+  HIPCHECK(hipStreamSynchronize(stream1));
 #endif
 
   float rsum, diff, err = 0.0;
@@ -386,16 +386,44 @@ int main(int argc, char **argv) {
   }
 
 #if WITH_GRAPH
-  checkCudaErrors(hipGraphExecDestroy(graphExec));
-  checkCudaErrors(hipGraphDestroy(initGraph));
-  checkCudaErrors(hipStreamDestroy(streamForGraph));
+  HIPCHECK(hipGraphExecDestroy(graphExec));
+  HIPCHECK(hipGraphDestroy(initGraph));
+  HIPCHECK(hipStreamDestroy(streamForGraph));
 #endif
-  checkCudaErrors(hipStreamDestroy(stream1));
+  HIPCHECK(hipStreamDestroy(stream1));
   hipsparseDestroy(cusparseHandle);
   hipblasDestroy(cublasHandle);
 
   if (matA) {
-    checkCudaErrors(hipsparseDestroySpMat(matA));
+    HIPCHECK(hipsparseDestroySpMat(matA));
+  }
+  if (vecx) {
+    HIPCHECK(hipsparseDestroyDnVec(vecx));
+  }
+  if (vecAx) {
+    HIPCHECK(hipsparseDestroyDnVec(vecAx));
+  }
+  if (vecp) {
+    HIPCHECK(hipsparseDestroyDnVec(vecp));
+  }
+
+  HIPCHECK(hipHostFree(I));
+  HIPCHECK(hipHostFree(J));
+  HIPCHECK(hipHostFree(val));
+  HIPCHECK(hipHostFree(x));
+  free(rhs);
+  HIPCHECK(hipFree(d_col));
+  HIPCHECK(hipFree(d_row));
+  HIPCHECK(hipFree(d_val));
+  HIPCHECK(hipFree(d_x));
+  HIPCHECK(hipFree(d_r));
+  HIPCHECK(hipFree(d_p));
+  HIPCHECK(hipFree(d_Ax));
+
+  printf("Test Summary:  Error amount = %f\n", err);
+  exit((k <= max_iter) ? 0 : 1);
+}
+rors(hipsparseDestroySpMat(matA));
   }
   if (vecx) {
     checkCudaErrors(hipsparseDestroyDnVec(vecx));

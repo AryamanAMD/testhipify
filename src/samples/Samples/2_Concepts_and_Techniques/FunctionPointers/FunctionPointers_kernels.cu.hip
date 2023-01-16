@@ -33,7 +33,7 @@
 namespace cg = cooperative_groups;
 
 #include "helper_cuda_hipified.h"
-#include "HIPCHECK.h"
+
 #include "FunctionPointers_kernels.h"
 
 // Texture object for reading image
@@ -398,6 +398,10 @@ extern "C" void sobelFilter(Pixel *odata, int iw, int ih,
           BlockWidth, SharedPitch,
 #endif
           iw, ih, fScale, blockOperation, pPointOp, tex);
+    } break;
+  }
+}
+   iw, ih, fScale, blockOperation, pPointOp, tex);
     } break;
   }
 }

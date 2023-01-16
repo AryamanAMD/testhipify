@@ -1,5 +1,3 @@
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
@@ -57,7 +55,7 @@
 
 #include <hip/hip_runtime.h>
 #include <hip/hip_runtime.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <helper_image.h>
 #include <helper_math.h>
 
@@ -2647,3 +2645,6 @@ int main(int argc, char** argv) {
     std::cerr << e.what() << std::endl;
     return EXIT_FAILURE;
   }
+
+  return EXIT_SUCCESS;
+}

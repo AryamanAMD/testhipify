@@ -26,8 +26,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "helper_cuda_hipified.h"
-#include <helper_string.h>
+//#include "helper_cuda_hipified.h"
+//#include <helper_string.h>
 
 #include <cstdio>
 #include <cstdlib>
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
   int device = -1;
   hipDeviceProp_t deviceProp;
   device = findCudaDevice(argc, (const char **)argv);
-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, device));
+  HIPCHECK(hipGetDeviceProperties(&deviceProp, device));
 
   if (!(deviceProp.major > 3 ||
         (deviceProp.major == 3 && deviceProp.minor >= 5))) {
@@ -164,10 +164,12 @@ int main(int argc, char **argv) {
   // Launch the kernel from the CPU.
   printf("Launching cdp_kernel() with CUDA Dynamic Parallelism:\n\n");
   cdp_kernel<<<2, 2>>>(max_depth, 0, 0, -1);
-  checkCudaErrors(hipGetLastError());
+  HIPCHECK(hipGetLastError());
 
   // Finalize.
-  checkCudaErrors(hipDeviceSynchronize());
+  HIPCHECK(hipDeviceSynchronize());
 
   exit(EXIT_SUCCESS);
+}
+xit(EXIT_SUCCESS);
 }

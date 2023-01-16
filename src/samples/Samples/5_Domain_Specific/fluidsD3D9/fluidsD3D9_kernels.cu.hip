@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,14 +27,12 @@
  */
 
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <hip/hip_runtime.h>
 #include <builtin_types.h>
 #include <hipfft.h>
-
-#include <helper_cuda.h>
+#include <hip/hip_runtime.h>
+#include "helper_cuda_hipified.h"
 #include "fluidsD3D9_kernels.h"
 
 // Texture object for reading velocity field
@@ -295,8 +294,8 @@ extern "C" void advectVelocity(cData *v, float *vx, float *vy, int dx, int pdx,
 extern "C" void diffuseProject(cData *vx, cData *vy, int dx, int dy, float dt,
                                float visc, size_t tPitch) {
   // Forward FFT
-  //    cufftExecR2C(planr2c, (cufftReal*)vx, (cufftComplex*)vx);
-  //    cufftExecR2C(planr2c, (cufftReal*)vy, (cufftComplex*)vy);
+  //    hipfftExecR2C(planr2c, (hipfftReal*)vx, (hipfftComplex*)vx);
+  //    hipfftExecR2C(planr2c, (hipfftReal*)vy, (hipfftComplex*)vy);
 
   uint3 grid = make_uint3((dx / TILEX) + (!(dx % TILEX) ? 0 : 1),
                           (dy / TILEY) + (!(dy % TILEY) ? 0 : 1), 1);
@@ -307,8 +306,8 @@ extern "C" void diffuseProject(cData *vx, cData *vy, int dx, int dy, float dt,
   getLastCudaError("diffuseProject_k failed.");
 
   // Inverse FFT
-  //    cufftExecC2R(planc2r, (cufftComplex*)vx, (cufftReal*)vx);
-  //    cufftExecC2R(planc2r, (cufftComplex*)vy, (cufftReal*)vy);
+  //    hipfftExecC2R(planc2r, (hipfftComplex*)vx, (hipfftReal*)vx);
+  //    hipfftExecC2R(planc2r, (hipfftComplex*)vy, (hipfftReal*)vy);
 }
 
 extern "C" void updateVelocity(cData *v, float *vx, float *vy, int dx, int pdx,
@@ -332,4 +331,6 @@ extern "C" void advectParticles(Vertex *p, cData *v, int dx, int dy, float dt,
 
   advectParticles_k<<<grid, tids>>>(p, v, dx, dy, dt, TILEY / TIDSY, tPitch);
   getLastCudaError("advectParticles_k failed.");
+}
+ectParticles_k failed.");
 }
