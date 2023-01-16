@@ -58,3 +58,4 @@ src/samples/Samples/0_Introduction/vectorAddMMAP/vectorAdd_kernel.cu
 src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu
 src/samples/Samples/0_Introduction/vectorAdd_nvrtc/vectorAdd_kernel.cu
 src/samples/Samples/5_Domain_Specific/quasirandomGenerator_nvrtc/quasirandomGenerator_kernel.cu
+src/samples/Samples/5_Domain_Specific/binomialOptions_nvrtc/binomialOptions_kernel.cu

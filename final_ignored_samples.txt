@@ -60,6 +60,7 @@ src/samples/Samples/5_Domain_Specific/SobelFilter/SobelFilter_kernels.cu
 src/samples/Samples/5_Domain_Specific/VFlockingD3D10/VFlocking_kernel.cu
 src/samples/Samples/5_Domain_Specific/bicubicTexture/bicubicTexture_cuda.cu
 src/samples/Samples/5_Domain_Specific/bilateralFilter/bilateral_kernel.cu
+src/samples/Samples/5_Domain_Specific/binomialOptions_nvrtc/binomialOptions_kernel.cu
 src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu
 src/samples/Samples/5_Domain_Specific/fluidsD3D9/fluidsD3D9_kernels.cu
 src/samples/Samples/5_Domain_Specific/fluidsGL/fluidsGL_kernels.cu
