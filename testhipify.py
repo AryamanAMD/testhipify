@@ -149,6 +149,7 @@ def ftale(x):
 	generate(x)
 	compilation_1(x)
 	compilation_2(x)
+	apply_patches()
 	runsample(x)
 	
 def generate_all(y):

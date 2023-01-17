@@ -1,4 +1,3 @@
-src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu
 src/samples/Samples/0_Introduction/c++11_cuda/c++11_cuda.cu
 src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu
 src/samples/Samples/0_Introduction/matrixMulDrv/matrixMul_kernel.cu

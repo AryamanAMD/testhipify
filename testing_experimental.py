@@ -55,9 +55,13 @@ def compilation_1(x):
 		print(command)
 		os.system(command)	
 	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu':
-		command=' hipcc -I../../../Common -fopenmp cudaOpenMP.cu.hip -o cudaOpenMP.out'
+		command=' hipcc -I src/samples/Common -fopenmp cudaOpenMP.cu.hip -o cudaOpenMP.out'
 		print(command)
-		os.system(command)	
+		os.system(command)
+	elif x=='src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu':
+		command='hipcc -I src/samples/Common -fopenmp UnifiedMemoryStreams.cu.hip -o UnifiedMemoryStreams.out'
+		print(command)
+		os.system(command)		
 	else:
 		for file in os.listdir(p):
 			if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
