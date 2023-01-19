@@ -201,7 +201,7 @@ def runsample_all(y):
 	print("Number of executables .out / .o:")
 	os.system('find . -name "*.out" | wc -l')
 	os.system('find . -name "*.o" | wc -l')
-	print("Number of Ignored Samples")
+	print("Number of Ignored Samples:")
 	os.system('cat final_ignored_samples.txt | wc -l')																	
 
 def generate(x):
