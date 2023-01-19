@@ -1,0 +1,28 @@
+src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.out
+src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.out: not found
+src/samples/Samples/3_CUDA_Features/cdpBezierTessellation/cdpBezierTessellation.out: not found
+src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.out: not found
+src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.out: not found
+src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.out: not found
+src/samples/Samples/3_CUDA_Features/graphMemoryNodes/graphMemoryNodes.out: not found
+src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.out: not found
+src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.out: not found
+src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.out: not found
+src/samples/Samples/2_Concepts_and_Techniques/segmentationTreeThrust/segmentationTreeThrust.out: not found
+src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineP/src/src.out
+src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.out: not found
+src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiQ/src/src.out: not found
+src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/src.out: not found
+src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG.out: not found
+src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiBlockCG/conjugateGradientMultiBlockCG.out: not found
+src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_2d_MGPU/simpleCUFFT_2d_MGPU.out: not found
+src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_callback/simpleCUFFT_callback.out: not found
+src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_MGPU/simpleCUFFT_MGPU.out: not found
+src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.out: not found
+src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.out: not found
+
+
+
+
+
+
