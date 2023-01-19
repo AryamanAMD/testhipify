@@ -149,7 +149,7 @@ def ftale(x):
 	generate(x)
 	compilation_1(x)
 	compilation_2(x)
-	apply_patches()
+	#apply_patches()
 	runsample(x)
 	
 def generate_all(y):
@@ -162,6 +162,7 @@ def generate_all(y):
 					print("Ignoring this sample "+elem)
 				else:
 					generate(elem)
+	apply_patches()				
 
 def compilation_1_all(y):
 	y=y.replace('"', '')
@@ -254,6 +255,14 @@ def apply_patches():
 
 	
 def compilation_1(x):
+	cuda_path='/usr/local/cuda-12.0/targets/x86_64-linux/include'
+	print ('Confirm the following CUDA Installation path for compilation:')
+	print('CUDA Path:'+cuda_path)
+	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
+	user_input=input()
+	if user_input == 'CUDA':
+		print('Enter path of your CUDA installation')
+		cuda_path=input()
 	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
@@ -279,7 +288,7 @@ def compilation_1(x):
 		
 
 		cpp = [p+'/'+x for x in cpp]
-		command='hipcc -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+		command='hipcc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 		print(command)
 
 		os.system(command)	
@@ -287,6 +296,14 @@ def compilation_1(x):
 	
 
 def compilation_2(x):
+	cuda_path='/usr/local/cuda-12.0/targets/x86_64-linux/include'
+	print ('Confirm the following CUDA Installation path for compilation:')
+	print('CUDA Path:'+cuda_path)
+	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
+	user_input=input()
+	if user_input == 'CUDA':
+		print('Enter path of your CUDA installation')
+		cuda_path=input()
 	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
@@ -312,7 +329,7 @@ def compilation_2(x):
 		
 
 		cpp = [p+'/'+x for x in cpp]
-		command='hipcc -use-staticlib -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+		command='hipcc -use-staticlib -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 		print(command)
 
 		os.system(command)
@@ -322,6 +339,13 @@ def runsample(x):
 	command='./'+os.path.dirname(x)+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
 	os.system(command)
+	print("Number of converted samples:")
+	os.system('find . -name "*.cu.hip" | wc -l')
+	print("Number of executables .out / .o:")
+	os.system('find . -name "*.out" | wc -l')
+	os.system('find . -name "*.o" | wc -l')
+	print("Number of Ignored Samples")
+	os.system('cat final_ignored_samples.txt | wc -l')
 	
 
 	
