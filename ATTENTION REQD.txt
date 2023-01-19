@@ -9,10 +9,10 @@ src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCop
 src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.cu
 src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu
 src/samples/Samples/2_Concepts_and_Techniques/segmentationTreeThrust/segmentationTreeThrust.cu
-src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineP/src/src.out.cu
+src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineP/src/piestimator.cu
 src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu
-src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiQ/src/src.cu
-src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/src.cu 
+src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiQ/src/piestimator.cu
+src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/priceingengine.cu 
 src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG.cu
 src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiBlockCG/conjugateGradientMultiBlockCG.cu
 src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_2d_MGPU/simpleCUFFT_2d_MGPU.cu
