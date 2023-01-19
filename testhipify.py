@@ -195,7 +195,14 @@ def runsample_all(y):
 				if elem in f.read():
 					print("Ignoring this sample "+elem)
 				else:
-					runsample(elem)														
+					runsample(elem)	
+	print("Number of converted samples:")
+	os.system('find . -name "*.cu.hip" | wc -l')
+	print("Number of executables .out / .o:")
+	os.system('find . -name "*.out" | wc -l')
+	os.system('find . -name "*.o" | wc -l')
+	print("Number of Ignored Samples")
+	os.system('cat final_ignored_samples.txt | wc -l')																	
 
 def generate(x):
 	x=x.replace('"', '')
@@ -339,13 +346,7 @@ def runsample(x):
 	command='./'+os.path.dirname(x)+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	print(command)
 	os.system(command)
-	print("Number of converted samples:")
-	os.system('find . -name "*.cu.hip" | wc -l')
-	print("Number of executables .out / .o:")
-	os.system('find . -name "*.out" | wc -l')
-	os.system('find . -name "*.o" | wc -l')
-	print("Number of Ignored Samples")
-	os.system('cat final_ignored_samples.txt | wc -l')
+	
 	
 
 	
