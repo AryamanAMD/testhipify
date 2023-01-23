@@ -262,14 +262,6 @@ def apply_patches():
 
 	
 def compilation_1(x):
-	cuda_path='/usr/local/cuda-12.0/targets/x86_64-linux/include'
-	print ('Confirm the following CUDA Installation path for compilation:')
-	print('CUDA Path:'+cuda_path)
-	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
-	user_input=input()
-	if user_input == 'CUDA':
-		print('Enter path of your CUDA installation')
-		cuda_path=input()
 	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
@@ -303,7 +295,6 @@ def compilation_1(x):
 	
 
 def compilation_2(x):
-	
 	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
