@@ -303,14 +303,7 @@ def compilation_1(x):
 	
 
 def compilation_2(x):
-	cuda_path='/usr/local/cuda-12.0/targets/x86_64-linux/include'
-	print ('Confirm the following CUDA Installation path for compilation:')
-	print('CUDA Path:'+cuda_path)
-	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
-	user_input=input()
-	if user_input == 'CUDA':
-		print('Enter path of your CUDA installation')
-		cuda_path=input()
+	
 	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
@@ -474,7 +467,16 @@ def rem(z):
 	#os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
 	os.remove('samples_to_be_ignored.txt')
 		
-
+global cuda_path 
+def setup():
+	cuda_path='/usr/local/cuda-12.0/targets/x86_64-linux/include'
+	print ('Confirm the following CUDA Installation path for compilation:')
+	print('CUDA Path:'+cuda_path)
+	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
+	user_input=input()
+	if user_input == 'CUDA':
+		print('Enter path of your CUDA installation')
+		cuda_path=input()
 
     
 
@@ -498,6 +500,7 @@ parser.add_argument("-l", "--parenthesis_check_all", help='Remove all last parts
 parser.add_argument("-p", "--patch", help='Apply all patches in src/patches',action='store_true')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
+parser.add_argument("-s", "--setup", help='Configure CUDA Installation',action='store_true')
 
 
 
@@ -545,4 +548,6 @@ if args.parenthesis_check:
 	parenthesis_check(e)
 if args.parenthesis_check_all:
 	f=args.parenthesis_check_all
-	parenthesis_check_all(f)					
+	parenthesis_check_all(f)
+if args.setup:
+	setup()						
