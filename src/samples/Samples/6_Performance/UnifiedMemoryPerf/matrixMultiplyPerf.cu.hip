@@ -1,4 +1,4 @@
-
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,14 +25,14 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include <hip/hip_runtime.h>
+
 #include "helper_cuda_hipified.h"
 #include <helper_timer.h>
 #include "commonDefs.hpp"
 #include "commonKernels.hpp"
 #include "HIPCHECK.h"
 #define VERIFY_GPU_CORRECTNESS 0
-#include "hip_runtime_api_modified.h"
+
 size_t maxSampleSizeInMb = 64;
 int numKernelRuns = 20;
 int verboseResults = 0;
@@ -209,13 +209,6 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
   float *dptrA = NULL, *hptrA = NULL;
   float *dptrB = NULL, *hptrB = NULL;
   float *dptrC = NULL, *hptrC = NULL;
-  void *dptrA1=(void*)dptrA;
-  void *dptrB1=(void*)dptrB;
-  void *dptrC1=(void*)dptrC;
-  void *hptrA1=(void*)hptrA;
-  void *hptrB1=(void*)hptrB;
-  void *hptrC1=(void*)hptrC;
-
   float *randValuesX = NULL, *randValuesY = NULL;
   float *randValuesVerifyXmulY = NULL, *randValuesVerifyYmulX = NULL;
   bool copyRequired = false, hintsRequired = false;
@@ -321,9 +314,9 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
       HIPCHECK(hipHostMalloc(&hptrA, size));
       HIPCHECK(hipHostMalloc(&hptrB, size));
       HIPCHECK(hipHostMalloc(&hptrC, size));
-      HIPCHECK(hipHostGetDevicePointer(&dptrA1, hptrA1, 0));
-      HIPCHECK(hipHostGetDevicePointer(&dptrB1, hptrB1, 0));
-      HIPCHECK(hipHostGetDevicePointer(&dptrC1, hptrC1, 0));
+      HIPCHECK(hipHostGetDevicePointer((void **)&dptrA, hptrA, 0));
+      HIPCHECK(hipHostGetDevicePointer((void **)&dptrB, hptrB, 0));
+      HIPCHECK(hipHostGetDevicePointer((void **)&dptrC, hptrC, 0));
       break;
 
     case USE_MANAGED_MEMORY:
