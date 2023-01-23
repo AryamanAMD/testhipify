@@ -3,7 +3,7 @@ src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu
 src/samples/Samples/0_Introduction/matrixMulDrv/matrixMul_kernel.cu
 src/samples/Samples/0_Introduction/matrixMul_nvrtc/matrixMul_kernel.cu
 src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu
-src/samples/Samples/5_Domain_Specific/simpleD3D9Texture/texture_cube.cu
+src/samples/Samples/2_Concepts_and_Techniques/particles/particleSystem_cuda.cu
 src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu
 src/samples/Samples/0_Introduction/simpleAssert_nvrtc/simpleAssert_kernel.cu
 src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu
@@ -27,7 +27,6 @@ src/samples/Samples/2_Concepts_and_Techniques/EGLSync_CUDAEvent_Interop/EGLSync_
 src/samples/Samples/2_Concepts_and_Techniques/FunctionPointers/FunctionPointers_kernels.cu
 src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineP/src/piestimator.cu
 src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiQ/src/piestimator.cu
-src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/priceingengine.cu
 src/samples/Samples/2_Concepts_and_Techniques/boxFilter/boxFilter_kernel.cu
 src/samples/Samples/2_Concepts_and_Techniques/convolutionTexture/convolutionTexture.cu
 src/samples/Samples/2_Concepts_and_Techniques/dct8x8/dct8x8.cu
@@ -105,6 +104,7 @@ src/samples/Samples/5_Domain_Specific/simpleD3D11Texture/texture_cube.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D12/sinewave_cuda.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D9/simpleD3D9_kernel.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D9Texture/texture_2d.cu
+src/samples/Samples/5_Domain_Specific/simpleD3D9Texture/texture_cube.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D9Texture/texture_volume.cu
 src/samples/Samples/5_Domain_Specific/simpleGL/simpleGL.cu
 src/samples/Samples/5_Domain_Specific/simpleGLES/simpleGLES.cu

@@ -80,10 +80,39 @@ def setup():
 	print('CUDA Path:'+cuda_path)
 	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
 	user_input=input()
-	if user_input == 'CUDA':
+	if user_input.lower() == 'cuda':
 		print('Enter path of your CUDA installation')
-		cuda_path=input()         	
-
+		cuda_path=input()  
+	os.system('gcc --version')
+	print('Enter gcc to install gcc compiler, or any other button to continue.')
+	user_input=input()
+	if user_input.lower() == 'gcc':
+		os.system('sudo apt install gcc')
+	print("Enter 'omp' to install OpenMP in your system, or any other button to continue.")
+	user_input=input()
+	if user_input.lower() == 'omp':
+		os.system('sudo apt install libomp-dev')
+		os.system('echo |cpp -fopenmp -dM |grep -i open')
+		print('Enter number of threads ')
+		x=int(input())
+		os.system('export OMP_NUM_THREADS='+x)
+		print("Always add -fopenmp flag on compilation.")
+	print("Enter 'mpi' to install OpenMPI, or any other button to continue.")
+	user_input=input()
+	if user_input.lower()=='mpi':
+		os.system('wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.3.tar.gz')
+		os.system('tar -xzvf openmpi-3.1.3.tar.gz')
+		os.system('cd openmpi-3.1.3')
+		os.system('./configure --prefix=/usr/local/')
+		os.system('./configure --prefix=/usr/local/openmpi-3.1.3/')
+		os.system('sudo make all install')
+		print('After make install is completed, mpirun or orterun executable should be at /usr/local/bin/.')
+		os.system('echo "export PATH=$PATH:/usr/local/bin" >> $HOME/.bashrc')
+		os.system('echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" >> $HOME/.bashrc')
+		os.system('export PATH=$PATH:/usr/local/bin')
+		os.system('export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib')
+		os.system('source $HOME/.bashrc')
+		os.system('mpirun --version')
 
 
 
