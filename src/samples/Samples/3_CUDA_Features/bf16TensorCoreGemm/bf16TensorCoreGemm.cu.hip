@@ -68,7 +68,7 @@
 // helper functions and utilities to work with CUDA
 #include "helper_functions.h"
 #include "helper_cuda_hipified.h"
-#include "HIPCHECK.h"
+
 // Externally configurable parameters.
 
 #ifndef CPU_DEBUG
@@ -179,8 +179,7 @@ enum kernels
 const char* kernelNames[] = {"compute_bf16gemm_async_copy", "compute_bf16gemm", 
                             "simple_wmma_bf16gemm"};
 
-using namespace cuda;
-//nvcuda
+using namespace nvcuda;
 
 __host__ void init_host_matrices(__nv_bfloat16 *a, __nv_bfloat16 *b, float *c)
 {
@@ -814,6 +813,13 @@ int main(int argc, char **argv)
     HIPCHECK(hipFree((void*)B));
     HIPCHECK(hipFree((void*)C));
     HIPCHECK(hipFree((void*)D));
+
+    return 0;
+}
+ors(hipFree((void*)A));
+    checkCudaErrors(hipFree((void*)B));
+    checkCudaErrors(hipFree((void*)C));
+    checkCudaErrors(hipFree((void*)D));
 
     return 0;
 }

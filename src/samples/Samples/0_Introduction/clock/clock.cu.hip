@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -37,8 +38,8 @@
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
-//#include "rocprofiler.h"
-
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 // CUDA runtime
 #include <hip/hip_runtime.h>
@@ -46,7 +47,7 @@
 // helper functions and utilities to work with CUDA
 #include "helper_cuda_hipified.h"
 #include "helper_functions.h"
-#include "HIPCHECK.h"
+
 // This kernel computes a standard parallel reduction and evaluates the
 // time it takes to do that for each block. The timing results are stored
 // in device memory.

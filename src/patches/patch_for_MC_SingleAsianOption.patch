@@ -1,0 +1,1409 @@
+diff --git a/src/samples/Samples/0_Introduction/clock/clock.cu.hip b/src/samples/Samples/0_Introduction/clock/clock.cu.hip
+index 968b7ce..d60759e 100644
+--- a/src/samples/Samples/0_Introduction/clock/clock.cu.hip
++++ b/src/samples/Samples/0_Introduction/clock/clock.cu.hip
+@@ -1,3 +1,4 @@
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -37,8 +38,8 @@
+ #include <assert.h>
+ #include <stdint.h>
+ #include <stdio.h>
+-//#include "rocprofiler.h"
+-
++#include "rocprofiler.h"
++#include "HIPCHECK.h"
+ 
+ // CUDA runtime
+ #include <hip/hip_runtime.h>
+@@ -46,7 +47,7 @@
+ // helper functions and utilities to work with CUDA
+ #include "helper_cuda_hipified.h"
+ #include "helper_functions.h"
+-#include "HIPCHECK.h"
++
+ // This kernel computes a standard parallel reduction and evaluates the
+ // time it takes to do that for each block. The timing results are stored
+ // in device memory.
+diff --git a/src/samples/Samples/0_Introduction/clock/clock.out b/src/samples/Samples/0_Introduction/clock/clock.out
+index 46d318e..26b31c8 100755
+Binary files a/src/samples/Samples/0_Introduction/clock/clock.out and b/src/samples/Samples/0_Introduction/clock/clock.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineP/src/piestimator.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineP/src/piestimator.cu.hip
+index 6968ec5..c56c703 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineP/src/piestimator.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiInlineP/src/piestimator.cu.hip
+@@ -1,3 +1,4 @@
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiQ/src/piestimator.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiQ/src/piestimator.cu.hip
+index d69a72c..581aa2c 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiQ/src/piestimator.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiQ/src/piestimator.cu.hip
+@@ -1,3 +1,4 @@
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/pricingengine.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/pricingengine.cu.hip
+index 413a660..e5857fd 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/pricingengine.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/pricingengine.cu.hip
+@@ -222,7 +222,7 @@ void PricingEngine<Real>::operator()(AsianOption<Real> &option) {
+   }
+ 
+   // Get initRNG function properties and check the maximum block size
+-  cudaResult = hipFuncGetAttributes(&funcAttributes, initRNG);
++  cudaResult = hipFuncGetAttributes(&funcAttributes,(const void*) initRNG);
+ 
+   if (cudaResult != hipSuccess) {
+     string msg("Could not get function attributes: ");
+@@ -236,7 +236,7 @@ void PricingEngine<Real>::operator()(AsianOption<Real> &option) {
+   }
+ 
+   // Get generatePaths function properties and check the maximum block size
+-  cudaResult = hipFuncGetAttributes(&funcAttributes, generatePaths<Real>);
++  cudaResult = hipFuncGetAttributes(&funcAttributes, (const void*)generatePaths<Real>);
+ 
+   if (cudaResult != hipSuccess) {
+     string msg("Could not get function attributes: ");
+@@ -250,7 +250,7 @@ void PricingEngine<Real>::operator()(AsianOption<Real> &option) {
+   }
+ 
+   // Get computeValue function properties and check the maximum block size
+-  cudaResult = hipFuncGetAttributes(&funcAttributes, computeValue<Real>);
++  cudaResult = hipFuncGetAttributes(&funcAttributes,(const void*) computeValue<Real>);
+ 
+   if (cudaResult != hipSuccess) {
+     string msg("Could not get function attributes: ");
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu.hip
+index 583de66..ba26509 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu.hip
+@@ -41,6 +41,7 @@
+ #include "helper_cuda_hipified.h"
+ #include "helper_functions.h"
+ #include "shfl_integral_image.cuh"
++
+ // Scan using shfl - takes log2(n) steps
+ // This function demonstrates basic use of the shuffle intrinsic, __shfl_up,
+ // to perform a scan operation across a block.
+@@ -212,9 +213,9 @@ bool shuffle_simple_test(int argc, char **argv) {
+   cuda_device = findCudaDevice(argc, (const char **)argv);
+ 
+   hipDeviceProp_t deviceProp;
+-  checkCudaErrors(hipGetDevice(&cuda_device));
++  HIPCHECK(hipGetDevice(&cuda_device));
+ 
+-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, cuda_device));
++  HIPCHECK(hipGetDeviceProperties(&deviceProp, cuda_device));
+ 
+   printf("> Detected Compute SM %d.%d hardware with %d multi-processors\n",
+          deviceProp.major, deviceProp.minor, deviceProp.multiProcessorCount);
+@@ -226,9 +227,9 @@ bool shuffle_simple_test(int argc, char **argv) {
+     exit(EXIT_WAIVED);
+   }
+ 
+-  checkCudaErrors(hipHostMalloc(reinterpret_cast<void **>(&h_data),
++  HIPCHECK(hipHostMalloc(reinterpret_cast<void **>(&h_data),
+                                  sizeof(int) * n_elements));
+-  checkCudaErrors(hipHostMalloc(reinterpret_cast<void **>(&h_result),
++  HIPCHECK(hipHostMalloc(reinterpret_cast<void **>(&h_result),
+                                  sizeof(int) * n_elements));
+ 
+   // initialize data:
+@@ -258,32 +259,32 @@ bool shuffle_simple_test(int argc, char **argv) {
+ 
+   // initialize a timer
+   hipEvent_t start, stop;
+-  checkCudaErrors(hipEventCreate(&start));
+-  checkCudaErrors(hipEventCreate(&stop));
++  HIPCHECK(hipEventCreate(&start));
++  HIPCHECK(hipEventCreate(&stop));
+   float et = 0;
+   float inc = 0;
+ 
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_data), sz));
+-  checkCudaErrors(
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_data), sz));
++  HIPCHECK(
+       hipMalloc(reinterpret_cast<void **>(&d_partial_sums), partial_sz));
+-  checkCudaErrors(hipMemset(d_partial_sums, 0, partial_sz));
++  HIPCHECK(hipMemset(d_partial_sums, 0, partial_sz));
+ 
+-  checkCudaErrors(
++  HIPCHECK(
+       hipHostMalloc(reinterpret_cast<void **>(&h_partial_sums), partial_sz));
+-  checkCudaErrors(hipMemcpy(d_data, h_data, sz, hipMemcpyHostToDevice));
++  HIPCHECK(hipMemcpy(d_data, h_data, sz, hipMemcpyHostToDevice));
+ 
+-  checkCudaErrors(hipEventRecord(start, 0));
++  HIPCHECK(hipEventRecord(start, 0));
+   shfl_scan_test<<<gridSize, blockSize, shmem_sz>>>(d_data, 32, d_partial_sums);
+   shfl_scan_test<<<p_gridSize, p_blockSize, shmem_sz>>>(d_partial_sums, 32);
+   uniform_add<<<gridSize - 1, blockSize>>>(d_data + blockSize, d_partial_sums,
+                                            n_elements);
+-  checkCudaErrors(hipEventRecord(stop, 0));
+-  checkCudaErrors(hipEventSynchronize(stop));
+-  checkCudaErrors(hipEventElapsedTime(&inc, start, stop));
++  HIPCHECK(hipEventRecord(stop, 0));
++  HIPCHECK(hipEventSynchronize(stop));
++  HIPCHECK(hipEventElapsedTime(&inc, start, stop));
+   et += inc;
+ 
+-  checkCudaErrors(hipMemcpy(h_result, d_data, sz, hipMemcpyDeviceToHost));
+-  checkCudaErrors(hipMemcpy(h_partial_sums, d_partial_sums, partial_sz,
++  HIPCHECK(hipMemcpy(h_result, d_data, sz, hipMemcpyDeviceToHost));
++  HIPCHECK(hipMemcpy(h_partial_sums, d_partial_sums, partial_sz,
+                              hipMemcpyDeviceToHost));
+ 
+   printf("Test Sum: %d\n", h_partial_sums[n_partialSums - 1]);
+@@ -293,11 +294,11 @@ bool shuffle_simple_test(int argc, char **argv) {
+ 
+   bool bTestResult = CPUverify(h_data, h_result, n_elements);
+ 
+-  checkCudaErrors(hipHostFree(h_data));
+-  checkCudaErrors(hipHostFree(h_result));
+-  checkCudaErrors(hipHostFree(h_partial_sums));
+-  checkCudaErrors(hipFree(d_data));
+-  checkCudaErrors(hipFree(d_partial_sums));
++  HIPCHECK(hipHostFree(h_data));
++  HIPCHECK(hipHostFree(h_result));
++  HIPCHECK(hipHostFree(h_partial_sums));
++  HIPCHECK(hipFree(d_data));
++  HIPCHECK(hipFree(d_partial_sums));
+ 
+   return bTestResult;
+ }
+@@ -316,7 +317,7 @@ bool shuffle_integral_image_test() {
+   printf("\nComputing Integral Image Test on size %d x %d synthetic data\n", w,
+          h);
+   printf("---------------------------------------------------\n");
+-  checkCudaErrors(hipHostMalloc(reinterpret_cast<void **>(&h_image), sz));
++  HIPCHECK(hipHostMalloc(reinterpret_cast<void **>(&h_image), sz));
+   // fill test "image" with synthetic 1's data
+   memset(h_image, 0, sz);
+ 
+@@ -326,11 +327,11 @@ bool shuffle_integral_image_test() {
+   int gridSize = h;
+ 
+   // Create a synthetic image for testing
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_data), sz));
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_integral_image),
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_data), sz));
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_integral_image),
+                              n_elements * sizeof(int) * 4));
+-  checkCudaErrors(hipMemset(d_data, 1, sz));
+-  checkCudaErrors(hipMemset(d_integral_image, 0, sz));
++  HIPCHECK(hipMemset(d_data, 1, sz));
++  HIPCHECK(hipMemset(d_integral_image, 0, sz));
+ 
+   hipEvent_t start, stop;
+   hipEventCreate(&start);
+@@ -344,12 +345,12 @@ bool shuffle_integral_image_test() {
+       reinterpret_cast<uint4 *>(d_data),
+       reinterpret_cast<uint4 *>(d_integral_image));
+   hipEventRecord(stop);
+-  checkCudaErrors(hipEventSynchronize(stop));
+-  checkCudaErrors(hipEventElapsedTime(&et, start, stop));
++  HIPCHECK(hipEventSynchronize(stop));
++  HIPCHECK(hipEventElapsedTime(&et, start, stop));
+   printf("Method: Fast  Time (GPU Timer): %f ms ", et);
+ 
+   // verify the scan line results
+-  checkCudaErrors(
++  HIPCHECK(
+       hipMemcpy(h_image, d_integral_image, sz, hipMemcpyDeviceToHost));
+   err = verifyDataRowSums(h_image, w, h);
+   printf("Diff = %d\n", err);
+@@ -362,21 +363,21 @@ bool shuffle_integral_image_test() {
+   shfl_vertical_shfl<<<testGrid, blockSz>>>((unsigned int *)d_integral_image, w,
+                                             h);
+   hipEventRecord(stop);
+-  checkCudaErrors(hipEventSynchronize(stop));
+-  checkCudaErrors(hipEventElapsedTime(&et, start, stop));
++  HIPCHECK(hipEventSynchronize(stop));
++  HIPCHECK(hipEventElapsedTime(&et, start, stop));
+   printf("Method: Vertical Scan  Time (GPU Timer): %f ms ", et);
+ 
+   // Verify the column results
+-  checkCudaErrors(
++  HIPCHECK(
+       hipMemcpy(h_image, d_integral_image, sz, hipMemcpyDeviceToHost));
+   printf("\n");
+ 
+   int finalSum = h_image[w * h - 1];
+   printf("CheckSum: %d, (expect %dx%d=%d)\n", finalSum, w, h, w * h);
+ 
+-  checkCudaErrors(hipFree(d_data));
+-  checkCudaErrors(hipFree(d_integral_image));
+-  checkCudaErrors(hipHostFree(h_image));
++  HIPCHECK(hipFree(d_data));
++  HIPCHECK(hipFree(d_integral_image));
++  HIPCHECK(hipHostFree(h_image));
+   // verify final sum: if the final value in the corner is the same as the size
+   // of the buffer (all 1's) then the integral image was generated successfully
+   return (finalSum == w * h) ? true : false;
+@@ -394,9 +395,9 @@ int main(int argc, char *argv[]) {
+   cuda_device = findCudaDevice(argc, (const char **)argv);
+ 
+   hipDeviceProp_t deviceProp;
+-  checkCudaErrors(hipGetDevice(&cuda_device));
++  HIPCHECK(hipGetDevice(&cuda_device));
+ 
+-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, cuda_device));
++  HIPCHECK(hipGetDeviceProperties(&deviceProp, cuda_device));
+ 
+   printf("> Detected Compute SM %d.%d hardware with %d multi-processors\n",
+          deviceProp.major, deviceProp.minor, deviceProp.multiProcessorCount);
+@@ -416,3 +417,15 @@ int main(int argc, char *argv[]) {
+ 
+   exit((bTestResult) ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
++ing test.\n");
++    exit(EXIT_WAIVED);
++  }
++
++  bool bTestResult = true;
++  bool simpleTest = shuffle_simple_test(argc, argv);
++  bool intTest = shuffle_integral_image_test();
++
++  bTestResult = simpleTest & intTest;
++
++  exit((bTestResult) ? EXIT_SUCCESS : EXIT_FAILURE);
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip
+index 0e714d8..11a668d 100644
+--- a/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip
+@@ -68,7 +68,7 @@
+ // helper functions and utilities to work with CUDA
+ #include "helper_functions.h"
+ #include "helper_cuda_hipified.h"
+-#include "HIPCHECK.h"
++
+ // Externally configurable parameters.
+ 
+ #ifndef CPU_DEBUG
+@@ -179,8 +179,7 @@ enum kernels
+ const char* kernelNames[] = {"compute_bf16gemm_async_copy", "compute_bf16gemm", 
+                             "simple_wmma_bf16gemm"};
+ 
+-using namespace cuda;
+-//nvcuda
++using namespace nvcuda;
+ 
+ __host__ void init_host_matrices(__nv_bfloat16 *a, __nv_bfloat16 *b, float *c)
+ {
+@@ -817,3 +816,10 @@ int main(int argc, char **argv)
+ 
+     return 0;
+ }
++ors(hipFree((void*)A));
++    checkCudaErrors(hipFree((void*)B));
++    checkCudaErrors(hipFree((void*)C));
++    checkCudaErrors(hipFree((void*)D));
++
++    return 0;
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.cu.hip b/src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.cu.hip
+index 8cba5f3..68a5536 100644
+--- a/src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.cu.hip
+@@ -47,7 +47,7 @@
+ #include <stdio.h>
+ #include <hip/hip_cooperative_groups.h>
+ #include <cooperative_groups/reduce.h>
+-#include <helper_cuda.h>
++#include "helper_cuda_hipified.h"
+ 
+ namespace cg = cooperative_groups;
+ 
+@@ -107,27 +107,27 @@ int main(int argc, const char **argv) {
+   int *h_sumOfOddEvenElems, *d_sumOfOddEvenElems;
+   unsigned int arrSize = 1024 * 100;
+ 
+-  checkCudaErrors(hipHostMalloc(&h_inputArr, sizeof(int) * arrSize));
+-  checkCudaErrors(hipHostMalloc(&h_numOfOdds, sizeof(int)));
+-  checkCudaErrors(hipHostMalloc(&h_sumOfOddEvenElems, sizeof(int) * 2));
++  HIPCHECK(hipHostMalloc(&h_inputArr, sizeof(int) * arrSize));
++  HIPCHECK(hipHostMalloc(&h_numOfOdds, sizeof(int)));
++  HIPCHECK(hipHostMalloc(&h_sumOfOddEvenElems, sizeof(int) * 2));
+   initOddEvenArr(h_inputArr, arrSize);
+ 
+   hipStream_t stream;
+-  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+-  checkCudaErrors(hipMalloc(&d_inputArr, sizeof(int) * arrSize));
+-  checkCudaErrors(hipMalloc(&d_numOfOdds, sizeof(int)));
+-  checkCudaErrors(hipMalloc(&d_sumOfOddEvenElems, sizeof(int) * 2));
++  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
++  HIPCHECK(hipMalloc(&d_inputArr, sizeof(int) * arrSize));
++  HIPCHECK(hipMalloc(&d_numOfOdds, sizeof(int)));
++  HIPCHECK(hipMalloc(&d_sumOfOddEvenElems, sizeof(int) * 2));
+ 
+-  checkCudaErrors(hipMemcpyAsync(d_inputArr, h_inputArr, sizeof(int) * arrSize,
++  HIPCHECK(hipMemcpyAsync(d_inputArr, h_inputArr, sizeof(int) * arrSize,
+                                   hipMemcpyHostToDevice, stream));
+-  checkCudaErrors(hipMemsetAsync(d_numOfOdds, 0, sizeof(int), stream));
+-  checkCudaErrors(
++  HIPCHECK(hipMemsetAsync(d_numOfOdds, 0, sizeof(int), stream));
++  HIPCHECK(
+       hipMemsetAsync(d_sumOfOddEvenElems, 0, 2 * sizeof(int), stream));
+ 
+   // Launch the kernel
+   int threadsPerBlock = 0;
+   int blocksPerGrid = 0;
+-  checkCudaErrors(hipOccupancyMaxPotentialBlockSize(
++  HIPCHECK(hipOccupancyMaxPotentialBlockSize(
+       &blocksPerGrid, &threadsPerBlock, oddEvenCountAndSumCG, 0, 0));
+ 
+   printf("\nLaunching %d blocks with %d threads...\n\n", blocksPerGrid,
+@@ -136,23 +136,29 @@ int main(int argc, const char **argv) {
+   oddEvenCountAndSumCG<<<blocksPerGrid, threadsPerBlock, 0, stream>>>(
+       d_inputArr, d_numOfOdds, d_sumOfOddEvenElems, arrSize);
+ 
+-  checkCudaErrors(hipMemcpyAsync(h_numOfOdds, d_numOfOdds, sizeof(int),
++  HIPCHECK(hipMemcpyAsync(h_numOfOdds, d_numOfOdds, sizeof(int),
+                                   hipMemcpyDeviceToHost, stream));
+-  checkCudaErrors(hipMemcpyAsync(h_sumOfOddEvenElems, d_sumOfOddEvenElems,
++  HIPCHECK(hipMemcpyAsync(h_sumOfOddEvenElems, d_sumOfOddEvenElems,
+                                   2 * sizeof(int), hipMemcpyDeviceToHost,
+                                   stream));
+-  checkCudaErrors(hipStreamSynchronize(stream));
++  HIPCHECK(hipStreamSynchronize(stream));
+ 
+   printf("Array size = %d Num of Odds = %d Sum of Odds = %d Sum of Evens %d\n",
+          arrSize, h_numOfOdds[0], h_sumOfOddEvenElems[0],
+          h_sumOfOddEvenElems[1]);
+   printf("\n...Done.\n\n");
+ 
+-  checkCudaErrors(hipHostFree(h_inputArr));
+-  checkCudaErrors(hipHostFree(h_numOfOdds));
+-  checkCudaErrors(hipHostFree(h_sumOfOddEvenElems));
++  HIPCHECK(hipHostFree(h_inputArr));
++  HIPCHECK(hipHostFree(h_numOfOdds));
++  HIPCHECK(hipHostFree(h_sumOfOddEvenElems));
+ 
+-  checkCudaErrors(hipFree(d_inputArr));
++  HIPCHECK(hipFree(d_inputArr));
++  HIPCHECK(hipFree(d_numOfOdds));
++  HIPCHECK(hipFree(d_sumOfOddEvenElems));
++
++  return EXIT_SUCCESS;
++}
++s(hipFree(d_inputArr));
+   checkCudaErrors(hipFree(d_numOfOdds));
+   checkCudaErrors(hipFree(d_sumOfOddEvenElems));
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip b/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
+index dddd613..bba346f 100644
+--- a/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
+@@ -78,30 +78,30 @@ void launchSaxpy(const float a, float4 *x, float4 *y, float4 *z, const size_t n,
+             h_x[i].x = h_x[i].y = h_x[i].z = h_x[i].w = init_val;
+             h_y[i].x = h_y[i].y = h_y[i].z = h_y[i].w = init_val;
+         }
+-        HIPCHECK(hipMemcpy(x, h_x, sizeof(float4) * n, hipMemcpyHostToDevice));
+-        HIPCHECK(hipMemcpy(y, h_y, sizeof(float4) * n, hipMemcpyHostToDevice));
++        checkCudaErrors(hipMemcpy(x, h_x, sizeof(float4) * n, hipMemcpyHostToDevice));
++        checkCudaErrors(hipMemcpy(y, h_y, sizeof(float4) * n, hipMemcpyHostToDevice));
+         free(h_x);
+         free(h_y);
+     }
+     else
+     {
+-        HIPCHECK(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)init));
++        checkCudaErrors(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)init));
+         threads = dim3(blockSize, 1, 1);
+         blocks  = dim3(minGridSize, 1, 1);
+         init<<<blocks, threads>>>(x, y, init_val, n);
+     }
+ 
+-    HIPCHECK(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)saxpy));
++    checkCudaErrors(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)saxpy));
+     threads = dim3(blockSize, 1, 1);
+     blocks  = dim3(minGridSize, 1, 1);
+ 
+-    HIPCHECK(hipEventCreate(&start));
+-    HIPCHECK(hipEventCreate(&stop));
+-    HIPCHECK(hipEventRecord(start));
++    checkCudaErrors(hipEventCreate(&start));
++    checkCudaErrors(hipEventCreate(&stop));
++    checkCudaErrors(hipEventRecord(start));
+     saxpy<<<blocks, threads>>>(a, x, y, z, n);
+-    HIPCHECK(hipEventRecord(stop));
+-    HIPCHECK(hipEventSynchronize(stop));
+-    HIPCHECK(hipEventElapsedTime(&ms, start, stop));
++    checkCudaErrors(hipEventRecord(stop));
++    checkCudaErrors(hipEventSynchronize(stop));
++    checkCudaErrors(hipEventElapsedTime(&ms, start, stop));
+ 
+     const size_t size = n * sizeof(float4);
+     printf("Running saxpy with %d blocks x %d threads = %.3f ms %.3f TB/s\n", blocks.x, threads.x, ms, (size*3)/ms/1e9);
+@@ -119,11 +119,11 @@ int main(int argc, char **argv)
+ 
+     findCudaDevice(argc, (const char**)argv);
+     hipDevice_t currentDevice;
+-    HIPCHECK(hipCtxGetDevice(&currentDevice));
++    checkCudaErrors(hipCtxGetDevice(&currentDevice));
+ 
+     // Check that the selected device supports virtual memory management
+     int vmm_supported = -1;
+-    HIPCHECK(hipDeviceGetAttribute(&vmm_supported,
++    checkCudaErrors(hipDeviceGetAttribute(&vmm_supported,
+                           CU_DEVICE_ATTRIBUTE_VIRTUAL_ADDRESS_MANAGEMENT_SUPPORTED,
+                           currentDevice));
+     if (vmm_supported == 0) {
+@@ -132,7 +132,7 @@ int main(int argc, char **argv)
+     }
+ 
+     int isCompressionAvailable;
+-    HIPCHECK(hipDeviceGetAttribute(&isCompressionAvailable,
++    checkCudaErrors(hipDeviceGetAttribute(&isCompressionAvailable,
+                              CU_DEVICE_ATTRIBUTE_GENERIC_COMPRESSION_SUPPORTED,
+                              currentDevice));
+     if (isCompressionAvailable == 0)
+@@ -144,30 +144,30 @@ int main(int argc, char **argv)
+     printf("Generic memory compression support is available\n");
+ 
+     int major, minor;
+-    HIPCHECK(hipDeviceGetAttribute(&major,
++    checkCudaErrors(hipDeviceGetAttribute(&major,
+                           hipDeviceAttributeComputeCapabilityMajor,
+                           currentDevice));
+-    HIPCHECK(hipDeviceGetAttribute(&minor,
++    checkCudaErrors(hipDeviceGetAttribute(&minor,
+                           hipDeviceAttributeComputeCapabilityMinor,
+                           currentDevice));
+     float4 *x, *y, *z;
+     const size_t size = n * sizeof(float4);
+ 
+     // Allocating compressible memory
+-    HIPCHECK(allocateCompressible((void **)&x, size, true));
+-    HIPCHECK(allocateCompressible((void **)&y, size, true));
++    checkCudaErrors(allocateCompressible((void **)&x, size, true));
++    checkCudaErrors(allocateCompressible((void **)&y, size, true));
+     bool compressibleZbuf = 0;
+     if ((major == 8 && minor == 0) || (major == 8 && minor == 6))
+     {
+         // On SM 8.0 and 8.6 GPUs compressible buffer can only be initialized 
+         // through hipMemcpy.
+         printf("allocating non-compressible Z buffer\n");
+-        HIPCHECK(allocateCompressible((void **)&z, size, false));
++        checkCudaErrors(allocateCompressible((void **)&z, size, false));
+         compressibleZbuf = 0;
+     }
+     else
+     {
+-        HIPCHECK(allocateCompressible((void **)&z, size, true));
++        checkCudaErrors(allocateCompressible((void **)&z, size, true));
+         compressibleZbuf = 1;
+     }
+ 
+@@ -177,26 +177,21 @@ int main(int argc, char **argv)
+     const float init_val = 1.0f;
+     launchSaxpy(a, x, y, z, n, init_val, compressibleZbuf);
+  
+-    HIPCHECK(freeCompressible(x, size, true));
+-    HIPCHECK(freeCompressible(y, size, true));
+-    HIPCHECK(freeCompressible(z, size, true));
++    checkCudaErrors(freeCompressible(x, size, true));
++    checkCudaErrors(freeCompressible(y, size, true));
++    checkCudaErrors(freeCompressible(z, size, true));
+ 
+     printf("Running saxpy on %zu bytes of Non-Compressible memory\n", size);
+     // Allocating non-compressible memory
+-    HIPCHECK(allocateCompressible((void **)&x, size, false));
+-    HIPCHECK(allocateCompressible((void **)&y, size, false));
+-    HIPCHECK(allocateCompressible((void **)&z, size, false));
++    checkCudaErrors(allocateCompressible((void **)&x, size, false));
++    checkCudaErrors(allocateCompressible((void **)&y, size, false));
++    checkCudaErrors(allocateCompressible((void **)&z, size, false));
+ 
+     launchSaxpy(a, x, y, z, n, init_val, compressibleZbuf);
+ 
+-    HIPCHECK(freeCompressible(x, size, false));
+-    HIPCHECK(freeCompressible(y, size, false));
+-    HIPCHECK(freeCompressible(z, size, false));
+-
+-    printf("\nNOTE: The CUDA Samples are not meant for performance measurements. "
+-      "Results may vary when GPU Boost is enabled.\n");
+-    return EXIT_SUCCESS;
+-}ompressible(z, size, false));
++    checkCudaErrors(freeCompressible(x, size, false));
++    checkCudaErrors(freeCompressible(y, size, false));
++    checkCudaErrors(freeCompressible(z, size, false));
+ 
+     printf("\nNOTE: The CUDA Samples are not meant for performance measurements. "
+       "Results may vary when GPU Boost is enabled.\n");
+diff --git a/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip
+index 345ac83..69ee2f6 100644
+--- a/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip
+@@ -67,8 +67,8 @@
+ #include <stdio.h>
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_cuda.h>
+-#include <helper_functions.h>
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ 
+ // Externally configurable parameters.
+ 
+@@ -485,7 +485,7 @@ int main(int argc, char **argv) {
+   int dev = findCudaDevice(argc, (const char **)argv);
+ 
+   hipDeviceProp_t deviceProp;
+-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
++  HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
+ 
+   // Tensor cores require a GPU of Volta (SM7X) architecture or higher.
+   if (deviceProp.major < 7) {
+@@ -520,13 +520,13 @@ int main(int argc, char **argv) {
+   float *C = NULL;
+   float *D = NULL;
+ 
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&A),
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&A),
+                              sizeof(half) * M_GLOBAL * K_GLOBAL));
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&B),
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&B),
+                              sizeof(half) * N_GLOBAL * K_GLOBAL));
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&C),
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&C),
+                              sizeof(float) * M_GLOBAL * N_GLOBAL));
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&D),
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&D),
+                              sizeof(float) * M_GLOBAL * N_GLOBAL));
+ 
+   assert(((unsigned long long)A) % 128 == 0);
+@@ -538,13 +538,13 @@ int main(int argc, char **argv) {
+ 
+   printf("Preparing data for GPU...\n");
+ 
+-  checkCudaErrors(hipMemcpy(A, A_h, sizeof(half) * M_GLOBAL * K_GLOBAL,
++  HIPCHECK(hipMemcpy(A, A_h, sizeof(half) * M_GLOBAL * K_GLOBAL,
+                              hipMemcpyHostToDevice));
+-  checkCudaErrors(hipMemcpy(B, B_h, sizeof(half) * N_GLOBAL * K_GLOBAL,
++  HIPCHECK(hipMemcpy(B, B_h, sizeof(half) * N_GLOBAL * K_GLOBAL,
+                              hipMemcpyHostToDevice));
+-  checkCudaErrors(hipMemcpy(C, C_h, sizeof(float) * M_GLOBAL * N_GLOBAL,
++  HIPCHECK(hipMemcpy(C, C_h, sizeof(float) * M_GLOBAL * N_GLOBAL,
+                              hipMemcpyHostToDevice));
+-  checkCudaErrors(hipMemset(D, 0, sizeof(float) * M_GLOBAL * N_GLOBAL));
++  HIPCHECK(hipMemset(D, 0, sizeof(float) * M_GLOBAL * N_GLOBAL));
+ 
+   enum {
+     // Compute the right amount of shared memory to request.
+@@ -566,21 +566,21 @@ int main(int argc, char **argv) {
+ 
+   hipEvent_t start, stop;
+ 
+-  checkCudaErrors(hipEventCreate(&start));
+-  checkCudaErrors(hipEventCreate(&stop));
+-  checkCudaErrors(hipEventRecord(start));
++  HIPCHECK(hipEventCreate(&start));
++  HIPCHECK(hipEventCreate(&stop));
++  HIPCHECK(hipEventRecord(start));
+ 
+   // If enough shared memory available on the GPU use high performant kernel
+   if (deviceProp.sharedMemPerMultiprocessor >= SHMEM_SZ) {
+     printf("Computing... using high performance kernel compute_gemm \n");
+ 
+-    checkCudaErrors(hipFuncSetAttribute(
++    HIPCHECK(hipFuncSetAttribute(
+         compute_gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+     checkKernelErrors(
+         (compute_gemm<<<deviceProp.multiProcessorCount, THREADS_PER_BLOCK,
+                         SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+ #if CPU_DEBUG
+-    checkCudaErrors(hipMemcpy(result_hD, D,
++    HIPCHECK(hipMemcpy(result_hD, D,
+                                sizeof(float) * M_GLOBAL * N_GLOBAL,
+                                hipMemcpyDeviceToHost));
+ #endif
+@@ -601,14 +601,14 @@ int main(int argc, char **argv) {
+     simple_wmma_gemm<<<gridDim, blockDim>>>(A, B, C, D, M_GLOBAL, N_GLOBAL,
+                                             K_GLOBAL, alpha, beta);
+ #if CPU_DEBUG
+-    checkCudaErrors(hipMemcpy(result_hD, D,
++    HIPCHECK(hipMemcpy(result_hD, D,
+                                sizeof(float) * M_GLOBAL * N_GLOBAL,
+                                hipMemcpyDeviceToHost));
+ #endif
+   }
+ 
+-  checkCudaErrors(hipEventRecord(stop));
+-  checkCudaErrors(hipEventSynchronize(stop));
++  HIPCHECK(hipEventRecord(stop));
++  HIPCHECK(hipEventSynchronize(stop));
+ 
+ #if CPU_DEBUG
+   printf("Verifying correctness of the computations...\n");
+@@ -629,7 +629,7 @@ int main(int argc, char **argv) {
+ 
+   float milliseconds = 0;
+ 
+-  checkCudaErrors(hipEventElapsedTime(&milliseconds, start, stop));
++  HIPCHECK(hipEventElapsedTime(&milliseconds, start, stop));
+ 
+   printf("Time: %f ms\n", milliseconds);
+   printf("TFLOPS: %.2f\n", static_cast<double>((static_cast<double>(M_GLOBAL) *
+@@ -640,8 +640,14 @@ int main(int argc, char **argv) {
+   free(A_h);
+   free(B_h);
+   free(C_h);
+-  checkCudaErrors(hipFree(reinterpret_cast<void *>(A)));
+-  checkCudaErrors(hipFree(reinterpret_cast<void *>(B)));
++  HIPCHECK(hipFree(reinterpret_cast<void *>(A)));
++  HIPCHECK(hipFree(reinterpret_cast<void *>(B)));
++  HIPCHECK(hipFree(reinterpret_cast<void *>(C)));
++  HIPCHECK(hipFree(reinterpret_cast<void *>(D)));
++
++  return 0;
++}
++rpret_cast<void *>(B)));
+   checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
+   checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip
+index 333879a..8ebd122 100644
+--- a/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip
+@@ -70,8 +70,8 @@
+ #include <cuda/pipeline>
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_functions.h>
+-#include <helper_cuda.h>
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"
+ 
+ // Externally configurable parameters.
+ 
+@@ -837,7 +837,7 @@ int main(int argc, char **argv)
+     int dev = findCudaDevice(argc, (const char **)argv);
+ 
+     hipDeviceProp_t deviceProp;
+-    checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
++    HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
+ 
+     // Double precision Tensor cores require a GPU of Ampere (SM8X) architecture or higher.
+     if (deviceProp.major < 8) {
+@@ -870,10 +870,10 @@ int main(int argc, char **argv)
+     double *C = NULL;
+     double *D = NULL;
+ 
+-    checkCudaErrors(hipMalloc((void**)&A, sizeof(double) * M_GLOBAL * K_GLOBAL));
+-    checkCudaErrors(hipMalloc((void**)&B, sizeof(double) * N_GLOBAL * K_GLOBAL));
+-    checkCudaErrors(hipMalloc((void**)&C, sizeof(double) * M_GLOBAL * N_GLOBAL));
+-    checkCudaErrors(hipMalloc((void**)&D, sizeof(double) * M_GLOBAL * N_GLOBAL));
++    HIPCHECK(hipMalloc((void**)&A, sizeof(double) * M_GLOBAL * K_GLOBAL));
++    HIPCHECK(hipMalloc((void**)&B, sizeof(double) * N_GLOBAL * K_GLOBAL));
++    HIPCHECK(hipMalloc((void**)&C, sizeof(double) * M_GLOBAL * N_GLOBAL));
++    HIPCHECK(hipMalloc((void**)&D, sizeof(double) * M_GLOBAL * N_GLOBAL));
+ 
+     assert(((unsigned long long)A) % 128 == 0);
+     assert(((unsigned long long)B) % 128 == 0);
+@@ -884,10 +884,10 @@ int main(int argc, char **argv)
+ 
+     printf("Preparing data for GPU...\n");
+ 
+-    checkCudaErrors(hipMemcpy(A, A_h, sizeof(double) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+-    checkCudaErrors(hipMemcpy(B, B_h, sizeof(double) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+-    checkCudaErrors(hipMemcpy(C, C_h, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
+-    checkCudaErrors(hipMemset(D, 0, sizeof(double) * M_GLOBAL * N_GLOBAL));
++    HIPCHECK(hipMemcpy(A, A_h, sizeof(double) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
++    HIPCHECK(hipMemcpy(B, B_h, sizeof(double) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
++    HIPCHECK(hipMemcpy(C, C_h, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
++    HIPCHECK(hipMemset(D, 0, sizeof(double) * M_GLOBAL * N_GLOBAL));
+ 
+     enum {
+         // Compute the right amount of shared memory to request.
+@@ -905,9 +905,9 @@ int main(int argc, char **argv)
+ 
+     hipEvent_t start, stop;
+ 
+-    checkCudaErrors(hipEventCreate(&start));
+-    checkCudaErrors(hipEventCreate(&stop));
+-    checkCudaErrors(hipEventRecord(start));
++    HIPCHECK(hipEventCreate(&start));
++    HIPCHECK(hipEventCreate(&stop));
++    HIPCHECK(hipEventRecord(start));
+ 
+     kernels selected_kernel = dmma_shmem_gemm_async_copy;
+ 
+@@ -934,21 +934,21 @@ int main(int argc, char **argv)
+         {
+             case dmma_shmem_gemm_async_copy :
+             default:
+-                checkCudaErrors(hipFuncSetAttribute(compute_dgemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
++                HIPCHECK(hipFuncSetAttribute(compute_dgemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                 checkKernelErrors((compute_dgemm_async_copy<<<deviceProp.multiProcessorCount*3, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+                 break;
+             case dmma_shmem_gemm_cg_async_copy :
+-                checkCudaErrors(hipFuncSetAttribute(compute_dgemm_cg_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
++                HIPCHECK(hipFuncSetAttribute(compute_dgemm_cg_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                 checkKernelErrors((compute_dgemm_cg_async_copy<<<deviceProp.multiProcessorCount*3, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+                 break;
+             case dmma_shmem_gemm :
+-                checkCudaErrors(hipFuncSetAttribute(compute_dgemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
++                HIPCHECK(hipFuncSetAttribute(compute_dgemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                 checkKernelErrors((compute_dgemm<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+                 break;
+         }
+ 
+ #if CPU_DEBUG
+-        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(double)*M_GLOBAL*N_GLOBAL, hipMemcpyDeviceToHost));
++        HIPCHECK(hipMemcpy(result_hD, D, sizeof(double)*M_GLOBAL*N_GLOBAL, hipMemcpyDeviceToHost));
+ #endif
+     }
+     else
+@@ -967,12 +967,12 @@ int main(int argc, char **argv)
+         printf("Computing... using simple_wmma_gemm kernel\n");
+         simple_wmma_gemm<<<gridDim, blockDim>>>(A, B, C, D, M_GLOBAL, N_GLOBAL, K_GLOBAL, alpha, beta);
+ #if CPU_DEBUG
+-        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
++        HIPCHECK(hipMemcpy(result_hD, D, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
+ #endif
+     }
+ 
+-    checkCudaErrors(hipEventRecord(stop));
+-    checkCudaErrors(hipEventSynchronize(stop));
++    HIPCHECK(hipEventRecord(stop));
++    HIPCHECK(hipEventSynchronize(stop));
+ 
+ #if CPU_DEBUG
+     printf("Verifying correctness of the computations...\n");
+@@ -1004,7 +1004,7 @@ int main(int argc, char **argv)
+ 
+     float milliseconds = 0;
+ 
+-    checkCudaErrors(hipEventElapsedTime(&milliseconds, start, stop));
++    HIPCHECK(hipEventElapsedTime(&milliseconds, start, stop));
+ 
+     printf("Time: %f ms\n", milliseconds);
+     printf("FP64 TFLOPS: %.2f\n", (((double)M_GLOBAL * N_GLOBAL * K_GLOBAL * 2)/(milliseconds/1000.)) / 1e12);
+@@ -1012,7 +1012,14 @@ int main(int argc, char **argv)
+     free(A_h);
+     free(B_h);
+     free(C_h);
+-    checkCudaErrors(hipFree((void*)A));
++    HIPCHECK(hipFree((void*)A));
++    HIPCHECK(hipFree((void*)B));
++    HIPCHECK(hipFree((void*)C));
++    HIPCHECK(hipFree((void*)D));
++
++    return 0;
++}
++CudaErrors(hipFree((void*)A));
+     checkCudaErrors(hipFree((void*)B));
+     checkCudaErrors(hipFree((void*)C));
+     checkCudaErrors(hipFree((void*)D));
+diff --git a/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip b/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
+index 0788de2..103a347 100644
+--- a/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
+@@ -42,9 +42,10 @@
+ // System includes
+ #include <stdio.h>
+ #include <assert.h>
++
+ // CUDA runtime
+ #include <hip/hip_runtime.h>
+-#include "cuda/pipeline"
++#include <cuda/pipeline>
+ 
+ #if __CUDA_ARCH__ >= 700
+ #include <cuda/barrier>
+@@ -761,11 +762,11 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+   unsigned int size_A = dimsA.x * dimsA.y;
+   unsigned int mem_size_A = sizeof(float) * size_A;
+   float *h_A;
+-  checkCudaErrors(hipHostMalloc(&h_A, mem_size_A));
++  HIPCHECK(hipHostMalloc(&h_A, mem_size_A));
+   unsigned int size_B = dimsB.x * dimsB.y;
+   unsigned int mem_size_B = sizeof(float) * size_B;
+   float *h_B;
+-  checkCudaErrors(hipHostMalloc(&h_B, mem_size_B));
++  HIPCHECK(hipHostMalloc(&h_B, mem_size_B));
+   hipStream_t stream;
+ 
+   // Initialize host memory
+@@ -780,29 +781,29 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+   dim3 dimsC(dimsB.x, dimsA.y, 1);
+   unsigned int mem_size_C = dimsC.x * dimsC.y * sizeof(float);
+   float *h_C;
+-  checkCudaErrors(hipHostMalloc(&h_C, mem_size_C));
++  HIPCHECK(hipHostMalloc(&h_C, mem_size_C));
+ 
+   if (h_C == NULL) {
+     fprintf(stderr, "Failed to allocate host matrix C!\n");
+     exit(EXIT_FAILURE);
+   }
+ 
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_A), mem_size_A));
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_B), mem_size_B));
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_C), mem_size_C));
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_A), mem_size_A));
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_B), mem_size_B));
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_C), mem_size_C));
+   // Allocate CUDA events that we'll use for timing
+   hipEvent_t start, stop;
+-  checkCudaErrors(hipEventCreate(&start));
+-  checkCudaErrors(hipEventCreate(&stop));
++  HIPCHECK(hipEventCreate(&start));
++  HIPCHECK(hipEventCreate(&stop));
+ 
+-  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
++  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+ 
+   // copy host memory to device
+-  checkCudaErrors(
++  HIPCHECK(
+       hipMemcpyAsync(d_A, h_A, mem_size_A, hipMemcpyHostToDevice, stream));
+-  checkCudaErrors(
++  HIPCHECK(
+       hipMemcpyAsync(d_B, h_B, mem_size_B, hipMemcpyHostToDevice, stream));
+-  checkCudaErrors(hipMemsetAsync(d_C, 0, mem_size_C, stream));
++  HIPCHECK(hipMemsetAsync(d_C, 0, mem_size_C, stream));
+ 
+   // Setup execution parameters
+   dim3 threads(blockSize, blockSize);
+@@ -860,13 +861,13 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+   }
+ 
+   printf("done\n");
+-  checkCudaErrors(hipStreamSynchronize(stream));
++  HIPCHECK(hipStreamSynchronize(stream));
+ 
+   // Execute the kernel
+   int nIter = 100;
+ 
+   // Record the start event
+-  checkCudaErrors(hipEventRecord(start, stream));
++  HIPCHECK(hipEventRecord(start, stream));
+ 
+   for (int j = 0; j < nIter; j++) {
+     switch (kernel_number) {
+@@ -910,13 +911,13 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+   }
+ 
+   // Record the stop event
+-  checkCudaErrors(hipEventRecord(stop, stream));
++  HIPCHECK(hipEventRecord(stop, stream));
+ 
+   // Wait for the stop event to complete
+-  checkCudaErrors(hipEventSynchronize(stop));
++  HIPCHECK(hipEventSynchronize(stop));
+ 
+   float msecTotal = 0.0f;
+-  checkCudaErrors(hipEventElapsedTime(&msecTotal, start, stop));
++  HIPCHECK(hipEventElapsedTime(&msecTotal, start, stop));
+ 
+   // Compute and print the performance
+   float msecPerMatrixMul = msecTotal / nIter;
+@@ -931,9 +932,9 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+       gigaFlops, msecPerMatrixMul, flopsPerMatrixMul, threads.x * threads.y);
+ 
+   // Copy result from device to host
+-  checkCudaErrors(
++  HIPCHECK(
+       hipMemcpyAsync(h_C, d_C, mem_size_C, hipMemcpyDeviceToHost, stream));
+-  checkCudaErrors(hipStreamSynchronize(stream));
++  HIPCHECK(hipStreamSynchronize(stream));
+ 
+   printf("Checking computed result for correctness: ");
+   bool correct = true;
+@@ -958,14 +959,14 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+   printf("%s\n", correct ? "Result = PASS" : "Result = FAIL");
+ 
+   // Clean up memory
+-  checkCudaErrors(hipHostFree(h_A));
+-  checkCudaErrors(hipHostFree(h_B));
+-  checkCudaErrors(hipHostFree(h_C));
+-  checkCudaErrors(hipFree(d_A));
+-  checkCudaErrors(hipFree(d_B));
+-  checkCudaErrors(hipFree(d_C));
+-  checkCudaErrors(hipEventDestroy(start));
+-  checkCudaErrors(hipEventDestroy(stop));
++  HIPCHECK(hipHostFree(h_A));
++  HIPCHECK(hipHostFree(h_B));
++  HIPCHECK(hipHostFree(h_C));
++  HIPCHECK(hipFree(d_A));
++  HIPCHECK(hipFree(d_B));
++  HIPCHECK(hipFree(d_C));
++  HIPCHECK(hipEventDestroy(start));
++  HIPCHECK(hipEventDestroy(stop));
+   printf(
+       "\nNOTE: The CUDA Samples are not meant for performance "
+       "measurements. Results may vary when GPU Boost is enabled.\n");
+@@ -1055,7 +1056,7 @@ int main(int argc, char **argv) {
+   }
+ 
+   int major = 0;
+-  checkCudaErrors(
++  HIPCHECK(
+       hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, dev));
+   if (major < 7) {
+     printf("globalToShmemAsyncCopy requires SM 7.0 or higher.  Exiting...\n");
+@@ -1069,3 +1070,10 @@ int main(int argc, char **argv) {
+ 
+   exit(matrix_result);
+ }
++rintf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y, dimsB.x,
++         dimsB.y);
++
++  int matrix_result = MatrixMultiply(argc, argv, dimsA, dimsB, selected_kernel);
++
++  exit(matrix_result);
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/graphMemoryNodes/graphMemoryNodes.cu.hip b/src/samples/Samples/3_CUDA_Features/graphMemoryNodes/graphMemoryNodes.cu.hip
+index 3ac88ed..d226ff8 100644
+--- a/src/samples/Samples/3_CUDA_Features/graphMemoryNodes/graphMemoryNodes.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/graphMemoryNodes/graphMemoryNodes.cu.hip
+@@ -1,3 +1,4 @@
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -28,8 +29,6 @@
+ // System includes
+ #include <assert.h>
+ #include <stdio.h>
+-#include "rocprofiler.h"
+-#include "HIPCHECK.h"
+ 
+ #include <climits>
+ #include <vector>
+@@ -38,8 +37,8 @@
+ #include <hip/hip_runtime.h>
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_cuda.h>
+-#include <helper_functions.h>
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ 
+ #define THREADS_PER_BLOCK 512
+ #define ALLOWABLE_VARIANCE 1.e-6f
+@@ -308,7 +307,7 @@ void doNegateSquaresInStream(hipStream_t stream1, negSquareArrays *hostArrays,
+   HIPCHECK(hipEventCreate(&negateKernelCompleteEvent));
+   HIPCHECK(hipEventCreate(&squareFreeEvent));
+ 
+-  // Virtual addresses are assigned synchronously when cudaMallocAsync is
++  // Virtual addresses are assigned synchronously when hipMallocAsync is
+   // called, thus there is no performace benefit gained by separating the
+   // allocations into two streams.
+   HIPCHECK(hipMallocAsync(&d_input, hostArrays->bytes, stream1));
+@@ -466,3 +465,104 @@ int main(int argc, char **argv) {
+   } else {
+     printf("Setting up sample.\n");
+   }
++
++  prepareHostArrays(&hostArrays);
++  prepareRefArrays(&hostArrays, &deviceRefArrays, &foundValidationFailure);
++  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
++  printf("Setup complete.\n\n");
++
++  printf("Running negateSquares in a stream.\n");
++  doNegateSquaresInStream(stream, &hostArrays);
++  HIPCHECK(hipStreamSynchronize(stream));
++  printf("Validating negateSquares in a stream...\n");
++  validateHost(&hostArrays, foundValidationFailure);
++  checkValidationFailure(foundValidationFailure);
++  resetOutputArrays(&hostArrays);
++
++  printf("Running negateSquares in a stream-captured graph.\n");
++  createNegateSquaresGraphWithStreamCapture(&graphExec, &hostArrays);
++  HIPCHECK(hipGraphLaunch(graphExec, stream));
++  HIPCHECK(hipStreamSynchronize(stream));
++  printf("Validating negateSquares in a stream-captured graph...\n");
++  validateHost(&hostArrays, foundValidationFailure);
++  checkValidationFailure(foundValidationFailure);
++  resetOutputArrays(&hostArrays);
++
++  printf("Running negateSquares in an explicitly constructed graph.\n");
++  createNegateSquaresGraphExplicitly(&graphExec, device, &hostArrays);
++  HIPCHECK(hipGraphLaunch(graphExec, stream));
++  HIPCHECK(hipStreamSynchronize(stream));
++  printf("Validating negateSquares in an explicitly constructed graph...\n");
++  validateHost(&hostArrays, foundValidationFailure);
++  checkValidationFailure(foundValidationFailure);
++  resetOutputArrays(&hostArrays);
++
++  // Each of the three examples below free d_negSquare outside the graph. As
++  // demonstrated by validateGPU, d_negSquare can be accessed by outside the
++  // graph before d_negSquare is freed.
++
++  printf("Running negateSquares with d_negSquare freed outside the stream.\n");
++  createNegateSquaresGraphExplicitly(&graphExec, device, &hostArrays,
++                                     &d_negSquare);
++  HIPCHECK(hipGraphLaunch(graphExec, stream));
++  validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
++      d_negSquare, deviceRefArrays, foundValidationFailure);
++  // Since hipFree is synchronous, the stream must synchronize before freeing
++  // d_negSquare to ensure d_negSquare no longer being accessed.
++  HIPCHECK(hipStreamSynchronize(stream));
++  HIPCHECK(hipFree(d_negSquare));
++  printf(
++      "Validating negateSquares with d_negSquare freed outside the "
++      "stream...\n");
++  validateHost(&hostArrays, foundValidationFailure);
++  checkValidationFailure(foundValidationFailure);
++  resetOutputArrays(&hostArrays);
++
++  printf("Running negateSquares with d_negSquare freed outside the graph.\n");
++  HIPCHECK(hipGraphLaunch(graphExec, stream));
++  validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
++      d_negSquare, deviceRefArrays, foundValidationFailure);
++  HIPCHECK(hipFreeAsync(d_negSquare, stream));
++  HIPCHECK(hipStreamSynchronize(stream));
++  printf(
++      "Validating negateSquares with d_negSquare freed outside the graph...\n");
++  checkValidationFailure(foundValidationFailure);
++  resetOutputArrays(&hostArrays);
++
++  printf(
++      "Running negateSquares with d_negSquare freed in a different graph.\n");
++  createFreeGraph(&graphExecFreeC, d_negSquare);
++  HIPCHECK(hipGraphLaunch(graphExec, stream));
++  validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
++      d_negSquare, deviceRefArrays, foundValidationFailure);
++  HIPCHECK(hipGraphLaunch(graphExecFreeC, stream));
++  HIPCHECK(hipStreamSynchronize(stream));
++  printf(
++      "Validating negateSquares with d_negSquare freed in a different "
++      "graph...\n");
++  checkValidationFailure(foundValidationFailure);
++
++  printf("Cleaning up sample.\n");
++  HIPCHECK(hipGraphExecDestroy(graphExec));
++  HIPCHECK(hipGraphExecDestroy(graphExecFreeC));
++  HIPCHECK(hipStreamDestroy(stream));
++  HIPCHECK(hipFree(foundValidationFailure));
++  HIPCHECK(hipFree(deviceRefArrays.negSquare));
++  free(hostArrays.input);
++  free(hostArrays.square);
++  free(hostArrays.negSquare);
++  printf("Cleanup complete. Exiting sample.\n");
++}aph...\n");
++  checkValidationFailure(foundValidationFailure);
++
++  printf("Cleaning up sample.\n");
++  checkCudaErrors(hipGraphExecDestroy(graphExec));
++  checkCudaErrors(hipGraphExecDestroy(graphExecFreeC));
++  checkCudaErrors(hipStreamDestroy(stream));
++  checkCudaErrors(hipFree(foundValidationFailure));
++  checkCudaErrors(hipFree(deviceRefArrays.negSquare));
++  free(hostArrays.input);
++  free(hostArrays.square);
++  free(hostArrays.negSquare);
++  printf("Cleanup complete. Exiting sample.\n");
++}
+\ No newline at end of file
+diff --git a/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip
+index f454f9a..0ded558 100644
+--- a/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip
+@@ -70,8 +70,8 @@
+ #include <stdio.h>
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_cuda.h>
+-#include <helper_functions.h>
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ 
+ // Externally configurable parameters.
+ 
+@@ -492,7 +492,7 @@ int main(int argc, char **argv) {
+   int dev = findCudaDevice(argc, (const char **)argv);
+ 
+   hipDeviceProp_t deviceProp;
+-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
++  HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
+ 
+   // Tensor cores require a GPU of Volta (SM72) architecture or higher.
+   if (deviceProp.major < 7 || (deviceProp.major <= 7 && deviceProp.minor < 2)) {
+@@ -527,12 +527,12 @@ int main(int argc, char **argv) {
+   int *C = NULL;
+   int *D = NULL;
+ 
+-  checkCudaErrors(
++  HIPCHECK(
+       hipMalloc(reinterpret_cast<void **>(&A), sizeof(uint8_t) * M_GLOBAL * K_GLOBAL));
+-  checkCudaErrors(
++  HIPCHECK(
+       hipMalloc(reinterpret_cast<void **>(&B), sizeof(uint8_t) * N_GLOBAL * K_GLOBAL));
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&C), sizeof(int) * M_GLOBAL * N_GLOBAL));
+-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&D), sizeof(int) * M_GLOBAL * N_GLOBAL));
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&C), sizeof(int) * M_GLOBAL * N_GLOBAL));
++  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&D), sizeof(int) * M_GLOBAL * N_GLOBAL));
+ 
+   assert(((unsigned long long)A) % 128 == 0);
+   assert(((unsigned long long)B) % 128 == 0);
+@@ -541,13 +541,13 @@ int main(int argc, char **argv) {
+ 
+   init_host_matrices(A_h, B_h, C_h);
+ 
+-  checkCudaErrors(hipMemcpy(A, A_h, sizeof(uint8_t) * M_GLOBAL * K_GLOBAL,
++  HIPCHECK(hipMemcpy(A, A_h, sizeof(uint8_t) * M_GLOBAL * K_GLOBAL,
+                              hipMemcpyHostToDevice));
+-  checkCudaErrors(hipMemcpy(B, B_h, sizeof(uint8_t) * N_GLOBAL * K_GLOBAL,
++  HIPCHECK(hipMemcpy(B, B_h, sizeof(uint8_t) * N_GLOBAL * K_GLOBAL,
+                              hipMemcpyHostToDevice));
+-  checkCudaErrors(hipMemcpy(C, C_h, sizeof(int) * M_GLOBAL * N_GLOBAL,
++  HIPCHECK(hipMemcpy(C, C_h, sizeof(int) * M_GLOBAL * N_GLOBAL,
+                              hipMemcpyHostToDevice));
+-  checkCudaErrors(hipMemset(D, 0, sizeof(int) * M_GLOBAL * N_GLOBAL));
++  HIPCHECK(hipMemset(D, 0, sizeof(int) * M_GLOBAL * N_GLOBAL));
+ 
+   printf("Preparing data for GPU...\n");
+ 
+@@ -576,22 +576,22 @@ int main(int argc, char **argv) {
+ 
+   hipEvent_t start, stop;
+ 
+-  checkCudaErrors(hipEventCreate(&start));
+-  checkCudaErrors(hipEventCreate(&stop));
+-  checkCudaErrors(hipEventRecord(start));
++  HIPCHECK(hipEventCreate(&start));
++  HIPCHECK(hipEventCreate(&stop));
++  HIPCHECK(hipEventRecord(start));
+ 
+   // If enough shared memory available on the GPU use high performant kernel
+   if (deviceProp.sharedMemPerMultiprocessor >= SHMEM_SZ) {
+     printf("Computing... using high performance kernel compute_gemm_imma \n");
+ 
+-    checkCudaErrors(hipFuncSetAttribute(
++    HIPCHECK(hipFuncSetAttribute(
+         compute_gemm_imma, hipFuncAttributeMaxDynamicSharedMemorySize,
+         SHMEM_SZ));
+     checkKernelErrors(
+         (compute_gemm_imma<<<deviceProp.multiProcessorCount, THREADS_PER_BLOCK,
+                              SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+ #if CPU_DEBUG
+-    checkCudaErrors(hipMemcpy(result_hD, D, sizeof(int) * M_GLOBAL * N_GLOBAL,
++    HIPCHECK(hipMemcpy(result_hD, D, sizeof(int) * M_GLOBAL * N_GLOBAL,
+                                hipMemcpyDeviceToHost));
+ #endif
+   } else {
+@@ -611,13 +611,13 @@ int main(int argc, char **argv) {
+     simple_wmma_gemm_imma<<<gridDim, blockDim>>>(A, B, C, D, M_GLOBAL, N_GLOBAL,
+                                                  K_GLOBAL, alpha, beta);
+ #if CPU_DEBUG
+-    checkCudaErrors(hipMemcpy(result_hD, D, sizeof(int) * M_GLOBAL * N_GLOBAL,
++    HIPCHECK(hipMemcpy(result_hD, D, sizeof(int) * M_GLOBAL * N_GLOBAL,
+                                hipMemcpyDeviceToHost));
+ #endif
+   }
+ 
+-  checkCudaErrors(hipEventRecord(stop));
+-  checkCudaErrors(hipEventSynchronize(stop));
++  HIPCHECK(hipEventRecord(stop));
++  HIPCHECK(hipEventSynchronize(stop));
+ 
+ #if CPU_DEBUG
+   printf("Verifying correctness of the computations...\n");
+@@ -639,7 +639,7 @@ int main(int argc, char **argv) {
+ 
+   float milliseconds = 0;
+ 
+-  checkCudaErrors(hipEventElapsedTime(&milliseconds, start, stop));
++  HIPCHECK(hipEventElapsedTime(&milliseconds, start, stop));
+ 
+     printf("Time: %f ms\n", milliseconds);
+     printf("TOPS: %.2f\n", (((double)M_GLOBAL * N_GLOBAL * K_GLOBAL * 2)/(milliseconds/1000.)) / 1e12);
+@@ -647,8 +647,14 @@ int main(int argc, char **argv) {
+   free(A_h);
+   free(B_h);
+   free(C_h);
+-  checkCudaErrors(hipFree(reinterpret_cast<void *>(A)));
+-  checkCudaErrors(hipFree(reinterpret_cast<void *>(B)));
++  HIPCHECK(hipFree(reinterpret_cast<void *>(A)));
++  HIPCHECK(hipFree(reinterpret_cast<void *>(B)));
++  HIPCHECK(hipFree(reinterpret_cast<void *>(C)));
++  HIPCHECK(hipFree(reinterpret_cast<void *>(D)));
++
++  return EXIT_SUCCESS;
++}
++void *>(B)));
+   checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
+   checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip
+index 46b40b2..f145adf 100644
+--- a/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip
+@@ -1,4 +1,4 @@
+-
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -60,14 +60,14 @@
+ 
+ #include <assert.h>
+ #include <stdio.h>
+-#include "hip/hip_runtime.h"
++#include <hip/hip_runtime.h>
+ #include <mma.h>
+ #include <cuda/pipeline>
+-#include "hip/hip_runtime_api.h"
++
+ // helper functions and utilities to work with CUDA
+ #include "helper_functions.h"
+ #include "helper_cuda_hipified.h"
+-#include "HIPCHECK.h"
++
+ // Externally configurable parameters.
+ 
+ #ifndef CPU_DEBUG
+@@ -836,3 +836,10 @@ int main(int argc, char **argv)
+ 
+     return 0;
+ }
++ors(hipFree((void*)A));
++    checkCudaErrors(hipFree((void*)B));
++    checkCudaErrors(hipFree((void*)C));
++    checkCudaErrors(hipFree((void*)D));
++
++    return 0;
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip b/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip
+index e0fec53..c17a1ee 100644
+--- a/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip
+@@ -28,8 +28,8 @@
+ 
+ #include <stdio.h>
+ // includes, project
+-#include <helper_cuda.h>
+-#include <helper_functions.h>
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h"
+ 
+ #include <hip/hip_runtime.h>
+ 
+@@ -118,17 +118,17 @@ int mapIndicesToBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
+     h_bucketCounters[i] = i*NUM_ELEMS;
+   }
+ 
+-  checkCudaErrors(hipMalloc(&d_indicesBuckets, sizeof(int) * NUM_ELEMS * numOfBuckets));
+-  checkCudaErrors(hipMalloc(&d_bucketCounters, sizeof(int) * numOfBuckets));
++  HIPCHECK(hipMalloc(&d_indicesBuckets, sizeof(int) * NUM_ELEMS * numOfBuckets));
++  HIPCHECK(hipMalloc(&d_bucketCounters, sizeof(int) * numOfBuckets));
+ 
+-  checkCudaErrors(hipMemcpy(d_bucketCounters, h_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyHostToDevice));
++  HIPCHECK(hipMemcpy(d_bucketCounters, h_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyHostToDevice));
+ 
+   dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
+   dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK), 1, 1);
+ 
+   mapToBuckets<<<dimGrid, dimBlock>>>(d_srcArr, d_indicesBuckets, d_bucketCounters, NUM_ELEMS, numOfBuckets);
+ 
+-  checkCudaErrors(hipMemcpy(h_bucketCounters, d_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyDeviceToHost));
++  HIPCHECK(hipMemcpy(h_bucketCounters, d_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyDeviceToHost));
+ 
+   for (int i=0; i < NUM_ELEMS; i++)
+   {
+@@ -204,18 +204,18 @@ int calculateMaxInBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
+     h_valueInBuckets[i] = rand();
+   }
+ 
+-  checkCudaErrors(hipMalloc(&d_valueInBuckets, sizeof(int) * NUM_ELEMS));
+-  checkCudaErrors(hipMalloc(&d_bucketsMax, sizeof(int) * numOfBuckets));
++  HIPCHECK(hipMalloc(&d_valueInBuckets, sizeof(int) * NUM_ELEMS));
++  HIPCHECK(hipMalloc(&d_bucketsMax, sizeof(int) * numOfBuckets));
+ 
+-  checkCudaErrors(hipMemset(d_bucketsMax, 0, sizeof(int) * numOfBuckets));
+-  checkCudaErrors(hipMemcpy(d_valueInBuckets, h_valueInBuckets, sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
++  HIPCHECK(hipMemset(d_bucketsMax, 0, sizeof(int) * numOfBuckets));
++  HIPCHECK(hipMemcpy(d_valueInBuckets, h_valueInBuckets, sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
+ 
+   dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
+   dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK), 1, 1);
+ 
+   calculateMaxInEachBuckets<<<dimGrid, dimBlock>>>(d_srcArr, d_valueInBuckets, d_bucketsMax, NUM_ELEMS, numOfBuckets);
+ 
+-  checkCudaErrors(hipMemcpy(h_bucketsMax, d_bucketsMax, sizeof(int) * numOfBuckets, hipMemcpyDeviceToHost));
++  HIPCHECK(hipMemcpy(h_bucketsMax, d_bucketsMax, sizeof(int) * numOfBuckets, hipMemcpyDeviceToHost));
+ 
+   for (int i = 0; i < NUM_ELEMS; i++)
+   {
+@@ -244,8 +244,8 @@ int calculateMaxInBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
+   delete[] h_valueInBuckets;
+   delete[] cpuBucketsMax;
+   delete[] h_bucketsMax;
+-  checkCudaErrors(hipFree(d_valueInBuckets));
+-  checkCudaErrors(hipFree(d_bucketsMax));
++  HIPCHECK(hipFree(d_valueInBuckets));
++  HIPCHECK(hipFree(d_bucketsMax));
+ 
+   if (!allMatch && finalElems != NUM_ELEMS)
+   {
+@@ -270,13 +270,13 @@ int main(int argc, char **argv) {
+ 
+   int devId = findCudaDevice(argc, (const char **)argv);
+ 
+-  checkCudaErrors(hipMalloc(&d_data_to_filter, sizeof(int) * NUM_ELEMS));
+-  checkCudaErrors(hipMalloc(&d_filtered_data, sizeof(int) * NUM_ELEMS));
+-  checkCudaErrors(hipMalloc(&d_nres, sizeof(int)));
++  HIPCHECK(hipMalloc(&d_data_to_filter, sizeof(int) * NUM_ELEMS));
++  HIPCHECK(hipMalloc(&d_filtered_data, sizeof(int) * NUM_ELEMS));
++  HIPCHECK(hipMalloc(&d_nres, sizeof(int)));
+ 
+-  checkCudaErrors(hipMemcpy(d_data_to_filter, data_to_filter,
++  HIPCHECK(hipMemcpy(d_data_to_filter, data_to_filter,
+                              sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
+-  checkCudaErrors(hipMemset(d_nres, 0, sizeof(int)));
++  HIPCHECK(hipMemset(d_nres, 0, sizeof(int)));
+ 
+   dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
+   dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK) + 1, 1, 1);
+@@ -284,12 +284,12 @@ int main(int argc, char **argv) {
+   filter_arr<<<dimGrid, dimBlock>>>(d_filtered_data, d_nres, d_data_to_filter,
+                                     NUM_ELEMS);
+ 
+-  checkCudaErrors(
++  HIPCHECK(
+       hipMemcpy(&nres, d_nres, sizeof(int), hipMemcpyDeviceToHost));
+ 
+   filtered_data = reinterpret_cast<int *>(malloc(sizeof(int) * nres));
+ 
+-  checkCudaErrors(hipMemcpy(filtered_data, d_filtered_data, sizeof(int) * nres,
++  HIPCHECK(hipMemcpy(filtered_data, d_filtered_data, sizeof(int) * nres,
+                              hipMemcpyDeviceToHost));
+ 
+   int *host_filtered_data =
+@@ -304,7 +304,7 @@ int main(int argc, char **argv) {
+   }
+ 
+   int major = 0;
+-  checkCudaErrors(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, devId));
++  HIPCHECK(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, devId));
+ 
+   int mapIndicesToBucketsStatus = EXIT_SUCCESS;
+   int calculateMaxInBucketsStatus = EXIT_SUCCESS;
+@@ -319,8 +319,14 @@ int main(int argc, char **argv) {
+          (host_flt_count == nres) && (mapIndicesToBucketsStatus == EXIT_SUCCESS) && 
+          (calculateMaxInBucketsStatus == EXIT_SUCCESS) ? "PASSED" : "FAILED");
+ 
+-  checkCudaErrors(hipFree(d_data_to_filter));
+-  checkCudaErrors(hipFree(d_filtered_data));
++  HIPCHECK(hipFree(d_data_to_filter));
++  HIPCHECK(hipFree(d_filtered_data));
++  HIPCHECK(hipFree(d_nres));
++  free(data_to_filter);
++  free(filtered_data);
++  free(host_filtered_data);
++}
++eckCudaErrors(hipFree(d_filtered_data));
+   checkCudaErrors(hipFree(d_nres));
+   free(data_to_filter);
+   free(filtered_data);

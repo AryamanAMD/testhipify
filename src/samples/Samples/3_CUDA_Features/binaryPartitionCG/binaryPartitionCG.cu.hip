@@ -47,7 +47,7 @@
 #include <stdio.h>
 #include <hip/hip_cooperative_groups.h>
 #include <cooperative_groups/reduce.h>
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 
 namespace cg = cooperative_groups;
 
@@ -107,27 +107,27 @@ int main(int argc, const char **argv) {
   int *h_sumOfOddEvenElems, *d_sumOfOddEvenElems;
   unsigned int arrSize = 1024 * 100;
 
-  checkCudaErrors(hipHostMalloc(&h_inputArr, sizeof(int) * arrSize));
-  checkCudaErrors(hipHostMalloc(&h_numOfOdds, sizeof(int)));
-  checkCudaErrors(hipHostMalloc(&h_sumOfOddEvenElems, sizeof(int) * 2));
+  HIPCHECK(hipHostMalloc(&h_inputArr, sizeof(int) * arrSize));
+  HIPCHECK(hipHostMalloc(&h_numOfOdds, sizeof(int)));
+  HIPCHECK(hipHostMalloc(&h_sumOfOddEvenElems, sizeof(int) * 2));
   initOddEvenArr(h_inputArr, arrSize);
 
   hipStream_t stream;
-  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
-  checkCudaErrors(hipMalloc(&d_inputArr, sizeof(int) * arrSize));
-  checkCudaErrors(hipMalloc(&d_numOfOdds, sizeof(int)));
-  checkCudaErrors(hipMalloc(&d_sumOfOddEvenElems, sizeof(int) * 2));
+  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+  HIPCHECK(hipMalloc(&d_inputArr, sizeof(int) * arrSize));
+  HIPCHECK(hipMalloc(&d_numOfOdds, sizeof(int)));
+  HIPCHECK(hipMalloc(&d_sumOfOddEvenElems, sizeof(int) * 2));
 
-  checkCudaErrors(hipMemcpyAsync(d_inputArr, h_inputArr, sizeof(int) * arrSize,
+  HIPCHECK(hipMemcpyAsync(d_inputArr, h_inputArr, sizeof(int) * arrSize,
                                   hipMemcpyHostToDevice, stream));
-  checkCudaErrors(hipMemsetAsync(d_numOfOdds, 0, sizeof(int), stream));
-  checkCudaErrors(
+  HIPCHECK(hipMemsetAsync(d_numOfOdds, 0, sizeof(int), stream));
+  HIPCHECK(
       hipMemsetAsync(d_sumOfOddEvenElems, 0, 2 * sizeof(int), stream));
 
   // Launch the kernel
   int threadsPerBlock = 0;
   int blocksPerGrid = 0;
-  checkCudaErrors(hipOccupancyMaxPotentialBlockSize(
+  HIPCHECK(hipOccupancyMaxPotentialBlockSize(
       &blocksPerGrid, &threadsPerBlock, oddEvenCountAndSumCG, 0, 0));
 
   printf("\nLaunching %d blocks with %d threads...\n\n", blocksPerGrid,
@@ -136,23 +136,29 @@ int main(int argc, const char **argv) {
   oddEvenCountAndSumCG<<<blocksPerGrid, threadsPerBlock, 0, stream>>>(
       d_inputArr, d_numOfOdds, d_sumOfOddEvenElems, arrSize);
 
-  checkCudaErrors(hipMemcpyAsync(h_numOfOdds, d_numOfOdds, sizeof(int),
+  HIPCHECK(hipMemcpyAsync(h_numOfOdds, d_numOfOdds, sizeof(int),
                                   hipMemcpyDeviceToHost, stream));
-  checkCudaErrors(hipMemcpyAsync(h_sumOfOddEvenElems, d_sumOfOddEvenElems,
+  HIPCHECK(hipMemcpyAsync(h_sumOfOddEvenElems, d_sumOfOddEvenElems,
                                   2 * sizeof(int), hipMemcpyDeviceToHost,
                                   stream));
-  checkCudaErrors(hipStreamSynchronize(stream));
+  HIPCHECK(hipStreamSynchronize(stream));
 
   printf("Array size = %d Num of Odds = %d Sum of Odds = %d Sum of Evens %d\n",
          arrSize, h_numOfOdds[0], h_sumOfOddEvenElems[0],
          h_sumOfOddEvenElems[1]);
   printf("\n...Done.\n\n");
 
-  checkCudaErrors(hipHostFree(h_inputArr));
-  checkCudaErrors(hipHostFree(h_numOfOdds));
-  checkCudaErrors(hipHostFree(h_sumOfOddEvenElems));
+  HIPCHECK(hipHostFree(h_inputArr));
+  HIPCHECK(hipHostFree(h_numOfOdds));
+  HIPCHECK(hipHostFree(h_sumOfOddEvenElems));
 
-  checkCudaErrors(hipFree(d_inputArr));
+  HIPCHECK(hipFree(d_inputArr));
+  HIPCHECK(hipFree(d_numOfOdds));
+  HIPCHECK(hipFree(d_sumOfOddEvenElems));
+
+  return EXIT_SUCCESS;
+}
+s(hipFree(d_inputArr));
   checkCudaErrors(hipFree(d_numOfOdds));
   checkCudaErrors(hipFree(d_sumOfOddEvenElems));
 

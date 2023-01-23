@@ -1,4 +1,4 @@
-
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -60,14 +60,14 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include "hip/hip_runtime.h"
+#include <hip/hip_runtime.h>
 #include <mma.h>
 #include <cuda/pipeline>
-#include "hip/hip_runtime_api.h"
+
 // helper functions and utilities to work with CUDA
 #include "helper_functions.h"
 #include "helper_cuda_hipified.h"
-#include "HIPCHECK.h"
+
 // Externally configurable parameters.
 
 #ifndef CPU_DEBUG
@@ -833,6 +833,13 @@ int main(int argc, char **argv)
     HIPCHECK(hipFree((void*)B));
     HIPCHECK(hipFree((void*)C));
     HIPCHECK(hipFree((void*)D));
+
+    return 0;
+}
+ors(hipFree((void*)A));
+    checkCudaErrors(hipFree((void*)B));
+    checkCudaErrors(hipFree((void*)C));
+    checkCudaErrors(hipFree((void*)D));
 
     return 0;
 }

@@ -222,7 +222,7 @@ void PricingEngine<Real>::operator()(AsianOption<Real> &option) {
   }
 
   // Get initRNG function properties and check the maximum block size
-  cudaResult = hipFuncGetAttributes(&funcAttributes, initRNG);
+  cudaResult = hipFuncGetAttributes(&funcAttributes,(const void*) initRNG);
 
   if (cudaResult != hipSuccess) {
     string msg("Could not get function attributes: ");
@@ -236,7 +236,7 @@ void PricingEngine<Real>::operator()(AsianOption<Real> &option) {
   }
 
   // Get generatePaths function properties and check the maximum block size
-  cudaResult = hipFuncGetAttributes(&funcAttributes, generatePaths<Real>);
+  cudaResult = hipFuncGetAttributes(&funcAttributes, (const void*)generatePaths<Real>);
 
   if (cudaResult != hipSuccess) {
     string msg("Could not get function attributes: ");
@@ -250,7 +250,7 @@ void PricingEngine<Real>::operator()(AsianOption<Real> &option) {
   }
 
   // Get computeValue function properties and check the maximum block size
-  cudaResult = hipFuncGetAttributes(&funcAttributes, computeValue<Real>);
+  cudaResult = hipFuncGetAttributes(&funcAttributes,(const void*) computeValue<Real>);
 
   if (cudaResult != hipSuccess) {
     string msg("Could not get function attributes: ");

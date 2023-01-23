@@ -78,30 +78,30 @@ void launchSaxpy(const float a, float4 *x, float4 *y, float4 *z, const size_t n,
             h_x[i].x = h_x[i].y = h_x[i].z = h_x[i].w = init_val;
             h_y[i].x = h_y[i].y = h_y[i].z = h_y[i].w = init_val;
         }
-        HIPCHECK(hipMemcpy(x, h_x, sizeof(float4) * n, hipMemcpyHostToDevice));
-        HIPCHECK(hipMemcpy(y, h_y, sizeof(float4) * n, hipMemcpyHostToDevice));
+        checkCudaErrors(hipMemcpy(x, h_x, sizeof(float4) * n, hipMemcpyHostToDevice));
+        checkCudaErrors(hipMemcpy(y, h_y, sizeof(float4) * n, hipMemcpyHostToDevice));
         free(h_x);
         free(h_y);
     }
     else
     {
-        HIPCHECK(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)init));
+        checkCudaErrors(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)init));
         threads = dim3(blockSize, 1, 1);
         blocks  = dim3(minGridSize, 1, 1);
         init<<<blocks, threads>>>(x, y, init_val, n);
     }
 
-    HIPCHECK(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)saxpy));
+    checkCudaErrors(hipOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, (void*)saxpy));
     threads = dim3(blockSize, 1, 1);
     blocks  = dim3(minGridSize, 1, 1);
 
-    HIPCHECK(hipEventCreate(&start));
-    HIPCHECK(hipEventCreate(&stop));
-    HIPCHECK(hipEventRecord(start));
+    checkCudaErrors(hipEventCreate(&start));
+    checkCudaErrors(hipEventCreate(&stop));
+    checkCudaErrors(hipEventRecord(start));
     saxpy<<<blocks, threads>>>(a, x, y, z, n);
-    HIPCHECK(hipEventRecord(stop));
-    HIPCHECK(hipEventSynchronize(stop));
-    HIPCHECK(hipEventElapsedTime(&ms, start, stop));
+    checkCudaErrors(hipEventRecord(stop));
+    checkCudaErrors(hipEventSynchronize(stop));
+    checkCudaErrors(hipEventElapsedTime(&ms, start, stop));
 
     const size_t size = n * sizeof(float4);
     printf("Running saxpy with %d blocks x %d threads = %.3f ms %.3f TB/s\n", blocks.x, threads.x, ms, (size*3)/ms/1e9);
@@ -119,11 +119,11 @@ int main(int argc, char **argv)
 
     findCudaDevice(argc, (const char**)argv);
     hipDevice_t currentDevice;
-    HIPCHECK(hipCtxGetDevice(&currentDevice));
+    checkCudaErrors(hipCtxGetDevice(&currentDevice));
 
     // Check that the selected device supports virtual memory management
     int vmm_supported = -1;
-    HIPCHECK(hipDeviceGetAttribute(&vmm_supported,
+    checkCudaErrors(hipDeviceGetAttribute(&vmm_supported,
                           CU_DEVICE_ATTRIBUTE_VIRTUAL_ADDRESS_MANAGEMENT_SUPPORTED,
                           currentDevice));
     if (vmm_supported == 0) {
@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     }
 
     int isCompressionAvailable;
-    HIPCHECK(hipDeviceGetAttribute(&isCompressionAvailable,
+    checkCudaErrors(hipDeviceGetAttribute(&isCompressionAvailable,
                              CU_DEVICE_ATTRIBUTE_GENERIC_COMPRESSION_SUPPORTED,
                              currentDevice));
     if (isCompressionAvailable == 0)
@@ -144,30 +144,30 @@ int main(int argc, char **argv)
     printf("Generic memory compression support is available\n");
 
     int major, minor;
-    HIPCHECK(hipDeviceGetAttribute(&major,
+    checkCudaErrors(hipDeviceGetAttribute(&major,
                           hipDeviceAttributeComputeCapabilityMajor,
                           currentDevice));
-    HIPCHECK(hipDeviceGetAttribute(&minor,
+    checkCudaErrors(hipDeviceGetAttribute(&minor,
                           hipDeviceAttributeComputeCapabilityMinor,
                           currentDevice));
     float4 *x, *y, *z;
     const size_t size = n * sizeof(float4);
 
     // Allocating compressible memory
-    HIPCHECK(allocateCompressible((void **)&x, size, true));
-    HIPCHECK(allocateCompressible((void **)&y, size, true));
+    checkCudaErrors(allocateCompressible((void **)&x, size, true));
+    checkCudaErrors(allocateCompressible((void **)&y, size, true));
     bool compressibleZbuf = 0;
     if ((major == 8 && minor == 0) || (major == 8 && minor == 6))
     {
         // On SM 8.0 and 8.6 GPUs compressible buffer can only be initialized 
         // through hipMemcpy.
         printf("allocating non-compressible Z buffer\n");
-        HIPCHECK(allocateCompressible((void **)&z, size, false));
+        checkCudaErrors(allocateCompressible((void **)&z, size, false));
         compressibleZbuf = 0;
     }
     else
     {
-        HIPCHECK(allocateCompressible((void **)&z, size, true));
+        checkCudaErrors(allocateCompressible((void **)&z, size, true));
         compressibleZbuf = 1;
     }
 
@@ -177,26 +177,21 @@ int main(int argc, char **argv)
     const float init_val = 1.0f;
     launchSaxpy(a, x, y, z, n, init_val, compressibleZbuf);
  
-    HIPCHECK(freeCompressible(x, size, true));
-    HIPCHECK(freeCompressible(y, size, true));
-    HIPCHECK(freeCompressible(z, size, true));
+    checkCudaErrors(freeCompressible(x, size, true));
+    checkCudaErrors(freeCompressible(y, size, true));
+    checkCudaErrors(freeCompressible(z, size, true));
 
     printf("Running saxpy on %zu bytes of Non-Compressible memory\n", size);
     // Allocating non-compressible memory
-    HIPCHECK(allocateCompressible((void **)&x, size, false));
-    HIPCHECK(allocateCompressible((void **)&y, size, false));
-    HIPCHECK(allocateCompressible((void **)&z, size, false));
+    checkCudaErrors(allocateCompressible((void **)&x, size, false));
+    checkCudaErrors(allocateCompressible((void **)&y, size, false));
+    checkCudaErrors(allocateCompressible((void **)&z, size, false));
 
     launchSaxpy(a, x, y, z, n, init_val, compressibleZbuf);
 
-    HIPCHECK(freeCompressible(x, size, false));
-    HIPCHECK(freeCompressible(y, size, false));
-    HIPCHECK(freeCompressible(z, size, false));
-
-    printf("\nNOTE: The CUDA Samples are not meant for performance measurements. "
-      "Results may vary when GPU Boost is enabled.\n");
-    return EXIT_SUCCESS;
-}ompressible(z, size, false));
+    checkCudaErrors(freeCompressible(x, size, false));
+    checkCudaErrors(freeCompressible(y, size, false));
+    checkCudaErrors(freeCompressible(z, size, false));
 
     printf("\nNOTE: The CUDA Samples are not meant for performance measurements. "
       "Results may vary when GPU Boost is enabled.\n");

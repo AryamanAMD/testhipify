@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,8 +29,6 @@
 // System includes
 #include <assert.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 #include <climits>
 #include <vector>
@@ -38,8 +37,8 @@
 #include <hip/hip_runtime.h>
 
 // helper functions and utilities to work with CUDA
-#include <helper_cuda.h>
-#include <helper_functions.h>
+#include "helper_cuda_hipified.h"
+#include "helper_functions.h"
 
 #define THREADS_PER_BLOCK 512
 #define ALLOWABLE_VARIANCE 1.e-6f
@@ -308,7 +307,7 @@ void doNegateSquaresInStream(hipStream_t stream1, negSquareArrays *hostArrays,
   HIPCHECK(hipEventCreate(&negateKernelCompleteEvent));
   HIPCHECK(hipEventCreate(&squareFreeEvent));
 
-  // Virtual addresses are assigned synchronously when cudaMallocAsync is
+  // Virtual addresses are assigned synchronously when hipMallocAsync is
   // called, thus there is no performace benefit gained by separating the
   // allocations into two streams.
   HIPCHECK(hipMallocAsync(&d_input, hostArrays->bytes, stream1));
@@ -466,3 +465,104 @@ int main(int argc, char **argv) {
   } else {
     printf("Setting up sample.\n");
   }
+
+  prepareHostArrays(&hostArrays);
+  prepareRefArrays(&hostArrays, &deviceRefArrays, &foundValidationFailure);
+  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+  printf("Setup complete.\n\n");
+
+  printf("Running negateSquares in a stream.\n");
+  doNegateSquaresInStream(stream, &hostArrays);
+  HIPCHECK(hipStreamSynchronize(stream));
+  printf("Validating negateSquares in a stream...\n");
+  validateHost(&hostArrays, foundValidationFailure);
+  checkValidationFailure(foundValidationFailure);
+  resetOutputArrays(&hostArrays);
+
+  printf("Running negateSquares in a stream-captured graph.\n");
+  createNegateSquaresGraphWithStreamCapture(&graphExec, &hostArrays);
+  HIPCHECK(hipGraphLaunch(graphExec, stream));
+  HIPCHECK(hipStreamSynchronize(stream));
+  printf("Validating negateSquares in a stream-captured graph...\n");
+  validateHost(&hostArrays, foundValidationFailure);
+  checkValidationFailure(foundValidationFailure);
+  resetOutputArrays(&hostArrays);
+
+  printf("Running negateSquares in an explicitly constructed graph.\n");
+  createNegateSquaresGraphExplicitly(&graphExec, device, &hostArrays);
+  HIPCHECK(hipGraphLaunch(graphExec, stream));
+  HIPCHECK(hipStreamSynchronize(stream));
+  printf("Validating negateSquares in an explicitly constructed graph...\n");
+  validateHost(&hostArrays, foundValidationFailure);
+  checkValidationFailure(foundValidationFailure);
+  resetOutputArrays(&hostArrays);
+
+  // Each of the three examples below free d_negSquare outside the graph. As
+  // demonstrated by validateGPU, d_negSquare can be accessed by outside the
+  // graph before d_negSquare is freed.
+
+  printf("Running negateSquares with d_negSquare freed outside the stream.\n");
+  createNegateSquaresGraphExplicitly(&graphExec, device, &hostArrays,
+                                     &d_negSquare);
+  HIPCHECK(hipGraphLaunch(graphExec, stream));
+  validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
+      d_negSquare, deviceRefArrays, foundValidationFailure);
+  // Since hipFree is synchronous, the stream must synchronize before freeing
+  // d_negSquare to ensure d_negSquare no longer being accessed.
+  HIPCHECK(hipStreamSynchronize(stream));
+  HIPCHECK(hipFree(d_negSquare));
+  printf(
+      "Validating negateSquares with d_negSquare freed outside the "
+      "stream...\n");
+  validateHost(&hostArrays, foundValidationFailure);
+  checkValidationFailure(foundValidationFailure);
+  resetOutputArrays(&hostArrays);
+
+  printf("Running negateSquares with d_negSquare freed outside the graph.\n");
+  HIPCHECK(hipGraphLaunch(graphExec, stream));
+  validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
+      d_negSquare, deviceRefArrays, foundValidationFailure);
+  HIPCHECK(hipFreeAsync(d_negSquare, stream));
+  HIPCHECK(hipStreamSynchronize(stream));
+  printf(
+      "Validating negateSquares with d_negSquare freed outside the graph...\n");
+  checkValidationFailure(foundValidationFailure);
+  resetOutputArrays(&hostArrays);
+
+  printf(
+      "Running negateSquares with d_negSquare freed in a different graph.\n");
+  createFreeGraph(&graphExecFreeC, d_negSquare);
+  HIPCHECK(hipGraphLaunch(graphExec, stream));
+  validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
+      d_negSquare, deviceRefArrays, foundValidationFailure);
+  HIPCHECK(hipGraphLaunch(graphExecFreeC, stream));
+  HIPCHECK(hipStreamSynchronize(stream));
+  printf(
+      "Validating negateSquares with d_negSquare freed in a different "
+      "graph...\n");
+  checkValidationFailure(foundValidationFailure);
+
+  printf("Cleaning up sample.\n");
+  HIPCHECK(hipGraphExecDestroy(graphExec));
+  HIPCHECK(hipGraphExecDestroy(graphExecFreeC));
+  HIPCHECK(hipStreamDestroy(stream));
+  HIPCHECK(hipFree(foundValidationFailure));
+  HIPCHECK(hipFree(deviceRefArrays.negSquare));
+  free(hostArrays.input);
+  free(hostArrays.square);
+  free(hostArrays.negSquare);
+  printf("Cleanup complete. Exiting sample.\n");
+}aph...\n");
+  checkValidationFailure(foundValidationFailure);
+
+  printf("Cleaning up sample.\n");
+  checkCudaErrors(hipGraphExecDestroy(graphExec));
+  checkCudaErrors(hipGraphExecDestroy(graphExecFreeC));
+  checkCudaErrors(hipStreamDestroy(stream));
+  checkCudaErrors(hipFree(foundValidationFailure));
+  checkCudaErrors(hipFree(deviceRefArrays.negSquare));
+  free(hostArrays.input);
+  free(hostArrays.square);
+  free(hostArrays.negSquare);
+  printf("Cleanup complete. Exiting sample.\n");
+}
