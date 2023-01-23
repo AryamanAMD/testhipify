@@ -95,7 +95,7 @@ def setup():
 		os.system('echo |cpp -fopenmp -dM |grep -i open')
 		print('Enter number of threads ')
 		x=int(input())
-		os.system('export OMP_NUM_THREADS='+x)
+		os.system('export OMP_NUM_THREADS='+str(x))
 		print("Always add -fopenmp flag on compilation.")
 	print("Enter 'mpi' to install OpenMPI, or any other button to continue.")
 	user_input=input()
