@@ -3,6 +3,7 @@ import argparse
 import fileinput
 import os.path
 from sys import platform
+cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
 def getListOfFiles(dirName):
     listOfFile=os.listdir(dirName)
     allFiles=list()
@@ -74,7 +75,7 @@ def check_for_word(file_name,word):
 
 def setup():
 	global cuda_path
-	cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
+	#cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
 	print ('Confirm the following CUDA Installation path for compilation:')
 	print('CUDA Path:'+cuda_path)
 	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
@@ -272,6 +273,7 @@ def apply_patches():
 
 	
 def compilation_1(x):
+	global cuda_path
 	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
@@ -305,6 +307,7 @@ def compilation_1(x):
 	
 
 def compilation_2(x):
+	global cuda_path
 	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
