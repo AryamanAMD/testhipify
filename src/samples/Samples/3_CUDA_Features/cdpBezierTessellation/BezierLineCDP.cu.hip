@@ -1,4 +1,4 @@
-
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,8 +25,9 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "hip/hip_runtime.h"
+
 #include <stdio.h>
+#include <hip/hip_runtime_api.h>
 #include <helper_cuda.h>
 #include <string.h>
 #include "HIPCHECK.h"
@@ -97,7 +98,8 @@ __global__ void computeBezierLinesCDP(BezierLine *bLines, int nLines) {
 
     if (bLines[lidx].vertexPos == NULL) {
       bLines[lidx].nVertices = nTessPoints;
-      hipMalloc(&bLines[lidx].vertexPos, nTessPoints * sizeof(float2));
+      hipMalloc((void **)&bLines[lidx].vertexPos,
+                 nTessPoints * sizeof(float2));
     }
 
     computeBezierLinePositions<<<ceilf((float)bLines[lidx].nVertices / 32.0f),

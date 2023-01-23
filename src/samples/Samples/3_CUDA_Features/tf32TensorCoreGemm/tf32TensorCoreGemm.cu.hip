@@ -65,9 +65,9 @@
 #include <cuda/pipeline>
 
 // helper functions and utilities to work with CUDA
-#include "helper_functions.h"
-#include "helper_cuda_hipified.h"
-
+#include <helper_functions.h>
+#include <helper_cuda.h>
+#include "HIPCHECK.h"
 // Externally configurable parameters.
 
 #ifndef CPU_DEBUG
@@ -833,13 +833,6 @@ int main(int argc, char **argv)
     HIPCHECK(hipFree((void*)B));
     HIPCHECK(hipFree((void*)C));
     HIPCHECK(hipFree((void*)D));
-
-    return 0;
-}
-ors(hipFree((void*)A));
-    checkCudaErrors(hipFree((void*)B));
-    checkCudaErrors(hipFree((void*)C));
-    checkCudaErrors(hipFree((void*)D));
 
     return 0;
 }

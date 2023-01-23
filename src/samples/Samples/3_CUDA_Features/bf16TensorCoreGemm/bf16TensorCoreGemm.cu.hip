@@ -64,7 +64,7 @@
 #include <cuda_bf16.h>
 #include <mma.h>
 #include <cuda/pipeline>
-
+#include "HIPCHECK.h"
 // helper functions and utilities to work with CUDA
 #include "helper_functions.h"
 #include "helper_cuda_hipified.h"
@@ -745,11 +745,11 @@ int main(int argc, char **argv)
         {
             case bf16mma_shmem_gemm_async_copy :
             default:
-                HIPCHECK(hipFuncSetAttribute(compute_bf16gemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                HIPCHECK(hipFuncSetAttribute((const void *)compute_bf16gemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
                 checkKernelErrors((compute_bf16gemm_async_copy<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
                 break;
             case bf16mma_shmem_gemm :
-                HIPCHECK(hipFuncSetAttribute(compute_bf16gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                HIPCHECK(hipFuncSetAttribute((const void *)compute_bf16gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
                 checkKernelErrors((compute_bf16gemm<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
                 break;
         }
@@ -816,10 +816,4 @@ int main(int argc, char **argv)
 
     return 0;
 }
-ors(hipFree((void*)A));
-    checkCudaErrors(hipFree((void*)B));
-    checkCudaErrors(hipFree((void*)C));
-    checkCudaErrors(hipFree((void*)D));
 
-    return 0;
-}

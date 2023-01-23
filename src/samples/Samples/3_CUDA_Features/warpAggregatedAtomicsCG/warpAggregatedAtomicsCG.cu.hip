@@ -28,8 +28,8 @@
 
 #include <stdio.h>
 // includes, project
-#include "helper_cuda_hipified.h"
-#include "helper_functions.h"
+#include <helper_cuda.h>
+#include <helper_functions.h>
 
 #include <hip/hip_runtime.h>
 
@@ -118,17 +118,17 @@ int mapIndicesToBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
     h_bucketCounters[i] = i*NUM_ELEMS;
   }
 
-  HIPCHECK(hipMalloc(&d_indicesBuckets, sizeof(int) * NUM_ELEMS * numOfBuckets));
-  HIPCHECK(hipMalloc(&d_bucketCounters, sizeof(int) * numOfBuckets));
+  checkCudaErrors(hipMalloc(&d_indicesBuckets, sizeof(int) * NUM_ELEMS * numOfBuckets));
+  checkCudaErrors(hipMalloc(&d_bucketCounters, sizeof(int) * numOfBuckets));
 
-  HIPCHECK(hipMemcpy(d_bucketCounters, h_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyHostToDevice));
+  checkCudaErrors(hipMemcpy(d_bucketCounters, h_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyHostToDevice));
 
   dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
   dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK), 1, 1);
 
   mapToBuckets<<<dimGrid, dimBlock>>>(d_srcArr, d_indicesBuckets, d_bucketCounters, NUM_ELEMS, numOfBuckets);
 
-  HIPCHECK(hipMemcpy(h_bucketCounters, d_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyDeviceToHost));
+  checkCudaErrors(hipMemcpy(h_bucketCounters, d_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyDeviceToHost));
 
   for (int i=0; i < NUM_ELEMS; i++)
   {
@@ -204,18 +204,18 @@ int calculateMaxInBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
     h_valueInBuckets[i] = rand();
   }
 
-  HIPCHECK(hipMalloc(&d_valueInBuckets, sizeof(int) * NUM_ELEMS));
-  HIPCHECK(hipMalloc(&d_bucketsMax, sizeof(int) * numOfBuckets));
+  checkCudaErrors(hipMalloc(&d_valueInBuckets, sizeof(int) * NUM_ELEMS));
+  checkCudaErrors(hipMalloc(&d_bucketsMax, sizeof(int) * numOfBuckets));
 
-  HIPCHECK(hipMemset(d_bucketsMax, 0, sizeof(int) * numOfBuckets));
-  HIPCHECK(hipMemcpy(d_valueInBuckets, h_valueInBuckets, sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
+  checkCudaErrors(hipMemset(d_bucketsMax, 0, sizeof(int) * numOfBuckets));
+  checkCudaErrors(hipMemcpy(d_valueInBuckets, h_valueInBuckets, sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
 
   dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
   dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK), 1, 1);
 
   calculateMaxInEachBuckets<<<dimGrid, dimBlock>>>(d_srcArr, d_valueInBuckets, d_bucketsMax, NUM_ELEMS, numOfBuckets);
 
-  HIPCHECK(hipMemcpy(h_bucketsMax, d_bucketsMax, sizeof(int) * numOfBuckets, hipMemcpyDeviceToHost));
+  checkCudaErrors(hipMemcpy(h_bucketsMax, d_bucketsMax, sizeof(int) * numOfBuckets, hipMemcpyDeviceToHost));
 
   for (int i = 0; i < NUM_ELEMS; i++)
   {
@@ -244,8 +244,8 @@ int calculateMaxInBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
   delete[] h_valueInBuckets;
   delete[] cpuBucketsMax;
   delete[] h_bucketsMax;
-  HIPCHECK(hipFree(d_valueInBuckets));
-  HIPCHECK(hipFree(d_bucketsMax));
+  checkCudaErrors(hipFree(d_valueInBuckets));
+  checkCudaErrors(hipFree(d_bucketsMax));
 
   if (!allMatch && finalElems != NUM_ELEMS)
   {
@@ -270,13 +270,13 @@ int main(int argc, char **argv) {
 
   int devId = findCudaDevice(argc, (const char **)argv);
 
-  HIPCHECK(hipMalloc(&d_data_to_filter, sizeof(int) * NUM_ELEMS));
-  HIPCHECK(hipMalloc(&d_filtered_data, sizeof(int) * NUM_ELEMS));
-  HIPCHECK(hipMalloc(&d_nres, sizeof(int)));
+  checkCudaErrors(hipMalloc(&d_data_to_filter, sizeof(int) * NUM_ELEMS));
+  checkCudaErrors(hipMalloc(&d_filtered_data, sizeof(int) * NUM_ELEMS));
+  checkCudaErrors(hipMalloc(&d_nres, sizeof(int)));
 
-  HIPCHECK(hipMemcpy(d_data_to_filter, data_to_filter,
+  checkCudaErrors(hipMemcpy(d_data_to_filter, data_to_filter,
                              sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
-  HIPCHECK(hipMemset(d_nres, 0, sizeof(int)));
+  checkCudaErrors(hipMemset(d_nres, 0, sizeof(int)));
 
   dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
   dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK) + 1, 1, 1);
@@ -284,12 +284,12 @@ int main(int argc, char **argv) {
   filter_arr<<<dimGrid, dimBlock>>>(d_filtered_data, d_nres, d_data_to_filter,
                                     NUM_ELEMS);
 
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(&nres, d_nres, sizeof(int), hipMemcpyDeviceToHost));
 
   filtered_data = reinterpret_cast<int *>(malloc(sizeof(int) * nres));
 
-  HIPCHECK(hipMemcpy(filtered_data, d_filtered_data, sizeof(int) * nres,
+  checkCudaErrors(hipMemcpy(filtered_data, d_filtered_data, sizeof(int) * nres,
                              hipMemcpyDeviceToHost));
 
   int *host_filtered_data =
@@ -304,7 +304,7 @@ int main(int argc, char **argv) {
   }
 
   int major = 0;
-  HIPCHECK(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, devId));
+  checkCudaErrors(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, devId));
 
   int mapIndicesToBucketsStatus = EXIT_SUCCESS;
   int calculateMaxInBucketsStatus = EXIT_SUCCESS;
@@ -319,14 +319,8 @@ int main(int argc, char **argv) {
          (host_flt_count == nres) && (mapIndicesToBucketsStatus == EXIT_SUCCESS) && 
          (calculateMaxInBucketsStatus == EXIT_SUCCESS) ? "PASSED" : "FAILED");
 
-  HIPCHECK(hipFree(d_data_to_filter));
-  HIPCHECK(hipFree(d_filtered_data));
-  HIPCHECK(hipFree(d_nres));
-  free(data_to_filter);
-  free(filtered_data);
-  free(host_filtered_data);
-}
-eckCudaErrors(hipFree(d_filtered_data));
+  checkCudaErrors(hipFree(d_data_to_filter));
+  checkCudaErrors(hipFree(d_filtered_data));
   checkCudaErrors(hipFree(d_nres));
   free(data_to_filter);
   free(filtered_data);

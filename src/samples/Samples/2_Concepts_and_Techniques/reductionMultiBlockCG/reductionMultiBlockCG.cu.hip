@@ -61,9 +61,9 @@
 #include <math.h>
 
 // includes, project
-#include "helper_functions.h"
-#include "helper_cuda_hipified.h"
-//#include <hipify/__clang_cuda_intrinsics.h>
+#include <helper_functions.h>
+#include <helper_cuda.h>
+
 #include <hip/hip_runtime.h>
 
 const char *sSDKsample = "reductionMultiBlockCG";
