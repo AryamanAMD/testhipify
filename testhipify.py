@@ -97,7 +97,7 @@ def setup():
 		x=int(input())
 		os.system('export OMP_NUM_THREADS='+str(x))
 		print("Always add -fopenmp flag on compilation.")
-	print("Enter 'mpi' to install OpenMPI, or any other button to continue.")
+	print("Enter 'mpi' to install OpenMPI, or any other button to continue.It's better to install latest version from this link manually:https://sites.google.com/site/rangsiman1993/comp-env/program-install/install-openmpi")
 	user_input=input()
 	if user_input.lower()=='mpi':
 		os.system('wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.3.tar.gz')
