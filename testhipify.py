@@ -71,7 +71,17 @@ def check_for_word(file_name,word):
 			return 0
 		 
 
-         	
+
+def setup():
+	global cuda_path
+	cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
+	print ('Confirm the following CUDA Installation path for compilation:')
+	print('CUDA Path:'+cuda_path)
+	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
+	user_input=input()
+	if user_input == 'CUDA':
+		print('Enter path of your CUDA installation')
+		cuda_path=input()         	
 
 
 
@@ -458,23 +468,7 @@ def rem(z):
 	#os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
 	os.remove('samples_to_be_ignored.txt')
 		
-global cuda_path 
-def setup():
-	cuda_path='/usr/local/cuda-12.0/targets/x86_64-linux/include'
-	print ('Confirm the following CUDA Installation path for compilation:')
-	print('CUDA Path:'+cuda_path)
-	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
-	user_input=input()
-	if user_input == 'CUDA':
-		print('Enter path of your CUDA installation')
-		cuda_path=input()
 
-    
-
-    
-
-
-    
       
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
