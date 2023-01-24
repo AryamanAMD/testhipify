@@ -103,6 +103,7 @@ def setup():
 		os.system('wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.3.tar.gz')
 		os.system('tar -xzvf openmpi-3.1.3.tar.gz')
 		os.system('cd openmpi-3.1.3')
+		os.system('pwd')
 		os.system('./configure --prefix=/usr/local/')
 		os.system('./configure --prefix=/usr/local/openmpi-3.1.3/')
 		os.system('sudo make all install')
@@ -178,13 +179,7 @@ def check(myStr):
         return 0
     else:
         return 1
-
-
-
-
-
-	
-    
+  
 def ftale(x):
 	generate(x)
 	compilation_1(x)
@@ -404,13 +399,6 @@ def runsample(x):
 	#os.system(command)
 	#command2='hipcc -I /long_pathname_so_that_rpms_can_package_the_debug_info/data/driver/testhipify/src/samples/Common asyncAPI.cu.hip -o asynAPI.out'
     
-	
-					
-		
-				
-							
-				
-	
 
 def fall(y):
 	y=y.replace('"', '')
@@ -422,8 +410,6 @@ def fall(y):
 					print("Ignoring this sample "+elem)
 				else:
 					ftale(elem)
-
-			
 
 def rem(z):
 	print("This script automates sample exclusion.Please backup any paths provided by you to avoid loss or overwriting.")
@@ -499,9 +485,7 @@ def rem(z):
 	
 	#os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
 	os.remove('samples_to_be_ignored.txt')
-		
-
-      
+		    
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
 parser.add_argument("-b", "--generate", help='Generate .hip files')
@@ -517,10 +501,7 @@ parser.add_argument("-l", "--parenthesis_check_all", help='Remove all last parts
 parser.add_argument("-p", "--patch", help='Apply all patches in src/patches',action='store_true')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
-parser.add_argument("-s", "--setup", help='Configure CUDA Installation',action='store_true')
-
-
-
+parser.add_argument("-s", "--setup", help='Configure dependencies.',action='store_true')
 
 args=parser.parse_args()
 if args.tale:
