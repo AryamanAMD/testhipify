@@ -105,9 +105,12 @@ def setup():
 		print('tar -xzvf openmpi-3.1.3.tar.gz')
 		os.system('tar -xzvf openmpi-3.1.3.tar.gz')
 		print('cd ~')
-		os.chdir(os.path.expanduser("~"))
+		os.chdir(os.path.expanduser("~/openmpi-3.1.3"))
+		"""
 		print('cd openmpi-3.1.3')
+		os.system('cd openmpi-3.1.3')
 		os.chdir('openmpi-3.1.3')
+		"""
 		print('pwd')
 		os.system('pwd')
 		print('./configure --prefix=/usr/local/')
