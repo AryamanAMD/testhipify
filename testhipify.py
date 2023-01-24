@@ -100,12 +100,13 @@ def setup():
 	print("Enter 'mpi' to install OpenMPI, or any other button to continue.It's better to install latest version from this link manually:https://sites.google.com/site/rangsiman1993/comp-env/program-install/install-openmpi")
 	user_input=input()
 	if user_input.lower()=='mpi':
+		os.chdir(os.path.expanduser("~/openmpi-3.1.3"))
 		print('wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.3.tar.gz')
 		os.system('wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.3.tar.gz')
 		print('tar -xzvf openmpi-3.1.3.tar.gz')
 		os.system('tar -xzvf openmpi-3.1.3.tar.gz')
-		print('cd ~')
-		os.chdir(os.path.expanduser("~/openmpi-3.1.3"))
+		os.system('mv -r ')
+		#print('cd ~')
 		"""
 		print('cd openmpi-3.1.3')
 		os.system('cd openmpi-3.1.3')
