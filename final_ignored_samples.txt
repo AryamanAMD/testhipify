@@ -3,7 +3,7 @@ src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu
 src/samples/Samples/0_Introduction/matrixMulDrv/matrixMul_kernel.cu
 src/samples/Samples/0_Introduction/matrixMul_nvrtc/matrixMul_kernel.cu
 src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu
-src/samples/Samples/2_Concepts_and_Techniques/particles/particleSystem_cuda.cu
+src/samples/Samples/0_Introduction/vectorAddMMAP/vectorAdd_kernel.cu
 src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu
 src/samples/Samples/0_Introduction/simpleAssert_nvrtc/simpleAssert_kernel.cu
 src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu
@@ -19,7 +19,6 @@ src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTexture_kernel.cu
 src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu
 src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu
 src/samples/Samples/0_Introduction/vectorAddDrv/vectorAdd_kernel.cu
-src/samples/Samples/0_Introduction/vectorAddMMAP/vectorAdd_kernel.cu
 src/samples/Samples/0_Introduction/vectorAdd_nvrtc/vectorAdd_kernel.cu
 src/samples/Samples/0_Introduction/vectorAdd_nvrtc/vectorAdd_nvrtc.cu
 src/samples/Samples/2_Concepts_and_Techniques/EGLStream_CUDA_CrossGPU/kernel.cu
