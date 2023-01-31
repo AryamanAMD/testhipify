@@ -338,7 +338,7 @@ def compilation_1(x):
 			
 		
 
-		cpp = [p+'/'+x for x in cpp]
+		cpp = [p+'/'+y for y in cpp]
 		command='hipcc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 		print(command)
 
@@ -372,7 +372,7 @@ def compilation_2(x):
 			
 		
 
-		cpp = [p+'/'+x for x in cpp]
+		cpp = [p+'/'+y for y in cpp]
 		command='hipcc -use-staticlib -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 		print(command)
 
