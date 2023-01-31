@@ -68,8 +68,7 @@ def check_for_word(file_name,word):
 	for line in linelist:
 		if str(word) in line:
 			return 1
-		else:
-			return 0
+	return 0
 		 
 
 

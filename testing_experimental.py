@@ -81,7 +81,7 @@ def runsample(x):
 	print(command)
 	os.system(command)	
 
-file1 = open('ATTENTION REQD.txt', 'r')
+file1 = open('run_samples_here.txt', 'r')
 Lines = file1.readlines()
 for line in Lines:
 	line = line.strip('\n')
