@@ -339,7 +339,7 @@ def compilation_1(x):
 		
 
 		cpp = [p+'/'+x for x in cpp]
-		command='hipcc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+		command='hipcc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'/'+os.path.basename(os.path.dirname(x))+'.out'
 		print(command)
 
 		os.system(command)	
