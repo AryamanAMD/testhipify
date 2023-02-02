@@ -96,8 +96,9 @@ def setup():
 	if user_input.lower() == 'samples':
 		os.system('cp -r src-original/ src/')
 		os.system('rm -rf src/samples/*')
-		os.chdir('src/samples')
-		os.system('git clone https://github.com/NVIDIA/cuda-samples.git')		
+		os.chdir('src/')
+		os.system('git clone https://github.com/NVIDIA/cuda-samples.git')
+		os.system('mv cuda-samples samples')		
 	print("Enter 'omp' to install OpenMP in your system, or any other button to continue.")
 	user_input=input()
 	if user_input.lower() == 'omp':
