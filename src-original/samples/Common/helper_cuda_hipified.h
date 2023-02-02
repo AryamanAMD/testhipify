@@ -32,7 +32,7 @@
 #define COMMON_HELPER_CUDA_H_
 
 #pragma once
-
+#include <hip/hip_runtime_api.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>

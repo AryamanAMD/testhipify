@@ -107,7 +107,7 @@ def setup():
 		patch_gen.generate_all('src/samples/Samples')
 		patch_gen2.generate_all('src/samples/Samples')
 		patch_gen3.generate_all('src/samples/Samples')
-		os.system('cp -r src-original/samples/Common/ src/samples/Common/')	
+		os.system('cp -r src-original/samples/Common/ src/samples/')	
 	print("Enter 'omp' to install OpenMP in your system, or any other button to continue.")
 	user_input=input()
 	if user_input.lower() == 'omp':
