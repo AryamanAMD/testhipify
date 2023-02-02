@@ -1,0 +1,4421 @@
+diff --git a/src/samples/Common/helper_cuda_hipified.h b/src/samples/Common/helper_cuda_hipified.h
+index c2a8cd1..f9401c1 100644
+--- a/src/samples/Common/helper_cuda_hipified.h
++++ b/src/samples/Common/helper_cuda_hipified.h
+@@ -39,7 +39,6 @@
+ #include <string.h>
+ 
+ #include <helper_string.h>
+-
+ #ifndef EXIT_WAIVED
+ #define EXIT_WAIVED 2
+ #endif
+@@ -60,7 +59,7 @@ static const char *_cudaGetErrorEnum(hipError_t error) {
+ 
+ #ifdef CUDA_DRIVER_API
+ // CUDA Driver API errors
+-static const char *_cudaGetErrorEnum(hipError_t error) {
++static const char *_cudaGetErrorEnum1(hipError_t error) {
+   static char unknown[] = "<unknown>";
+   const char *ret = NULL;
+   hipGetErrorName(error, &ret);
+diff --git a/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.out b/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.out
+index 58a4dd0..3be2eea 100755
+Binary files a/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.out and b/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu.hip
+index e69de29..2cd9b07 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu.hip
+@@ -0,0 +1,441 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * This sample demonstrates Inter Process Communication
++ * using one process per GPU for computation.
++ */
++
++#include <stdio.h>
++#include <stdlib.h>
++#include <vector>
++#include <hip/hip_runtime.h>
++#define CUDA_DRIVER_API 1
++#include "helper_cuda_hipified.h"
++#include "helper_cuda_drvapi.h"
++#include "helper_multiprocess.h"
++#include "HIPCHECK.h"
++static const char shmName[] = "streamOrderedAllocationIPCshm";
++static const char ipcName[] = "streamOrderedAllocationIPC_pipe";
++// For direct NVLINK and PCI-E peers, at max 8 simultaneous peers are allowed
++// For NVSWITCH connected peers like DGX-2, simultaneous peers are not limited
++// in the same way.
++#define MAX_DEVICES (32)
++#define DATA_SIZE (64ULL << 20ULL)  // 64MB
++
++#if defined(__linux__)
++#define cpu_atomic_add32(a, x) __sync_add_and_fetch(a, x)
++#elif defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
++#define cpu_atomic_add32(a, x) InterlockedAdd((volatile LONG *)a, x)
++#else
++#error Unsupported system
++#endif
++
++typedef struct shmStruct_st {
++  size_t nprocesses;
++  int barrier;
++  int sense;
++  int devices[MAX_DEVICES];
++  hipMemPoolPtrExportData exportPtrData[MAX_DEVICES];
++} shmStruct;
++
++__global__ void simpleKernel(char *ptr, int sz, char val) {
++  int idx = blockIdx.x * blockDim.x + threadIdx.x;
++  for (; idx < sz; idx += (gridDim.x * blockDim.x)) {
++    ptr[idx] = val;
++  }
++}
++
++static void barrierWait(volatile int *barrier, volatile int *sense,
++                        unsigned int n) {
++  int count;
++
++  // Check-in
++  count = cpu_atomic_add32(barrier, 1);
++  if (count == n)  // Last one in
++    *sense = 1;
++  while (!*sense)
++    ;
++
++  // Check-out
++  count = cpu_atomic_add32(barrier, -1);
++  if (count == 0)  // Last one out
++    *sense = 0;
++  while (*sense)
++    ;
++}
++
++static void childProcess(int id) {
++  volatile shmStruct *shm = NULL;
++  hipStream_t stream;
++  sharedMemoryInfo info;
++  size_t procCount, i;
++  int blocks = 0;
++  int threads = 128;
++  hipDeviceProp_t prop;
++  std::vector<void *> ptrs;
++
++  std::vector<char> verification_buffer(DATA_SIZE);
++
++  ipcHandle *ipcChildHandle = NULL;
++  checkIpcErrors(ipcOpenSocket(ipcChildHandle));
++
++  if (sharedMemoryOpen(shmName, sizeof(shmStruct), &info) != 0) {
++    printf("Failed to create shared memory slab\n");
++    exit(EXIT_FAILURE);
++  }
++  shm = (volatile shmStruct *)info.addr;
++  procCount = shm->nprocesses;
++
++  barrierWait(&shm->barrier, &shm->sense, (unsigned int)(procCount + 1));
++
++  // Receive all allocation handles shared by Parent.
++  std::vector<ShareableHandle> shHandle(shm->nprocesses);
++  checkIpcErrors(ipcRecvShareableHandles(ipcChildHandle, shHandle));
++
++  HIPCHECK(hipSetDevice(shm->devices[id]));
++  HIPCHECK(hipGetDeviceProperties(&prop, shm->devices[id]));
++  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
++  HIPCHECK(hipOccupancyMaxActiveBlocksPerMultiprocessor(
++      &blocks, simpleKernel, threads, 0));
++  blocks *= prop.multiProcessorCount;
++
++  std::vector<hipMemPool_t> pools(shm->nprocesses);
++
++  hipMemAllocationHandleType handleType = hipMemHandleTypePosixFileDescriptor;
++
++  // Import mem pools from all the devices created in the master
++  // process using shareable handles received via socket
++  // and import the pointer to the allocated buffer using
++  // exportData filled in shared memory by the master process.
++  for (i = 0; i < procCount; i++) {
++    HIPCHECK(hipMemPoolImportFromShareableHandle(
++        &pools[i], (void *)shHandle[i], handleType, 0));
++
++    hipMemAccessFlags accessFlags;
++    hipMemLocation location;
++    location.type = hipMemLocationTypeDevice;
++    location.id = shm->devices[id];
++    HIPCHECK(hipMemPoolGetAccess(&accessFlags, pools[i], &location));
++    if (accessFlags != hipMemAccessFlagsProtReadWrite) {
++      hipMemAccessDesc desc;
++      memset(&desc, 0, sizeof(hipMemAccessDesc));
++      desc.location.type = hipMemLocationTypeDevice;
++      desc.location.id = shm->devices[id];
++      desc.flags = hipMemAccessFlagsProtReadWrite;
++      HIPCHECK(hipMemPoolSetAccess(pools[i], &desc, 1));
++    }
++
++    // Import the allocation from each memory pool by iterating over exportData
++    // until import is success.
++    for (int j = 0; j < procCount; j++) {
++      void *ptr = NULL;
++      // Import the allocation using the opaque export data retrieved through
++      // the shared memory".
++      hipError_t ret = hipMemPoolImportPointer(
++          &ptr, pools[i], (hipMemPoolPtrExportData *)&shm->exportPtrData[j]);
++
++      if (ret == hipSuccess) {
++        // Pointer import is successful hence add it to the ptrs bag.
++        ptrs.push_back(ptr);
++        break;
++      } else {
++        // Reset failure error received from hipMemPoolImportPointer
++        // for further try.
++        hipGetLastError();
++      }
++    }
++    // Since we have imported allocations shared by the parent with us, we can
++    // close this ShareableHandle.
++    checkIpcErrors(ipcCloseShareableHandle(shHandle[i]));
++  }
++
++  // Since we have imported allocations shared by the parent with us, we can
++  // close the socket.
++  checkIpcErrors(ipcCloseSocket(ipcChildHandle));
++
++  // At each iteration of the loop, each sibling process will push work on
++  // their respective devices accessing the next peer mapped buffer allocated
++  // by the master process (these can come from other sibling processes as
++  // well). To coordinate each process' access, we force the stream to wait for
++  // the work already accessing this buffer.
++  for (i = 0; i < procCount; i++) {
++    size_t bufferId = (i + id) % procCount;
++
++    // Push a simple kernel on it
++    simpleKernel<<<blocks, threads, 0, stream>>>((char *)ptrs[bufferId],
++                                                 DATA_SIZE, id);
++    HIPCHECK(hipGetLastError());
++    HIPCHECK(hipStreamSynchronize(stream));
++
++    // Wait for all my sibling processes to push this stage of their work
++    // before proceeding to the next. This prevents siblings from racing
++    // ahead and clobbering the recorded event or waiting on the wrong
++    // recorded event.
++    barrierWait(&shm->barrier, &shm->sense, (unsigned int)procCount);
++    if (id == 0) {
++      printf("Step %lld done\n", (unsigned long long)i);
++    }
++  }
++
++  // Now wait for my buffer to be ready so I can copy it locally and verify it
++  HIPCHECK(hipMemcpyAsync(&verification_buffer[0], ptrs[id], DATA_SIZE,
++                                  hipMemcpyDeviceToHost, stream));
++
++  // And wait for all the queued up work to complete
++  HIPCHECK(hipStreamSynchronize(stream));
++
++  printf("Process %d: verifying...\n", id);
++
++  // The contents should have the id of the sibling just after me
++  char compareId = (char)((id + 1) % procCount);
++  for (unsigned long long j = 0; j < DATA_SIZE; j++) {
++    if (verification_buffer[j] != compareId) {
++      printf("Process %d: Verification mismatch at %lld: %d != %d\n", id, j,
++             (int)verification_buffer[j], (int)compareId);
++    }
++  }
++
++  // Clean up!
++  for (i = 0; i < procCount; i++) {
++    // Free the memory before the exporter process frees it
++    HIPCHECK(hipFreeAsync(ptrs[i], stream));
++  }
++
++  // And wait for all the queued up work to complete
++  HIPCHECK(hipStreamSynchronize(stream));
++  HIPCHECK(hipStreamDestroy(stream));
++
++  printf("Process %d complete!\n", id);
++}
++
++static void parentProcess(char *app) {
++  sharedMemoryInfo info;
++  int devCount, i;
++  volatile shmStruct *shm = NULL;
++  std::vector<void *> ptrs;
++  std::vector<Process> processes;
++
++  HIPCHECK(hipGetDeviceCount(&devCount));
++  std::vector<hipDevice_t> devices(devCount);
++  for (i = 0; i < devCount; i++) {
++    hipDeviceGet(&devices[i], i);
++  }
++
++  if (sharedMemoryCreate(shmName, sizeof(*shm), &info) != 0) {
++    printf("Failed to create shared memory slab\n");
++    exit(EXIT_FAILURE);
++  }
++  shm = (volatile shmStruct *)info.addr;
++  memset((void *)shm, 0, sizeof(*shm));
++
++  // Pick all the devices that can access each other's memory for this test
++  // Keep in mind that CUDA has minimal support for fork() without a
++  // corresponding exec() in the child process, but in this case our
++  // spawnProcess will always exec, so no need to worry.
++  for (i = 0; i < devCount; i++) {
++    bool allPeers = true;
++    hipDeviceProp_t prop;
++    HIPCHECK(hipGetDeviceProperties(&prop, i));
++
++    int isMemPoolSupported = 0;
++    HIPCHECK(hipDeviceGetAttribute(&isMemPoolSupported,
++                                           hipDeviceAttributeMemoryPoolsSupported, i));
++    // CUDA IPC is only supported on devices with unified addressing
++    if (!isMemPoolSupported) {
++      printf("Device %d does not support cuda memory pools, skipping...\n", i);
++      continue;
++    }
++    int deviceSupportsIpcHandle = 0;
++#if defined(__linux__)
++    HIPCHECK(hipDeviceGetAttribute(
++        &deviceSupportsIpcHandle,
++        CU_DEVICE_ATTRIBUTE_HANDLE_TYPE_POSIX_FILE_DESCRIPTOR_SUPPORTED,
++        devices[i]));
++#else
++    hipDeviceGetAttribute(&deviceSupportsIpcHandle,
++                         CU_DEVICE_ATTRIBUTE_HANDLE_TYPE_WIN32_HANDLE_SUPPORTED,
++                         devices[i]);
++#endif
++
++    if (!deviceSupportsIpcHandle) {
++      printf("Device %d does not support CUDA IPC Handle, skipping...\n", i);
++      continue;
++    }
++    // This sample requires two processes accessing each device, so we need
++    // to ensure exclusive or prohibited mode is not set
++    if (prop.computeMode != hipComputeModeDefault) {
++      printf("Device %d is in an unsupported compute mode for this sample\n",
++             i);
++      continue;
++    }
++#if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
++    // CUDA IPC on Windows is only supported on TCC
++    if (!prop.tccDriver) {
++      printf("Device %d is not in TCC mode\n", i);
++      continue;
++    }
++#endif
++
++    for (int j = 0; j < shm->nprocesses; j++) {
++      int canAccessPeerIJ, canAccessPeerJI;
++      HIPCHECK(
++          hipDeviceCanAccessPeer(&canAccessPeerJI, shm->devices[j], i));
++      HIPCHECK(
++          hipDeviceCanAccessPeer(&canAccessPeerIJ, i, shm->devices[j]));
++      if (!canAccessPeerIJ || !canAccessPeerJI) {
++        allPeers = false;
++        break;
++      }
++    }
++    if (allPeers) {
++      // Enable peers here.  This isn't necessary for IPC, but it will
++      // setup the peers for the device.  For systems that only allow 8
++      // peers per GPU at a time, this acts to remove devices from CanAccessPeer
++      for (int j = 0; j < shm->nprocesses; j++) {
++        HIPCHECK(hipSetDevice(i));
++        HIPCHECK(hipDeviceEnablePeerAccess(shm->devices[j], 0));
++        HIPCHECK(hipSetDevice(shm->devices[j]));
++        HIPCHECK(hipDeviceEnablePeerAccess(i, 0));
++      }
++      shm->devices[shm->nprocesses++] = i;
++      if (shm->nprocesses >= MAX_DEVICES) break;
++    } else {
++      printf(
++          "Device %d is not peer capable with some other selected peers, "
++          "skipping\n",
++          i);
++    }
++  }
++
++  if (shm->nprocesses == 0) {
++    printf("No CUDA devices support IPC\n");
++    exit(EXIT_WAIVED);
++  }
++
++  std::vector<ShareableHandle> shareableHandles(shm->nprocesses);
++  std::vector<hipStream_t> streams(shm->nprocesses);
++  std::vector<hipMemPool_t> pools(shm->nprocesses);
++
++  // Now allocate memory for each process and fill the shared
++  // memory buffer with the export data and get memPool handles to communicate
++  for (i = 0; i < shm->nprocesses; i++) {
++    void *ptr = NULL;
++    HIPCHECK(hipSetDevice(shm->devices[i]));
++    HIPCHECK(
++        hipStreamCreateWithFlags(&streams[i], hipStreamNonBlocking));
++    // Allocate an explicit pool with IPC capabilities
++    hipMemPoolProps poolProps;
++    memset(&poolProps, 0, sizeof(hipMemPoolProps));
++    poolProps.allocType = hipMemAllocationTypePinned;
++    poolProps.handleTypes = hipMemHandleTypePosixFileDescriptor;
++
++    poolProps.location.type = hipMemLocationTypeDevice;
++    poolProps.location.id = shm->devices[i];
++
++    HIPCHECK(hipMemPoolCreate(&pools[i], &poolProps));
++
++    // Query the shareable handle for the pool
++    hipMemAllocationHandleType handleType =
++        hipMemHandleTypePosixFileDescriptor;
++    // Allocate memory in a stream from the pool just created
++    HIPCHECK(hipMallocAsync(&ptr, DATA_SIZE, pools[i], streams[i]));
++
++    HIPCHECK(hipMemPoolExportToShareableHandle(
++        &shareableHandles[i], pools[i], handleType, 0));
++
++    // Get the opaque ‘bag-of-bits’ representing the allocation
++    memset((void *)&shm->exportPtrData[i], 0, sizeof(hipMemPoolPtrExportData));
++    HIPCHECK(hipMemPoolExportPointer(
++        (hipMemPoolPtrExportData *)&shm->exportPtrData[i], ptr));
++    ptrs.push_back(ptr);
++  }
++
++  // Launch the child processes!
++  for (i = 0; i < shm->nprocesses; i++) {
++    char devIdx[10];
++    char *const args[] = {app, devIdx, NULL};
++    Process process;
++
++    SPRINTF(devIdx, "%d", i);
++
++    if (spawnProcess(&process, app, args)) {
++      printf("Failed to create process\n");
++      exit(EXIT_FAILURE);
++    }
++
++    processes.push_back(process);
++  }
++
++  barrierWait(&shm->barrier, &shm->sense, (unsigned int)(shm->nprocesses + 1));
++
++  ipcHandle *ipcParentHandle = NULL;
++  checkIpcErrors(ipcCreateSocket(ipcParentHandle, ipcName, processes));
++  checkIpcErrors(
++      ipcSendShareableHandles(ipcParentHandle, shareableHandles, processes));
++
++  // Close the shareable handles as they are not needed anymore.
++  for (int i = 0; i < shm->nprocesses; i++) {
++    checkIpcErrors(ipcCloseShareableHandle(shareableHandles[i]));
++  }
++  checkIpcErrors(ipcCloseSocket(ipcParentHandle));
++
++  // And wait for them to finish
++  for (i = 0; i < processes.size(); i++) {
++    if (waitProcess(&processes[i]) != EXIT_SUCCESS) {
++      printf("Process %d failed!\n", i);
++      exit(EXIT_FAILURE);
++    }
++  }
++
++  // Clean up!
++  for (i = 0; i < shm->nprocesses; i++) {
++    HIPCHECK(hipSetDevice(shm->devices[i]));
++    HIPCHECK(hipFreeAsync(ptrs[i], streams[i]));
++    HIPCHECK(hipStreamSynchronize(streams[i]));
++    HIPCHECK(hipMemPoolDestroy(pools[i]));
++  }
++
++  sharedMemoryClose(&info);
++}
++
++// Host code
++int main(int argc, char **argv) {
++#if defined(__arm__) || defined(__aarch64__) || defined(WIN32) || \
++    defined(_WIN32) || defined(WIN64) || defined(_WIN64)
++  printf("Not supported on ARM\n");
++  return EXIT_WAIVED;
++#else
++  if (argc == 1) {
++    parentProcess(argv[0]);
++  } else {
++    childProcess(atoi(argv[1]));
++  }
++  return EXIT_SUCCESS;
++#endif
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu.hip b/src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu.hip
+index e69de29..5906937 100644
+--- a/src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu.hip
+@@ -0,0 +1,743 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <thrust/random.h>
++#include <thrust/device_vector.h>
++#include <thrust/host_vector.h>
++#include <hip/hip_cooperative_groups.h>
++
++namespace cg = cooperative_groups;
++#include <helper_cuda.h>
++
++////////////////////////////////////////////////////////////////////////////////
++// A structure of 2D points (structure of arrays).
++////////////////////////////////////////////////////////////////////////////////
++class Points {
++  float *m_x;
++  float *m_y;
++
++ public:
++  // Constructor.
++  __host__ __device__ Points() : m_x(NULL), m_y(NULL) {}
++
++  // Constructor.
++  __host__ __device__ Points(float *x, float *y) : m_x(x), m_y(y) {}
++
++  // Get a point.
++  __host__ __device__ __forceinline__ float2 get_point(int idx) const {
++    return make_float2(m_x[idx], m_y[idx]);
++  }
++
++  // Set a point.
++  __host__ __device__ __forceinline__ void set_point(int idx, const float2 &p) {
++    m_x[idx] = p.x;
++    m_y[idx] = p.y;
++  }
++
++  // Set the pointers.
++  __host__ __device__ __forceinline__ void set(float *x, float *y) {
++    m_x = x;
++    m_y = y;
++  }
++};
++
++////////////////////////////////////////////////////////////////////////////////
++// A 2D bounding box
++////////////////////////////////////////////////////////////////////////////////
++class Bounding_box {
++  // Extreme points of the bounding box.
++  float2 m_p_min;
++  float2 m_p_max;
++
++ public:
++  // Constructor. Create a unit box.
++  __host__ __device__ Bounding_box() {
++    m_p_min = make_float2(0.0f, 0.0f);
++    m_p_max = make_float2(1.0f, 1.0f);
++  }
++
++  // Compute the center of the bounding-box.
++  __host__ __device__ void compute_center(float2 &center) const {
++    center.x = 0.5f * (m_p_min.x + m_p_max.x);
++    center.y = 0.5f * (m_p_min.y + m_p_max.y);
++  }
++
++  // The points of the box.
++  __host__ __device__ __forceinline__ const float2 &get_max() const {
++    return m_p_max;
++  }
++
++  __host__ __device__ __forceinline__ const float2 &get_min() const {
++    return m_p_min;
++  }
++
++  // Does a box contain a point.
++  __host__ __device__ bool contains(const float2 &p) const {
++    return p.x >= m_p_min.x && p.x < m_p_max.x && p.y >= m_p_min.y &&
++           p.y < m_p_max.y;
++  }
++
++  // Define the bounding box.
++  __host__ __device__ void set(float min_x, float min_y, float max_x,
++                               float max_y) {
++    m_p_min.x = min_x;
++    m_p_min.y = min_y;
++    m_p_max.x = max_x;
++    m_p_max.y = max_y;
++  }
++};
++
++////////////////////////////////////////////////////////////////////////////////
++// A node of a quadree.
++////////////////////////////////////////////////////////////////////////////////
++class Quadtree_node {
++  // The identifier of the node.
++  int m_id;
++  // The bounding box of the tree.
++  Bounding_box m_bounding_box;
++  // The range of points.
++  int m_begin, m_end;
++
++ public:
++  // Constructor.
++  __host__ __device__ Quadtree_node() : m_id(0), m_begin(0), m_end(0) {}
++
++  // The ID of a node at its level.
++  __host__ __device__ int id() const { return m_id; }
++
++  // The ID of a node at its level.
++  __host__ __device__ void set_id(int new_id) { m_id = new_id; }
++
++  // The bounding box.
++  __host__ __device__ __forceinline__ const Bounding_box &bounding_box() const {
++    return m_bounding_box;
++  }
++
++  // Set the bounding box.
++  __host__ __device__ __forceinline__ void set_bounding_box(float min_x,
++                                                            float min_y,
++                                                            float max_x,
++                                                            float max_y) {
++    m_bounding_box.set(min_x, min_y, max_x, max_y);
++  }
++
++  // The number of points in the tree.
++  __host__ __device__ __forceinline__ int num_points() const {
++    return m_end - m_begin;
++  }
++
++  // The range of points in the tree.
++  __host__ __device__ __forceinline__ int points_begin() const {
++    return m_begin;
++  }
++
++  __host__ __device__ __forceinline__ int points_end() const { return m_end; }
++
++  // Define the range for that node.
++  __host__ __device__ __forceinline__ void set_range(int begin, int end) {
++    m_begin = begin;
++    m_end = end;
++  }
++};
++
++////////////////////////////////////////////////////////////////////////////////
++// Algorithm parameters.
++////////////////////////////////////////////////////////////////////////////////
++struct Parameters {
++  // Choose the right set of points to use as in/out.
++  int point_selector;
++  // The number of nodes at a given level (2^k for level k).
++  int num_nodes_at_this_level;
++  // The recursion depth.
++  int depth;
++  // The max value for depth.
++  const int max_depth;
++  // The minimum number of points in a node to stop recursion.
++  const int min_points_per_node;
++
++  // Constructor set to default values.
++  __host__ __device__ Parameters(int max_depth, int min_points_per_node)
++      : point_selector(0),
++        num_nodes_at_this_level(1),
++        depth(0),
++        max_depth(max_depth),
++        min_points_per_node(min_points_per_node) {}
++
++  // Copy constructor. Changes the values for next iteration.
++  __host__ __device__ Parameters(const Parameters &params, bool)
++      : point_selector((params.point_selector + 1) % 2),
++        num_nodes_at_this_level(4 * params.num_nodes_at_this_level),
++        depth(params.depth + 1),
++        max_depth(params.max_depth),
++        min_points_per_node(params.min_points_per_node) {}
++};
++
++////////////////////////////////////////////////////////////////////////////////
++// Build a quadtree on the GPU. Use CUDA Dynamic Parallelism.
++//
++// The algorithm works as follows. The host (CPU) launches one block of
++// NUM_THREADS_PER_BLOCK threads. That block will do the following steps:
++//
++// 1- Check the number of points and its depth.
++//
++// We impose a maximum depth to the tree and a minimum number of points per
++// node. If the maximum depth is exceeded or the minimum number of points is
++// reached. The threads in the block exit.
++//
++// Before exiting, they perform a buffer swap if it is needed. Indeed, the
++// algorithm uses two buffers to permute the points and make sure they are
++// properly distributed in the quadtree. By design we want all points to be
++// in the first buffer of points at the end of the algorithm. It is the reason
++// why we may have to swap the buffer before leavin (if the points are in the
++// 2nd buffer).
++//
++// 2- Count the number of points in each child.
++//
++// If the depth is not too high and the number of points is sufficient, the
++// block has to dispatch the points into four geometrical buckets: Its
++// children. For that purpose, we compute the center of the bounding box and
++// count the number of points in each quadrant.
++//
++// The set of points is divided into sections. Each section is given to a
++// warp of threads (32 threads). Warps use __ballot and __popc intrinsics
++// to count the points. See the Programming Guide for more information about
++// those functions.
++//
++// 3- Scan the warps' results to know the "global" numbers.
++//
++// Warps work independently from each other. At the end, each warp knows the
++// number of points in its section. To know the numbers for the block, the
++// block has to run a scan/reduce at the block level. It's a traditional
++// approach. The implementation in that sample is not as optimized as what
++// could be found in fast radix sorts, for example, but it relies on the same
++// idea.
++//
++// 4- Move points.
++//
++// Now that the block knows how many points go in each of its 4 children, it
++// remains to dispatch the points. It is straightforward.
++//
++// 5- Launch new blocks.
++//
++// The block launches four new blocks: One per children. Each of the four blocks
++// will apply the same algorithm.
++////////////////////////////////////////////////////////////////////////////////
++template <int NUM_THREADS_PER_BLOCK>
++__global__ void build_quadtree_kernel(Quadtree_node *nodes, Points *points,
++                                      Parameters params) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  // The number of warps in a block.
++  const int NUM_WARPS_PER_BLOCK = NUM_THREADS_PER_BLOCK / warpSize;
++
++  // Shared memory to store the number of points.
++  extern __shared__ int smem[];
++
++  // s_num_pts[4][NUM_WARPS_PER_BLOCK];
++  // Addresses of shared memory.
++  volatile int *s_num_pts[4];
++
++  for (int i = 0; i < 4; ++i)
++    s_num_pts[i] = (volatile int *)&smem[i * NUM_WARPS_PER_BLOCK];
++
++  // Compute the coordinates of the threads in the block.
++  const int warp_id = threadIdx.x / warpSize;
++  const int lane_id = threadIdx.x % warpSize;
++
++  // Mask for compaction.
++  // Same as: asm( "mov.u32 %0, %%lanemask_lt;" : "=r"(lane_mask_lt) );
++  int lane_mask_lt = (1 << lane_id) - 1;
++
++  // The current node.
++  Quadtree_node &node = nodes[blockIdx.x];
++
++  // The number of points in the node.
++  int num_points = node.num_points();
++
++  float2 center;
++  int range_begin, range_end;
++  int warp_cnts[4] = {0, 0, 0, 0};
++  //
++  // 1- Check the number of points and its depth.
++  //
++
++  // Stop the recursion here. Make sure points[0] contains all the points.
++  if (params.depth >= params.max_depth ||
++      num_points <= params.min_points_per_node) {
++    if (params.point_selector == 1) {
++      int it = node.points_begin(), end = node.points_end();
++
++      for (it += threadIdx.x; it < end; it += NUM_THREADS_PER_BLOCK)
++        if (it < end) points[0].set_point(it, points[1].get_point(it));
++    }
++
++    return;
++  }
++
++  // Compute the center of the bounding box of the points.
++  const Bounding_box &bbox = node.bounding_box();
++
++  bbox.compute_center(center);
++
++  // Find how many points to give to each warp.
++  int num_points_per_warp = max(
++      warpSize, (num_points + NUM_WARPS_PER_BLOCK - 1) / NUM_WARPS_PER_BLOCK);
++
++  // Each warp of threads will compute the number of points to move to each
++  // quadrant.
++  range_begin = node.points_begin() + warp_id * num_points_per_warp;
++  range_end = min(range_begin + num_points_per_warp, node.points_end());
++
++  //
++  // 2- Count the number of points in each child.
++  //
++
++  // Input points.
++  const Points &in_points = points[params.point_selector];
++
++  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
++  // Compute the number of points.
++  for (int range_it = range_begin + tile32.thread_rank();
++       tile32.any(range_it < range_end); range_it += warpSize) {
++    // Is it still an active thread?
++    bool is_active = range_it < range_end;
++
++    // Load the coordinates of the point.
++    float2 p =
++        is_active ? in_points.get_point(range_it) : make_float2(0.0f, 0.0f);
++
++    // Count top-left points.
++    int num_pts =
++        __popc(tile32.ballot(is_active && p.x < center.x && p.y >= center.y));
++    warp_cnts[0] += tile32.shfl(num_pts, 0);
++
++    // Count top-right points.
++    num_pts =
++        __popc(tile32.ballot(is_active && p.x >= center.x && p.y >= center.y));
++    warp_cnts[1] += tile32.shfl(num_pts, 0);
++
++    // Count bottom-left points.
++    num_pts =
++        __popc(tile32.ballot(is_active && p.x < center.x && p.y < center.y));
++    warp_cnts[2] += tile32.shfl(num_pts, 0);
++
++    // Count bottom-right points.
++    num_pts =
++        __popc(tile32.ballot(is_active && p.x >= center.x && p.y < center.y));
++    warp_cnts[3] += tile32.shfl(num_pts, 0);
++  }
++
++  if (tile32.thread_rank() == 0) {
++    s_num_pts[0][warp_id] = warp_cnts[0];
++    s_num_pts[1][warp_id] = warp_cnts[1];
++    s_num_pts[2][warp_id] = warp_cnts[2];
++    s_num_pts[3][warp_id] = warp_cnts[3];
++  }
++
++  // Make sure warps have finished counting.
++  cg::sync(cta);
++
++  //
++  // 3- Scan the warps' results to know the "global" numbers.
++  //
++
++  // First 4 warps scan the numbers of points per child (inclusive scan).
++  if (warp_id < 4) {
++    int num_pts = tile32.thread_rank() < NUM_WARPS_PER_BLOCK
++                      ? s_num_pts[warp_id][tile32.thread_rank()]
++                      : 0;
++#pragma unroll
++
++    for (int offset = 1; offset < NUM_WARPS_PER_BLOCK; offset *= 2) {
++      int n = tile32.shfl_up(num_pts, offset);
++
++      if (tile32.thread_rank() >= offset) num_pts += n;
++    }
++
++    if (tile32.thread_rank() < NUM_WARPS_PER_BLOCK)
++      s_num_pts[warp_id][tile32.thread_rank()] = num_pts;
++  }
++
++  cg::sync(cta);
++
++  // Compute global offsets.
++  if (warp_id == 0) {
++    int sum = s_num_pts[0][NUM_WARPS_PER_BLOCK - 1];
++
++    for (int row = 1; row < 4; ++row) {
++      int tmp = s_num_pts[row][NUM_WARPS_PER_BLOCK - 1];
++      cg::sync(tile32);
++
++      if (tile32.thread_rank() < NUM_WARPS_PER_BLOCK)
++        s_num_pts[row][tile32.thread_rank()] += sum;
++
++      cg::sync(tile32);
++      sum += tmp;
++    }
++  }
++
++  cg::sync(cta);
++
++  // Make the scan exclusive.
++  int val = 0;
++  if (threadIdx.x < 4 * NUM_WARPS_PER_BLOCK) {
++    val = threadIdx.x == 0 ? 0 : smem[threadIdx.x - 1];
++    val += node.points_begin();
++  }
++
++  cg::sync(cta);
++
++  if (threadIdx.x < 4 * NUM_WARPS_PER_BLOCK) {
++    smem[threadIdx.x] = val;
++  }
++
++  cg::sync(cta);
++
++  //
++  // 4- Move points.
++  //
++  if (!(params.depth >= params.max_depth ||
++        num_points <= params.min_points_per_node)) {
++    // Output points.
++    Points &out_points = points[(params.point_selector + 1) % 2];
++
++    warp_cnts[0] = s_num_pts[0][warp_id];
++    warp_cnts[1] = s_num_pts[1][warp_id];
++    warp_cnts[2] = s_num_pts[2][warp_id];
++    warp_cnts[3] = s_num_pts[3][warp_id];
++
++    const Points &in_points = points[params.point_selector];
++    // Reorder points.
++    for (int range_it = range_begin + tile32.thread_rank();
++         tile32.any(range_it < range_end); range_it += warpSize) {
++      // Is it still an active thread?
++      bool is_active = range_it < range_end;
++
++      // Load the coordinates of the point.
++      float2 p =
++          is_active ? in_points.get_point(range_it) : make_float2(0.0f, 0.0f);
++
++      // Count top-left points.
++      bool pred = is_active && p.x < center.x && p.y >= center.y;
++      int vote = tile32.ballot(pred);
++      int dest = warp_cnts[0] + __popc(vote & lane_mask_lt);
++
++      if (pred) out_points.set_point(dest, p);
++
++      warp_cnts[0] += tile32.shfl(__popc(vote), 0);
++
++      // Count top-right points.
++      pred = is_active && p.x >= center.x && p.y >= center.y;
++      vote = tile32.ballot(pred);
++      dest = warp_cnts[1] + __popc(vote & lane_mask_lt);
++
++      if (pred) out_points.set_point(dest, p);
++
++      warp_cnts[1] += tile32.shfl(__popc(vote), 0);
++
++      // Count bottom-left points.
++      pred = is_active && p.x < center.x && p.y < center.y;
++      vote = tile32.ballot(pred);
++      dest = warp_cnts[2] + __popc(vote & lane_mask_lt);
++
++      if (pred) out_points.set_point(dest, p);
++
++      warp_cnts[2] += tile32.shfl(__popc(vote), 0);
++
++      // Count bottom-right points.
++      pred = is_active && p.x >= center.x && p.y < center.y;
++      vote = tile32.ballot(pred);
++      dest = warp_cnts[3] + __popc(vote & lane_mask_lt);
++
++      if (pred) out_points.set_point(dest, p);
++
++      warp_cnts[3] += tile32.shfl(__popc(vote), 0);
++    }
++  }
++
++  cg::sync(cta);
++
++  if (tile32.thread_rank() == 0) {
++    s_num_pts[0][warp_id] = warp_cnts[0];
++    s_num_pts[1][warp_id] = warp_cnts[1];
++    s_num_pts[2][warp_id] = warp_cnts[2];
++    s_num_pts[3][warp_id] = warp_cnts[3];
++  }
++
++  cg::sync(cta);
++
++  //
++  // 5- Launch new blocks.
++  //
++  if (!(params.depth >= params.max_depth ||
++        num_points <= params.min_points_per_node)) {
++    // The last thread launches new blocks.
++    if (threadIdx.x == NUM_THREADS_PER_BLOCK - 1) {
++      // The children.
++      Quadtree_node *children =
++          &nodes[params.num_nodes_at_this_level - (node.id() & ~3)];
++
++      // The offsets of the children at their level.
++      int child_offset = 4 * node.id();
++
++      // Set IDs.
++      children[child_offset + 0].set_id(4 * node.id() + 0);
++      children[child_offset + 1].set_id(4 * node.id() + 1);
++      children[child_offset + 2].set_id(4 * node.id() + 2);
++      children[child_offset + 3].set_id(4 * node.id() + 3);
++
++      const Bounding_box &bbox = node.bounding_box();
++      // Points of the bounding-box.
++      const float2 &p_min = bbox.get_min();
++      const float2 &p_max = bbox.get_max();
++
++      // Set the bounding boxes of the children.
++      children[child_offset + 0].set_bounding_box(p_min.x, center.y, center.x,
++                                                  p_max.y);  // Top-left.
++      children[child_offset + 1].set_bounding_box(center.x, center.y, p_max.x,
++                                                  p_max.y);  // Top-right.
++      children[child_offset + 2].set_bounding_box(p_min.x, p_min.y, center.x,
++                                                  center.y);  // Bottom-left.
++      children[child_offset + 3].set_bounding_box(center.x, p_min.y, p_max.x,
++                                                  center.y);  // Bottom-right.
++
++      // Set the ranges of the children.
++
++      children[child_offset + 0].set_range(node.points_begin(),
++                                           s_num_pts[0][warp_id]);
++      children[child_offset + 1].set_range(s_num_pts[0][warp_id],
++                                           s_num_pts[1][warp_id]);
++      children[child_offset + 2].set_range(s_num_pts[1][warp_id],
++                                           s_num_pts[2][warp_id]);
++      children[child_offset + 3].set_range(s_num_pts[2][warp_id],
++                                           s_num_pts[3][warp_id]);
++
++      // Launch 4 children.
++      build_quadtree_kernel<NUM_THREADS_PER_BLOCK><<<
++          4, NUM_THREADS_PER_BLOCK, 4 * NUM_WARPS_PER_BLOCK * sizeof(int)>>>(
++          &children[child_offset], points, Parameters(params, true));
++    }
++  }
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// Make sure a Quadtree is properly defined.
++////////////////////////////////////////////////////////////////////////////////
++bool check_quadtree(const Quadtree_node *nodes, int idx, int num_pts,
++                    Points *pts, Parameters params) {
++  const Quadtree_node &node = nodes[idx];
++  int num_points = node.num_points();
++
++  if (!(params.depth == params.max_depth ||
++        num_points <= params.min_points_per_node)) {
++    int num_points_in_children = 0;
++
++    num_points_in_children +=
++        nodes[params.num_nodes_at_this_level + 4 * idx + 0].num_points();
++    num_points_in_children +=
++        nodes[params.num_nodes_at_this_level + 4 * idx + 1].num_points();
++    num_points_in_children +=
++        nodes[params.num_nodes_at_this_level + 4 * idx + 2].num_points();
++    num_points_in_children +=
++        nodes[params.num_nodes_at_this_level + 4 * idx + 3].num_points();
++
++    if (num_points_in_children != node.num_points()) return false;
++
++    return check_quadtree(&nodes[params.num_nodes_at_this_level], 4 * idx + 0,
++                          num_pts, pts, Parameters(params, true)) &&
++           check_quadtree(&nodes[params.num_nodes_at_this_level], 4 * idx + 1,
++                          num_pts, pts, Parameters(params, true)) &&
++           check_quadtree(&nodes[params.num_nodes_at_this_level], 4 * idx + 2,
++                          num_pts, pts, Parameters(params, true)) &&
++           check_quadtree(&nodes[params.num_nodes_at_this_level], 4 * idx + 3,
++                          num_pts, pts, Parameters(params, true));
++  }
++
++  const Bounding_box &bbox = node.bounding_box();
++
++  for (int it = node.points_begin(); it < node.points_end(); ++it) {
++    if (it >= num_pts) return false;
++
++    float2 p = pts->get_point(it);
++
++    if (!bbox.contains(p)) return false;
++  }
++
++  return true;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// Parallel random number generator.
++////////////////////////////////////////////////////////////////////////////////
++struct Random_generator {
++  int count;
++
++  __host__ __device__ Random_generator() : count(0) {}
++  __host__ __device__ unsigned int hash(unsigned int a) {
++    a = (a + 0x7ed55d16) + (a << 12);
++    a = (a ^ 0xc761c23c) ^ (a >> 19);
++    a = (a + 0x165667b1) + (a << 5);
++    a = (a + 0xd3a2646c) ^ (a << 9);
++    a = (a + 0xfd7046c5) + (a << 3);
++    a = (a ^ 0xb55a4f09) ^ (a >> 16);
++    return a;
++  }
++
++  __host__ __device__ __forceinline__ thrust::tuple<float, float> operator()() {
++#ifdef __CUDA_ARCH__
++    unsigned seed = hash(blockIdx.x * blockDim.x + threadIdx.x + count);
++    // thrust::generate may call operator() more than once per thread.
++    // Hence, increment count by grid size to ensure uniqueness of seed
++    count += blockDim.x * gridDim.x;
++#else
++    unsigned seed = hash(0);
++#endif
++    thrust::default_random_engine rng(seed);
++    thrust::random::uniform_real_distribution<float> distrib;
++    return thrust::make_tuple(distrib(rng), distrib(rng));
++  }
++};
++
++////////////////////////////////////////////////////////////////////////////////
++// Allocate GPU structs, launch kernel and clean up
++////////////////////////////////////////////////////////////////////////////////
++bool cdpQuadtree(int warp_size) {
++  // Constants to control the algorithm.
++  const int num_points = 1024;
++  const int max_depth = 8;
++  const int min_points_per_node = 16;
++
++  // Allocate memory for points.
++  thrust::device_vector<float> x_d0(num_points);
++  thrust::device_vector<float> x_d1(num_points);
++  thrust::device_vector<float> y_d0(num_points);
++  thrust::device_vector<float> y_d1(num_points);
++
++  // Generate random points.
++  Random_generator rnd;
++  thrust::generate(
++      thrust::make_zip_iterator(thrust::make_tuple(x_d0.begin(), y_d0.begin())),
++      thrust::make_zip_iterator(thrust::make_tuple(x_d0.end(), y_d0.end())),
++      rnd);
++
++  // Host structures to analyze the device ones.
++  Points points_init[2];
++  points_init[0].set(thrust::raw_pointer_cast(&x_d0[0]),
++                     thrust::raw_pointer_cast(&y_d0[0]));
++  points_init[1].set(thrust::raw_pointer_cast(&x_d1[0]),
++                     thrust::raw_pointer_cast(&y_d1[0]));
++
++  // Allocate memory to store points.
++  Points *points;
++  checkCudaErrors(hipMalloc((void **)&points, 2 * sizeof(Points)));
++  checkCudaErrors(hipMemcpy(points, points_init, 2 * sizeof(Points),
++                             hipMemcpyHostToDevice));
++
++  // We could use a close form...
++  int max_nodes = 0;
++
++  for (int i = 0, num_nodes_at_level = 1; i < max_depth;
++       ++i, num_nodes_at_level *= 4)
++    max_nodes += num_nodes_at_level;
++
++  // Allocate memory to store the tree.
++  Quadtree_node root;
++  root.set_range(0, num_points);
++  Quadtree_node *nodes;
++  checkCudaErrors(
++      hipMalloc((void **)&nodes, max_nodes * sizeof(Quadtree_node)));
++  checkCudaErrors(
++      hipMemcpy(nodes, &root, sizeof(Quadtree_node), hipMemcpyHostToDevice));
++
++  // We set the recursion limit for CDP to max_depth.
++  hipDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, max_depth);
++
++  // Build the quadtree.
++  Parameters params(max_depth, min_points_per_node);
++  std::cout << "Launching CDP kernel to build the quadtree" << std::endl;
++  const int NUM_THREADS_PER_BLOCK = 128;  // Do not use less than 128 threads.
++  const int NUM_WARPS_PER_BLOCK = NUM_THREADS_PER_BLOCK / warp_size;
++  const size_t smem_size = 4 * NUM_WARPS_PER_BLOCK * sizeof(int);
++  build_quadtree_kernel<
++      NUM_THREADS_PER_BLOCK><<<1, NUM_THREADS_PER_BLOCK, smem_size>>>(
++      nodes, points, params);
++  checkCudaErrors(hipGetLastError());
++
++  // Copy points to CPU.
++  thrust::host_vector<float> x_h(x_d0);
++  thrust::host_vector<float> y_h(y_d0);
++  Points host_points;
++  host_points.set(thrust::raw_pointer_cast(&x_h[0]),
++                  thrust::raw_pointer_cast(&y_h[0]));
++
++  // Copy nodes to CPU.
++  Quadtree_node *host_nodes = new Quadtree_node[max_nodes];
++  checkCudaErrors(hipMemcpy(host_nodes, nodes,
++                             max_nodes * sizeof(Quadtree_node),
++                             hipMemcpyDeviceToHost));
++
++  // Validate the results.
++  bool ok = check_quadtree(host_nodes, 0, num_points, &host_points, params);
++  std::cout << "Results: " << (ok ? "OK" : "FAILED") << std::endl;
++
++  // Free CPU memory.
++  delete[] host_nodes;
++
++  // Free memory.
++  checkCudaErrors(hipFree(nodes));
++  checkCudaErrors(hipFree(points));
++
++  return ok;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// Main entry point.
++////////////////////////////////////////////////////////////////////////////////
++int main(int argc, char **argv) {
++  // Find/set the device.
++  // The test requires an architecture SM35 or greater (CDP capable).
++  int cuda_device = findCudaDevice(argc, (const char **)argv);
++  hipDeviceProp_t deviceProps;
++  checkCudaErrors(hipGetDeviceProperties(&deviceProps, cuda_device));
++  int cdpCapable = (deviceProps.major == 3 && deviceProps.minor >= 5) ||
++                   deviceProps.major >= 4;
++
++  printf("GPU device %s has compute capabilities (SM %d.%d)\n",
++         deviceProps.name, deviceProps.major, deviceProps.minor);
++
++  if (!cdpCapable) {
++    std::cerr << "cdpQuadTree requires SM 3.5 or higher to use CUDA Dynamic "
++                 "Parallelism.  Exiting...\n"
++              << std::endl;
++    exit(EXIT_WAIVED);
++  }
++
++  bool ok = cdpQuadtree(deviceProps.warpSize);
++
++  return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip b/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
+index e69de29..bfc7c82 100644
+--- a/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
+@@ -0,0 +1,1072 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/**
++ * Matrix multiplication: C = A * B.
++ *
++ * This sample demonstrates implements matrix multiplication which makes use of
++ * shared memory to ensure data reuse, the matrix multiplication is done using
++ * tiling approach.
++ * With compute capability 8.0 or higher the CUDA kernels involved uses
++ * asynchronously copy data from global to shared memory; a.k.a., async-copy.
++ * This sample has been written for clarity of exposition to illustrate various
++ * CUDA programming principles, not with the goal of providing the most
++ * performant generic kernel for matrix multiplication.
++ */
++
++// System includes
++#include <stdio.h>
++#include <assert.h>
++
++// CUDA runtime
++#include <hip/hip_runtime.h>
++#include <cuda/pipeline>
++
++#if __CUDA_ARCH__ >= 700
++#include <cuda/barrier>
++#endif
++#include <hip/hip_cooperative_groups.h>
++
++namespace cg = cooperative_groups;
++
++// Helper functions and utilities to work with CUDA
++#include <helper_functions.h>
++#include <helper_cuda.h>
++
++enum kernels {
++  AsyncCopyMultiStageLargeChunk = 0,
++  AsyncCopyLargeChunk = 1,
++  AsyncCopyLargeChunkAWBarrier = 2,
++  AsyncCopyMultiStageSharedState = 3,
++  AsyncCopyMultiStage = 4,
++  AsyncCopySingleStage = 5,
++  Naive = 6,
++  NaiveLargeChunk = 7
++};
++
++const char *kernelNames[] = {"AsyncCopyMultiStageLargeChunk",
++                             "AsyncCopyLargeChunk",
++                             "AsyncCopyLargeChunkAWBarrier",
++                             "AsyncCopyMultiStageSharedState",
++                             "AsyncCopyMultiStage",
++                             "AsyncCopySingleStage",
++                             "Naive",
++                             "NaiveLargeChunk"};
++
++constexpr int blockSize = 16;
++
++// Multi Stage memcpy_async pipeline with large chunk copy
++template <int BLOCK_SIZE>
++__global__ void MatrixMulAsyncCopyMultiStageLargeChunk(
++    float *__restrict__ C, const float *__restrict__ A,
++    const float *__restrict__ B, int wA, int wB) {
++  // Requires BLOCK_SIZE % 4 == 0
++
++  // Multi-stage pipeline version
++  constexpr size_t maxPipelineStages = 4;
++
++  // Declaration of the shared memory array As used to
++  // store the sub-matrix of A for each stage
++  __shared__ alignas(
++      alignof(float4)) float As[maxPipelineStages][BLOCK_SIZE][BLOCK_SIZE];
++
++  // Declaration of the shared memory array Bs used to
++  // store the sub-matrix of B for each stage
++  __shared__ alignas(
++      alignof(float4)) float Bs[maxPipelineStages][BLOCK_SIZE][BLOCK_SIZE];
++
++  float Csub = 0.0;
++
++  // Index of the first sub-matrix of A processed by the block
++  const int aBegin = wA * (BLOCK_SIZE)*blockIdx.y;
++
++  // Index of the last sub-matrix of A processed by the block
++  const int aEnd = aBegin + wA - 1;
++
++  // Step size used to iterate through the sub-matrices of A
++  int aStep = BLOCK_SIZE;
++
++  // Index of the first sub-matrix of B processed by the block
++  const int bBegin = BLOCK_SIZE * blockIdx.x;
++
++  // Step size used to iterate through the sub-matrices of B
++  int bStep = BLOCK_SIZE * wB;
++
++  const int t4x = threadIdx.x * 4;
++  const auto shape4 = cuda::aligned_size_t<alignof(float4)>(sizeof(float4));
++
++  cuda::pipeline<cuda::thread_scope_thread> pipe = cuda::make_pipeline();
++
++  // Loop over all the sub-matrices of A and B
++  // required to compute the block sub-matrix
++  for (int a = aBegin, b = bBegin, i = 0, aStage = aBegin, bStage = bBegin,
++           iStage = 0;
++       a <= aEnd; a += aStep, b += bStep, ++i) {
++    // Load the matrices from device memory to shared memory; each thread loads
++    // one element of each matrix
++    for (; aStage <= a + aStep * maxPipelineStages;
++         aStage += aStep, bStage += bStep, ++iStage) {
++      pipe.producer_acquire();
++      if (aStage <= aEnd && t4x < BLOCK_SIZE) {
++        // Rotating buffer
++        const int j = iStage % maxPipelineStages;
++        cuda::memcpy_async(&As[j][threadIdx.y][t4x],
++                           &A[aStage + wA * threadIdx.y + t4x], shape4, pipe);
++        cuda::memcpy_async(&Bs[j][threadIdx.y][t4x],
++                           &B[aStage + wA * threadIdx.y + t4x], shape4, pipe);
++      }
++      pipe.producer_commit();
++    }
++
++    pipe.consumer_wait();
++    // Synchronize to make sure the matrices are loaded
++    __syncthreads();
++
++    // Rotating buffer
++    const int j = i % maxPipelineStages;
++
++// Multiply the two matrices together;
++// each thread computes one element
++// of the block sub-matrix
++#pragma unroll
++    for (int k = 0; k < BLOCK_SIZE; ++k) {
++      Csub += As[j][threadIdx.y][k] * Bs[j][k][threadIdx.x];
++    }
++    pipe.consumer_release();
++
++    // Don't have to synchronize because maxPipelineStages is greater than one
++    // therefore next iteration is loading to a different buffer.
++  }
++
++  // Write the block sub-matrix to device memory;
++  // each thread writes four element
++  int c = wB * BLOCK_SIZE * blockIdx.y + BLOCK_SIZE * blockIdx.x;
++  C[c + wB * threadIdx.y + threadIdx.x] = Csub;
++}
++
++// Single Stage memcpy_async pipeline with Large copy chunk (float4)
++template <int BLOCK_SIZE>
++__global__ void MatrixMulAsyncCopyLargeChunk(float *__restrict__ C,
++                                             const float *__restrict__ A,
++                                             const float *__restrict__ B,
++                                             int wA, int wB) {
++  // Requires BLOCK_SIZE % 4 == 0
++
++  // Declaration of the shared memory array As used to
++  // store the sub-matrix of A
++  __shared__ alignas(alignof(float4)) float As[BLOCK_SIZE][BLOCK_SIZE];
++
++  // Declaration of the shared memory array Bs used to
++  // store the sub-matrix of B
++  __shared__ alignas(alignof(float4)) float Bs[BLOCK_SIZE][BLOCK_SIZE];
++
++  // Index of the first sub-matrix of A processed by the block
++  int aBegin = wA * BLOCK_SIZE * blockIdx.y;
++
++  // Index of the last sub-matrix of A processed by the block
++  int aEnd = aBegin + wA - 1;
++
++  // Step size used to iterate through the sub-matrices of A
++  int aStep = BLOCK_SIZE;
++
++  // Index of the first sub-matrix of B processed by the block
++  int bBegin = BLOCK_SIZE * blockIdx.x;
++
++  // Step size used to iterate through the sub-matrices of B
++  int bStep = BLOCK_SIZE * wB;
++
++  // Single-stage pipeline version
++  float Csub = 0.0;
++
++  const int t4x = threadIdx.x * 4;
++  const auto shape4 = cuda::aligned_size_t<alignof(float4)>(sizeof(float4));
++  cuda::pipeline<cuda::thread_scope_thread> pipe = cuda::make_pipeline();
++
++  // Loop over all the sub-matrices of A and B
++  // required to compute the block sub-matrix
++  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
++    // Load the matrices from device memory to shared memory;
++    // a subset of threads loads a contiguous chunk of elements.
++
++    // Previously, per-thread:
++    // As[ty][tx] = A[a + wA * ty + tx];
++    // Bs[ty][tx] = B[b + wB * ty + tx];
++
++    // Now, one fourth of the threads load four elements of each matrix
++    if (t4x < BLOCK_SIZE) {
++      pipe.producer_acquire();
++
++      cuda::memcpy_async(&As[threadIdx.y][t4x], &A[a + wA * threadIdx.y + t4x],
++                         shape4, pipe);
++      cuda::memcpy_async(&Bs[threadIdx.y][t4x], &B[a + wA * threadIdx.y + t4x],
++                         shape4, pipe);
++
++      pipe.producer_commit();
++      pipe.consumer_wait();
++    }
++
++    // Synchronize to make sure the matrices are loaded
++    __syncthreads();
++
++// Multiply the two matrices together;
++// each thread computes one element
++// of the block sub-matrix
++#pragma unroll
++    for (int k = 0; k < BLOCK_SIZE; ++k) {
++      Csub += As[threadIdx.y][k] * Bs[k][threadIdx.x];
++    }
++
++    pipe.consumer_release();
++
++    // Synchronize to make sure that the preceding
++    // computation is done before overwriting the
++    // shared memory sub-matrix buffers As and Bs in the next iteration.
++    __syncthreads();
++  }
++
++  // Write the block sub-matrix to device memory;
++  // each thread writes four element
++  int c = wB * BLOCK_SIZE * blockIdx.y + BLOCK_SIZE * blockIdx.x;
++  C[c + wB * threadIdx.y + threadIdx.x] = Csub;
++}
++
++// Single Stage memcpy_async pipeline with Large copy chunk (float4) using
++// arrive-wait barrier
++template <int BLOCK_SIZE>
++__global__ void MatrixMulAsyncCopyLargeChunkAWBarrier(
++    float *__restrict__ C, const float *__restrict__ A,
++    const float *__restrict__ B, int wA, int wB) {
++#if __CUDA_ARCH__ >= 700
++#pragma diag_suppress static_var_with_dynamic_init
++  // Requires BLOCK_SIZE % 4 == 0
++
++  __shared__ cuda::barrier<cuda::thread_scope_block> bar;
++
++  // Declaration of the shared memory array As used to
++  // store the sub-matrix of A
++  __shared__ alignas(alignof(float4)) float As[BLOCK_SIZE][BLOCK_SIZE];
++
++  // Declaration of the shared memory array Bs used to
++  // store the sub-matrix of B
++  __shared__ alignas(alignof(float4)) float Bs[BLOCK_SIZE][BLOCK_SIZE];
++
++  if (threadIdx.x == 0) {
++    init(&bar, blockDim.x * blockDim.y);
++  }
++  __syncthreads();
++
++  // Index of the first sub-matrix of A processed by the block
++  int aBegin = wA * BLOCK_SIZE * blockIdx.y;
++
++  // Index of the last sub-matrix of A processed by the block
++  int aEnd = aBegin + wA - 1;
++
++  // Step size used to iterate through the sub-matrices of A
++  int aStep = BLOCK_SIZE;
++
++  // Index of the first sub-matrix of B processed by the block
++  int bBegin = BLOCK_SIZE * blockIdx.x;
++
++  // Step size used to iterate through the sub-matrices of B
++  int bStep = BLOCK_SIZE * wB;
++
++  float Csub = 0.0;
++
++  const int t4x = threadIdx.x * 4;
++
++  // Loop over all the sub-matrices of A and B
++  // required to compute the block sub-matrix
++  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
++    // Load the matrices from device memory to shared memory;
++    // a subset of threads loads a contiguous chunk of elements.
++
++    // Now, one fourth of the threads load four elements of each matrix
++    if (t4x < BLOCK_SIZE) {
++      float4 *const A4s = reinterpret_cast<float4 *>(&As[threadIdx.y][t4x]);
++      float4 *const B4s = reinterpret_cast<float4 *>(&Bs[threadIdx.y][t4x]);
++      const float4 *const A4 =
++          reinterpret_cast<const float4 *>(&A[a + wA * threadIdx.y + t4x]);
++      const float4 *const B4 =
++          reinterpret_cast<const float4 *>(&B[a + wA * threadIdx.y + t4x]);
++
++      cuda::memcpy_async(A4s, A4, sizeof(float4), bar);
++      cuda::memcpy_async(B4s, B4, sizeof(float4), bar);
++    }
++
++    // Synchronize to make sure the matrices are loaded
++    bar.arrive_and_wait();
++
++// Multiply the two matrices together;
++// each thread computes one element
++// of the block sub-matrix
++#pragma unroll
++    for (int k = 0; k < BLOCK_SIZE; ++k) {
++      Csub += As[threadIdx.y][k] * Bs[k][threadIdx.x];
++    }
++
++    // Synchronize to make sure that the preceding
++    // computation is done before overwriting the
++    // shared memory sub-matrix buffers As and Bs in the next iteration.
++    bar.arrive_and_wait();
++  }
++
++  // Write the block sub-matrix to device memory;
++  // each thread writes four element
++  int c = wB * BLOCK_SIZE * blockIdx.y + BLOCK_SIZE * blockIdx.x;
++  C[c + wB * threadIdx.y + threadIdx.x] = Csub;
++#endif
++}
++
++// Single Stage memcpy_async pipeline with float copy
++template <int BLOCK_SIZE>
++__global__ void MatrixMulAsyncCopySingleStage(float *C, const float *A,
++                                              const float *B, int wA, int wB) {
++  // Declaration of the shared memory array As used to
++  // store the sub-matrix of A
++  __shared__ float As[BLOCK_SIZE][BLOCK_SIZE];
++
++  // Declaration of the shared memory array Bs used to
++  // store the sub-matrix of B
++  __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
++
++  // Index of the first sub-matrix of A processed by the block
++  int aBegin = wA * BLOCK_SIZE * blockIdx.y;
++
++  // Index of the last sub-matrix of A processed by the block
++  int aEnd = aBegin + wA - 1;
++
++  // Step size used to iterate through the sub-matrices of A
++  int aStep = BLOCK_SIZE;
++
++  // Index of the first sub-matrix of B processed by the block
++  int bBegin = BLOCK_SIZE * blockIdx.x;
++
++  // Step size used to iterate through the sub-matrices of B
++  int bStep = BLOCK_SIZE * wB;
++
++  // Single-stage pipeline version
++  float Csub = 0.0;
++
++  cuda::pipeline<cuda::thread_scope_thread> pipe = cuda::make_pipeline();
++  const auto shape1 = cuda::aligned_size_t<alignof(float)>(sizeof(float));
++
++  // Loop over all the sub-matrices of A and B
++  // required to compute the block sub-matrix
++  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
++    // Load the matrices from device memory to shared memory; each thread loads
++    // one element of each matrix
++    {
++      pipe.producer_acquire();
++
++      cuda::memcpy_async(&As[threadIdx.y][threadIdx.x],
++                         &A[a + wA * threadIdx.y + threadIdx.x], shape1, pipe);
++      cuda::memcpy_async(&Bs[threadIdx.y][threadIdx.x],
++                         &B[b + wB * threadIdx.y + threadIdx.x], shape1, pipe);
++
++      pipe.producer_commit();
++    }
++
++    pipe.consumer_wait();
++    // Synchronize to make sure the matrices are loaded
++    __syncthreads();
++
++// Multiply the two matrices together;
++// each thread computes one element
++// of the block sub-matrix
++#pragma unroll
++    for (int k = 0; k < BLOCK_SIZE; ++k) {
++      Csub += As[threadIdx.y][k] * Bs[k][threadIdx.x];
++    }
++
++    // Synchronize to make sure that the preceding
++    // computation is done before overwriting the
++    // shared memory sub-matrix buffers As and Bs in the next iteration.
++    __syncthreads();
++  }
++
++  // Write the block sub-matrix to device memory;
++  // each thread writes four element
++  int c = wB * BLOCK_SIZE * blockIdx.y + BLOCK_SIZE * blockIdx.x;
++  C[c + wB * threadIdx.y + threadIdx.x] = Csub;
++}
++
++// Multi Stage memcpy_async thread_scope_thread pipeline with single-element
++// async-copy
++template <int BLOCK_SIZE>
++__global__ void MatrixMulAsyncCopyMultiStage(float *__restrict__ C,
++                                             const float *__restrict__ A,
++                                             const float *__restrict__ B,
++                                             int wA, int wB) {
++  // Multi-stage pipeline version
++  constexpr size_t maxPipelineStages = 4;
++
++  // Declaration of the shared memory array As used to
++  // store the sub-matrix of A for each stage
++  __shared__ float As[maxPipelineStages][BLOCK_SIZE][BLOCK_SIZE];
++
++  // Declaration of the shared memory array Bs used to
++  // store the sub-matrix of B for each stage
++  __shared__ float Bs[maxPipelineStages][BLOCK_SIZE][BLOCK_SIZE];
++
++  float Csub = 0.0;
++
++  // Index of the first sub-matrix of A processed by the block
++  const int aBegin = wA * BLOCK_SIZE * blockIdx.y;
++
++  // Index of the last sub-matrix of A processed by the block
++  const int aEnd = aBegin + wA - 1;
++
++  // Step size used to iterate through the sub-matrices of A
++  int aStep = BLOCK_SIZE;
++
++  // Index of the first sub-matrix of B processed by the block
++  const int bBegin = BLOCK_SIZE * blockIdx.x;
++
++  // Step size used to iterate through the sub-matrices of B
++  int bStep = BLOCK_SIZE * wB;
++
++  cuda::pipeline<cuda::thread_scope_thread> pipe = cuda::make_pipeline();
++  const auto shape1 = cuda::aligned_size_t<alignof(float)>(sizeof(float));
++
++  // Loop over all the sub-matrices of A and B
++  // required to compute the block sub-matrix
++  for (int a = aBegin, b = bBegin, i = 0, aStage = aBegin, bStage = bBegin,
++           iStage = 0;
++       a <= aEnd; a += aStep, b += bStep, ++i) {
++    // Load the matrices from device memory to shared memory; each thread loads
++    // one element of each matrix
++
++    for (; aStage <= a + aStep * maxPipelineStages;
++         aStage += aStep, bStage += bStep, ++iStage) {
++      if (aStage <= aEnd) {
++        // Rotating buffer
++        const int j = iStage % maxPipelineStages;
++
++        pipe.producer_acquire();
++
++        cuda::memcpy_async(&As[j][threadIdx.y][threadIdx.x],
++                           &A[aStage + wA * threadIdx.y + threadIdx.x], shape1,
++                           pipe);
++        cuda::memcpy_async(&Bs[j][threadIdx.y][threadIdx.x],
++                           &B[bStage + wB * threadIdx.y + threadIdx.x], shape1,
++                           pipe);
++
++        pipe.producer_commit();
++      }
++    }
++    pipe.consumer_wait();
++
++    // Synchronize to make sure the matrices are loaded
++    __syncthreads();
++
++    const int j = i % maxPipelineStages;
++
++    // Multiply the two matrices together;
++    // each thread computes one element
++    // of the block sub-matrix
++    for (int k = 0; k < BLOCK_SIZE; ++k) {
++      Csub += As[j][threadIdx.y][k] * Bs[j][k][threadIdx.x];
++    }
++
++    pipe.consumer_release();
++    // Don't have to synchronize because maxPipelineStages is greater than one
++    // therefore next iteration is loading to a different buffer.
++  }
++
++  // Write the block sub-matrix to device memory;
++  // each thread writes four element
++  int c = wB * BLOCK_SIZE * blockIdx.y + BLOCK_SIZE * blockIdx.x;
++  C[c + wB * threadIdx.y + threadIdx.x] = Csub;
++}
++
++// Multi Stage shared state memcpy_async pipeline thread_scope_block
++// with parititioned producer & consumer, here we've 1 warp as producer
++// group which issues memcpy_async operations and rest all warps are part of
++// consumer group which perform gemm computation on the loaded matrices by
++// producer.
++template <int BLOCK_SIZE_X>
++__global__ void MatrixMulAsyncCopyMultiStageSharedState(
++    float *__restrict__ C, const float *__restrict__ A,
++    const float *__restrict__ B, int wA, int wB) {
++  // Multi-stage pipeline version
++  constexpr size_t maxPipelineStages = 4;
++
++  // Declaration of the shared memory array As used to
++  // store the sub-matrix of A for each stage
++  __shared__ float As[maxPipelineStages][BLOCK_SIZE_X][BLOCK_SIZE_X];
++
++  // Declaration of the shared memory array Bs used to
++  // store the sub-matrix of B for each stage
++  __shared__ float Bs[maxPipelineStages][BLOCK_SIZE_X][BLOCK_SIZE_X];
++
++  float Csub = 0.0;
++
++  // Index of the first sub-matrix of A processed by the block
++  const int aBegin = wA * BLOCK_SIZE_X * blockIdx.y;
++
++  // Index of the last sub-matrix of A processed by the block
++  const int aEnd = aBegin + wA - 1;
++
++  // Step size used to iterate through the sub-matrices of A
++  constexpr int aStep = BLOCK_SIZE_X;
++
++  // Index of the first sub-matrix of B processed by the block
++  const int bBegin = BLOCK_SIZE_X * blockIdx.x;
++
++  // Step size used to iterate through the sub-matrices of B
++  int bStep = BLOCK_SIZE_X * wB;
++
++  auto cta = cg::this_thread_block();
++
++  const auto shape1 = cuda::aligned_size_t<alignof(float)>(sizeof(float));
++  __shared__ cuda::pipeline_shared_state<cuda::thread_scope_block,
++                                         maxPipelineStages> shared_state;
++  constexpr int consumer_row_count = BLOCK_SIZE_X;
++
++  const auto thread_role = (cta.thread_index().y < consumer_row_count)
++                               ? cuda::pipeline_role::consumer
++                               : cuda::pipeline_role::producer;
++  auto pipe = cuda::make_pipeline(cta, &shared_state, thread_role);
++
++  // Loop over all the sub-matrices of A and B
++  // required to compute the block sub-matrix
++  for (int a = aBegin, b = bBegin, i = 0, aStage = aBegin, bStage = bBegin,
++           iStage = 0;
++       a <= aEnd; a += aStep, b += bStep, ++i) {
++    if (threadIdx.y >= consumer_row_count) {
++      // this is a whole producer warp because threadIdx.y >= 16 where 16 ==
++      // consumer_row_count,
++      // which loads the matrices from device memory to shared memory;
++      for (; aStage <= a + aStep * maxPipelineStages;
++           aStage += aStep, bStage += bStep, ++iStage) {
++        if (aStage <= aEnd) {
++          // Rotating buffer
++          const int j = iStage % maxPipelineStages;
++          const int strideRows = (blockDim.y - consumer_row_count);
++          pipe.producer_acquire();
++          for (int rowId = threadIdx.y - consumer_row_count;
++               rowId < BLOCK_SIZE_X; rowId += strideRows) {
++            cuda::memcpy_async(&As[j][rowId][threadIdx.x],
++                               &A[aStage + wA * rowId + threadIdx.x], shape1,
++                               pipe);
++            cuda::memcpy_async(&Bs[j][rowId][threadIdx.x],
++                               &B[bStage + wB * rowId + threadIdx.x], shape1,
++                               pipe);
++          }
++          pipe.producer_commit();
++        }
++      }
++    } else {
++      // this is a whole set of consumer group because threadIdx.y <
++      // consumer_row_count where consumer_row_count == 16,
++      // which computes gemm operation on matrices loaded in shared memory by
++      // producer warp.
++      const int j = i % maxPipelineStages;
++      // Synchronize consumer group to make sure the matrices are loaded by
++      // producer group.
++      pipe.consumer_wait();
++// Multiply the two matrices together;
++// each thread computes one element
++// of the block sub-matrix
++#pragma unroll
++      for (int k = 0; k < BLOCK_SIZE_X; ++k) {
++        Csub += As[j][threadIdx.y][k] * Bs[j][k][threadIdx.x];
++      }
++      pipe.consumer_release();
++    }
++  }
++
++  // Write the block sub-matrix to device memory;
++  // each thread writes four element
++  if (threadIdx.y < consumer_row_count) {
++    const int c = wB * BLOCK_SIZE_X * blockIdx.y + BLOCK_SIZE_X * blockIdx.x;
++    C[c + wB * threadIdx.y + threadIdx.x] = Csub;
++  }
++}
++
++/**
++ * Matrix multiplication (CUDA Kernel) on the device: C = A * B
++ * wA is A's width and wB is B's width
++ */
++template <int BLOCK_SIZE>
++__global__ void MatrixMulNaive(float *C, float *A, float *B, int wA, int wB) {
++  // Declaration of the shared memory array As used to
++  // store the sub-matrix of A
++  __shared__ float As[BLOCK_SIZE][BLOCK_SIZE];
++
++  // Declaration of the shared memory array Bs used to
++  // store the sub-matrix of B
++  __shared__ float Bs[BLOCK_SIZE][BLOCK_SIZE];
++
++  // Index of the first sub-matrix of A processed by the block
++  int aBegin = wA * BLOCK_SIZE * blockIdx.y;
++
++  // Index of the last sub-matrix of A processed by the block
++  int aEnd = aBegin + wA - 1;
++
++  // Step size used to iterate through the sub-matrices of A
++  int aStep = BLOCK_SIZE;
++
++  // Index of the first sub-matrix of B processed by the block
++  int bBegin = BLOCK_SIZE * blockIdx.x;
++
++  // Step size used to iterate through the sub-matrices of B
++  int bStep = BLOCK_SIZE * wB;
++
++  // Csub is used to store the element of the block sub-matrix
++  // that is computed by the thread
++  float Csub = 0;
++
++  // Loop over all the sub-matrices of A and B
++  // required to compute the block sub-matrix
++  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
++    // Load the matrices from device memory
++    // to shared memory; each thread loads
++    // one element of each matrix
++    As[threadIdx.y][threadIdx.x] = A[a + wA * threadIdx.y + threadIdx.x];
++    Bs[threadIdx.y][threadIdx.x] = B[b + wB * threadIdx.y + threadIdx.x];
++
++    // Synchronize to make sure the matrices are loaded
++    __syncthreads();
++
++// Multiply the two matrices together;
++// each thread computes one element
++// of the block sub-matrix
++#pragma unroll
++    for (int k = 0; k < BLOCK_SIZE; ++k) {
++      Csub += As[threadIdx.y][k] * Bs[k][threadIdx.x];
++    }
++
++    // Synchronize to make sure that the preceding
++    // computation is done before loading two new
++    // sub-matrices of A and B in the next iteration
++    __syncthreads();
++  }
++
++  // Write the block sub-matrix to device memory;
++  // each thread writes one element
++  int c = wB * BLOCK_SIZE * blockIdx.y + BLOCK_SIZE * blockIdx.x;
++  C[c + wB * threadIdx.y + threadIdx.x] = Csub;
++}
++
++template <int BLOCK_SIZE>
++__global__ void MatrixMulNaiveLargeChunk(float *C, float *A, float *B, int wA,
++                                         int wB) {
++  // Declaration of the shared memory array As used to
++  // store the sub-matrix of A
++  __shared__ alignas(alignof(float4)) float As[BLOCK_SIZE][BLOCK_SIZE];
++
++  // Declaration of the shared memory array Bs used to
++  // store the sub-matrix of B
++  __shared__ alignas(alignof(float4)) float Bs[BLOCK_SIZE][BLOCK_SIZE];
++
++  int t4x = threadIdx.x * 4;
++
++  // Index of the first sub-matrix of A processed by the block
++  int aBegin = wA * BLOCK_SIZE * blockIdx.y;
++
++  // Index of the last sub-matrix of A processed by the block
++  int aEnd = aBegin + wA - 1;
++
++  // Step size used to iterate through the sub-matrices of A
++  int aStep = BLOCK_SIZE;
++
++  // Index of the first sub-matrix of B processed by the block
++  int bBegin = BLOCK_SIZE * blockIdx.x;
++
++  // Step size used to iterate through the sub-matrices of B
++  int bStep = BLOCK_SIZE * wB;
++
++  // Csub is used to store the element of the block sub-matrix
++  // that is computed by the thread
++  float Csub = 0;
++
++  // Loop over all the sub-matrices of A and B
++  // required to compute the block sub-matrix
++  for (int a = aBegin, b = bBegin; a <= aEnd; a += aStep, b += bStep) {
++    // Load the matrices from device memory
++    // to shared memory;
++
++    // One fourth of the threads load four elements of each matrix
++    if (t4x < BLOCK_SIZE) {
++      float4 *const A4s = reinterpret_cast<float4 *>(&As[threadIdx.y][t4x]);
++      float4 *const B4s = reinterpret_cast<float4 *>(&Bs[threadIdx.y][t4x]);
++      const float4 *const A4 =
++          reinterpret_cast<float4 *>(&A[a + wA * threadIdx.y + t4x]);
++      const float4 *const B4 =
++          reinterpret_cast<float4 *>(&B[a + wA * threadIdx.y + t4x]);
++      *A4s = *A4;
++      *B4s = *B4;
++    }
++
++    // Synchronize to make sure the matrices are loaded
++    __syncthreads();
++
++// Multiply the two matrices together;
++// each thread computes one element
++// of the block sub-matrix
++#pragma unroll
++    for (int k = 0; k < BLOCK_SIZE; ++k) {
++      Csub += As[threadIdx.y][k] * Bs[k][threadIdx.x];
++    }
++
++    // Synchronize to make sure that the preceding
++    // computation is done before loading two new
++    // sub-matrices of A and B in the next iteration
++    __syncthreads();
++  }
++
++  // Write the block sub-matrix to device memory;
++  // each thread writes one element
++  int c = wB * BLOCK_SIZE * blockIdx.y + BLOCK_SIZE * blockIdx.x;
++  C[c + wB * threadIdx.y + threadIdx.x] = Csub;
++}
++
++void ConstantInit(float *data, int size, float val) {
++  for (int i = 0; i < size; ++i) {
++    data[i] = val;
++  }
++}
++
++/**
++ * Run matrix multiplication using CUDA
++ */
++int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
++                   kernels kernel_number) {
++  // Allocate host memory for matrices A and B
++  unsigned int size_A = dimsA.x * dimsA.y;
++  unsigned int mem_size_A = sizeof(float) * size_A;
++  float *h_A;
++  checkCudaErrors(hipHostMalloc(&h_A, mem_size_A));
++  unsigned int size_B = dimsB.x * dimsB.y;
++  unsigned int mem_size_B = sizeof(float) * size_B;
++  float *h_B;
++  checkCudaErrors(hipHostMalloc(&h_B, mem_size_B));
++  hipStream_t stream;
++
++  // Initialize host memory
++  const float valB = 2.10f;
++  ConstantInit(h_A, size_A, 1.0f);
++  ConstantInit(h_B, size_B, valB);
++
++  // Allocate device memory
++  float *d_A, *d_B, *d_C;
++
++  // Allocate host matrix C
++  dim3 dimsC(dimsB.x, dimsA.y, 1);
++  unsigned int mem_size_C = dimsC.x * dimsC.y * sizeof(float);
++  float *h_C;
++  checkCudaErrors(hipHostMalloc(&h_C, mem_size_C));
++
++  if (h_C == NULL) {
++    fprintf(stderr, "Failed to allocate host matrix C!\n");
++    exit(EXIT_FAILURE);
++  }
++
++  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_A), mem_size_A));
++  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_B), mem_size_B));
++  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_C), mem_size_C));
++  // Allocate CUDA events that we'll use for timing
++  hipEvent_t start, stop;
++  checkCudaErrors(hipEventCreate(&start));
++  checkCudaErrors(hipEventCreate(&stop));
++
++  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
++
++  // copy host memory to device
++  checkCudaErrors(
++      hipMemcpyAsync(d_A, h_A, mem_size_A, hipMemcpyHostToDevice, stream));
++  checkCudaErrors(
++      hipMemcpyAsync(d_B, h_B, mem_size_B, hipMemcpyHostToDevice, stream));
++  checkCudaErrors(hipMemsetAsync(d_C, 0, mem_size_C, stream));
++
++  // Setup execution parameters
++  dim3 threads(blockSize, blockSize);
++  dim3 grid(dimsB.x / threads.x, dimsA.y / threads.y);
++
++  // Here the block size is 16x18, where first 16 rows are consumer thread group
++  // and last 2 rows (1 warp) is producer thread group
++  dim3 threadsSharedStateKernel(blockSize, blockSize + 2, 1);
++  dim3 gridSharedStateKernel(dimsB.x / threadsSharedStateKernel.x,
++                             dimsA.y / threadsSharedStateKernel.x);
++
++  printf("Running kernel = %d - %s\n", kernel_number,
++         kernelNames[kernel_number]);
++  // Create and start timer
++  printf("Computing result using CUDA Kernel...\n");
++
++  // Performs warmup operation using matrixMul CUDA kernel
++  switch (kernel_number) {
++    case AsyncCopyMultiStageLargeChunk:
++    default:
++      MatrixMulAsyncCopyMultiStageLargeChunk<
++          blockSize><<<grid, threads, 0, stream>>>(d_C, d_A, d_B, dimsA.x,
++                                                   dimsB.x);
++      break;
++    case AsyncCopyLargeChunk:
++      MatrixMulAsyncCopyLargeChunk<blockSize><<<grid, threads, 0, stream>>>(
++          d_C, d_A, d_B, dimsA.x, dimsB.x);
++      break;
++    case AsyncCopyLargeChunkAWBarrier:
++      MatrixMulAsyncCopyLargeChunkAWBarrier<
++          blockSize><<<grid, threads, 0, stream>>>(d_C, d_A, d_B, dimsA.x,
++                                                   dimsB.x);
++      break;
++    case AsyncCopyMultiStageSharedState:
++      MatrixMulAsyncCopyMultiStageSharedState<blockSize><<<
++          gridSharedStateKernel, threadsSharedStateKernel, 0, stream>>>(
++          d_C, d_A, d_B, dimsA.x, dimsB.x);
++      break;
++    case AsyncCopyMultiStage:
++      MatrixMulAsyncCopyMultiStage<blockSize><<<grid, threads, 0, stream>>>(
++          d_C, d_A, d_B, dimsA.x, dimsB.x);
++      break;
++    case AsyncCopySingleStage:
++      MatrixMulAsyncCopySingleStage<blockSize><<<grid, threads, 0, stream>>>(
++          d_C, d_A, d_B, dimsA.x, dimsB.x);
++      break;
++    case Naive:
++      MatrixMulNaive<blockSize><<<grid, threads, 0, stream>>>(d_C, d_A, d_B,
++                                                              dimsA.x, dimsB.x);
++      break;
++    case NaiveLargeChunk:
++      MatrixMulNaiveLargeChunk<blockSize><<<grid, threads, 0, stream>>>(
++          d_C, d_A, d_B, dimsA.x, dimsB.x);
++      break;
++  }
++
++  printf("done\n");
++  checkCudaErrors(hipStreamSynchronize(stream));
++
++  // Execute the kernel
++  int nIter = 100;
++
++  // Record the start event
++  checkCudaErrors(hipEventRecord(start, stream));
++
++  for (int j = 0; j < nIter; j++) {
++    switch (kernel_number) {
++      case AsyncCopyMultiStageLargeChunk:
++      default:
++        MatrixMulAsyncCopyMultiStageLargeChunk<
++            blockSize><<<grid, threads, 0, stream>>>(d_C, d_A, d_B, dimsA.x,
++                                                     dimsB.x);
++        break;
++      case AsyncCopyLargeChunk:
++        MatrixMulAsyncCopyLargeChunk<blockSize><<<grid, threads, 0, stream>>>(
++            d_C, d_A, d_B, dimsA.x, dimsB.x);
++        break;
++      case AsyncCopyLargeChunkAWBarrier:
++        MatrixMulAsyncCopyLargeChunkAWBarrier<
++            blockSize><<<grid, threads, 0, stream>>>(d_C, d_A, d_B, dimsA.x,
++                                                     dimsB.x);
++        break;
++      case AsyncCopyMultiStageSharedState:
++        MatrixMulAsyncCopyMultiStageSharedState<blockSize><<<
++            gridSharedStateKernel, threadsSharedStateKernel, 0, stream>>>(
++            d_C, d_A, d_B, dimsA.x, dimsB.x);
++        break;
++      case AsyncCopyMultiStage:
++        MatrixMulAsyncCopyMultiStage<blockSize><<<grid, threads, 0, stream>>>(
++            d_C, d_A, d_B, dimsA.x, dimsB.x);
++        break;
++      case AsyncCopySingleStage:
++        MatrixMulAsyncCopySingleStage<blockSize><<<grid, threads, 0, stream>>>(
++            d_C, d_A, d_B, dimsA.x, dimsB.x);
++        break;
++      case Naive:
++        MatrixMulNaive<blockSize><<<grid, threads, 0, stream>>>(
++            d_C, d_A, d_B, dimsA.x, dimsB.x);
++        break;
++      case NaiveLargeChunk:
++        MatrixMulNaiveLargeChunk<blockSize><<<grid, threads, 0, stream>>>(
++            d_C, d_A, d_B, dimsA.x, dimsB.x);
++        break;
++    }
++  }
++
++  // Record the stop event
++  checkCudaErrors(hipEventRecord(stop, stream));
++
++  // Wait for the stop event to complete
++  checkCudaErrors(hipEventSynchronize(stop));
++
++  float msecTotal = 0.0f;
++  checkCudaErrors(hipEventElapsedTime(&msecTotal, start, stop));
++
++  // Compute and print the performance
++  float msecPerMatrixMul = msecTotal / nIter;
++  double flopsPerMatrixMul = 2.0 * static_cast<double>(dimsA.x) *
++                             static_cast<double>(dimsA.y) *
++                             static_cast<double>(dimsB.x);
++  double gigaFlops =
++      (flopsPerMatrixMul * 1.0e-9f) / (msecPerMatrixMul / 1000.0f);
++  printf(
++      "Performance= %.2f GFlop/s, Time= %.3f msec, Size= %.0f Ops,"
++      " WorkgroupSize= %u threads/block\n",
++      gigaFlops, msecPerMatrixMul, flopsPerMatrixMul, threads.x * threads.y);
++
++  // Copy result from device to host
++  checkCudaErrors(
++      hipMemcpyAsync(h_C, d_C, mem_size_C, hipMemcpyDeviceToHost, stream));
++  checkCudaErrors(hipStreamSynchronize(stream));
++
++  printf("Checking computed result for correctness: ");
++  bool correct = true;
++
++  // test relative error by the formula
++  // |<x, y>_cpu - <x,y>_gpu|/<|x|, |y|>  < eps
++  double eps = 1.e-6;  // machine zero
++
++  for (int i = 0; i < static_cast<int>(dimsC.x * dimsC.y); i++) {
++    double abs_err = fabs(h_C[i] - (dimsA.x * valB));
++    double dot_length = dimsA.x;
++    double abs_val = fabs(h_C[i]);
++    double rel_err = abs_err / abs_val / dot_length;
++
++    if (rel_err > eps) {
++      printf("Error! Matrix[%05d]=%.8f, ref=%.8f error term is > %E\n", i,
++             h_C[i], dimsA.x * valB, eps);
++      correct = false;
++    }
++  }
++
++  printf("%s\n", correct ? "Result = PASS" : "Result = FAIL");
++
++  // Clean up memory
++  checkCudaErrors(hipHostFree(h_A));
++  checkCudaErrors(hipHostFree(h_B));
++  checkCudaErrors(hipHostFree(h_C));
++  checkCudaErrors(hipFree(d_A));
++  checkCudaErrors(hipFree(d_B));
++  checkCudaErrors(hipFree(d_C));
++  checkCudaErrors(hipEventDestroy(start));
++  checkCudaErrors(hipEventDestroy(stop));
++  printf(
++      "\nNOTE: The CUDA Samples are not meant for performance "
++      "measurements. Results may vary when GPU Boost is enabled.\n");
++
++  if (correct) {
++    return EXIT_SUCCESS;
++  } else {
++    return EXIT_FAILURE;
++  }
++}
++
++int main(int argc, char **argv) {
++  printf("[globalToShmemAsyncCopy] - Starting...\n");
++
++  if (checkCmdLineFlag(argc, (const char **)argv, "help") ||
++      checkCmdLineFlag(argc, (const char **)argv, "?")) {
++    printf("Usage -device=n (n >= 0 for deviceID)\n");
++    printf("      -wA=WidthA -hA=HeightA (Width x Height of Matrix A)\n");
++    printf("      -wB=WidthB -hB=HeightB (Width x Height of Matrix B)\n");
++    printf(
++        "      -kernel=kernel_number (0 - AsyncCopyMultiStageLargeChunk; 1 - "
++        "AsyncCopyLargeChunk)\n");
++    printf(
++        "                            (2 - AsyncCopyLargeChunkAWBarrier; 3 - "
++        "AsyncCopyMultiStageSharedState)\n");
++    printf(
++        "                            (4 - AsyncCopyMultiStage; 5 - "
++        "AsyncCopySingleStage; 6 - Naive without memcpy_async)\n");
++    printf(
++        "                            (7 - NaiveLargeChunk without "
++        "memcpy_async)\n");
++    printf(
++        "  Note: Outer matrix dimensions of A & B matrices must be equal.\n");
++
++    exit(EXIT_SUCCESS);
++  }
++
++  // This will pick the best possible CUDA capable device, otherwise
++  // override the device ID based on input provided at the command line
++  int dev = findCudaDevice(argc, (const char **)argv);
++
++  int matrixBlock = 32;
++  dim3 dimsA(10 * 4 * matrixBlock, 10 * 4 * matrixBlock, 1);
++  dim3 dimsB(10 * 4 * matrixBlock, 10 * 4 * matrixBlock, 1);
++
++  // width of Matrix A
++  if (checkCmdLineFlag(argc, (const char **)argv, "wA")) {
++    dimsA.x = getCmdLineArgumentInt(argc, (const char **)argv, "wA");
++  }
++
++  // height of Matrix A
++  if (checkCmdLineFlag(argc, (const char **)argv, "hA")) {
++    dimsA.y = getCmdLineArgumentInt(argc, (const char **)argv, "hA");
++  }
++
++  // width of Matrix B
++  if (checkCmdLineFlag(argc, (const char **)argv, "wB")) {
++    dimsB.x = getCmdLineArgumentInt(argc, (const char **)argv, "wB");
++  }
++
++  // height of Matrix B
++  if (checkCmdLineFlag(argc, (const char **)argv, "hB")) {
++    dimsB.y = getCmdLineArgumentInt(argc, (const char **)argv, "hB");
++  }
++
++  if (dimsA.x != dimsB.y) {
++    printf("Error: outer matrix dimensions must be equal. (%d != %d)\n",
++           dimsA.x, dimsB.y);
++    exit(EXIT_FAILURE);
++  }
++
++  kernels selected_kernel = AsyncCopyMultiStageLargeChunk;
++
++  // kernel to run - default (AsyncCopyMultiStageLargeChunk == 0)
++  if (checkCmdLineFlag(argc, (const char **)argv, "kernel")) {
++    int kernel_number =
++        getCmdLineArgumentInt(argc, (const char **)argv, "kernel");
++    if (kernel_number < 8) {
++      selected_kernel = (kernels)kernel_number;
++    } else {
++      printf(
++          "Error: kernel number should be between 0 to 6, you have entered "
++          "%d\n",
++          kernel_number);
++      exit(EXIT_FAILURE);
++    }
++  }
++
++  int major = 0;
++  checkCudaErrors(
++      hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, dev));
++  if (major < 7) {
++    printf("globalToShmemAsyncCopy requires SM 7.0 or higher.  Exiting...\n");
++    exit(EXIT_WAIVED);
++  }
++
++  printf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y, dimsB.x,
++         dimsB.y);
++
++  int matrix_result = MatrixMultiply(argc, argv, dimsA, dimsB, selected_kernel);
++
++  exit(matrix_result);
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobiCudaGraphs.out b/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobiCudaGraphs.out
+index ff8594d..9d81401 100755
+Binary files a/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobiCudaGraphs.out and b/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobiCudaGraphs.out differ
+diff --git a/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip b/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip
+index e69de29..e0fec53 100644
+--- a/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip
+@@ -0,0 +1,328 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++#include <stdio.h>
++// includes, project
++#include <helper_cuda.h>
++#include <helper_functions.h>
++
++#include <hip/hip_runtime.h>
++
++#include <hip/hip_cooperative_groups.h>
++#include <cooperative_groups/reduce.h>
++
++namespace cg = cooperative_groups;
++
++#define NUM_ELEMS 10000000
++#define NUM_THREADS_PER_BLOCK 512
++
++// warp-aggregated atomic increment
++__device__ int atomicAggInc(int *counter) {
++  cg::coalesced_group active = cg::coalesced_threads();
++
++  // leader does the update
++  int res = 0;
++  if (active.thread_rank() == 0) {
++    res = atomicAdd(counter, active.size());
++  }
++
++  // broadcast result
++  res = active.shfl(res, 0);
++
++  // each thread computes its own value
++  return res + active.thread_rank();
++}
++
++__global__ void filter_arr(int *dst, int *nres, const int *src, int n) {
++  int id = threadIdx.x + blockIdx.x * blockDim.x;
++
++  for (int i = id; i < n; i += gridDim.x * blockDim.x) {
++    if (src[i] > 0) dst[atomicAggInc(nres)] = src[i];
++  }
++}
++
++// warp-aggregated atomic multi bucket increment
++#if __CUDA_ARCH__ >= 700
++__device__ int atomicAggIncMulti(const int bucket, int *counter)
++{
++  cg::coalesced_group active = cg::coalesced_threads();
++  // group all threads with same bucket value.
++  auto labeledGroup = cg::labeled_partition(active, bucket);
++
++  int res = 0;
++  if (labeledGroup.thread_rank() == 0)
++  {
++    res = atomicAdd(&counter[bucket], labeledGroup.size());
++  }
++
++  // broadcast result
++  res = labeledGroup.shfl(res, 0);
++
++  // each thread computes its own value
++  return res + labeledGroup.thread_rank();
++}
++#endif
++
++// Places individual value indices into its corresponding buckets.
++__global__ void mapToBuckets(const int *srcArr, int *indicesBuckets, int *bucketCounters, const int srcSize, const int numOfBuckets)
++{
++#if __CUDA_ARCH__ >= 700
++  cg::grid_group grid = cg::this_grid();
++
++  for (int i=grid.thread_rank(); i < srcSize; i += grid.size())
++  {
++    const int bucket = srcArr[i];
++    if (bucket < numOfBuckets)
++    {
++      indicesBuckets[atomicAggIncMulti(bucket, bucketCounters)] = i;
++    }
++  }
++#endif
++}
++
++int mapIndicesToBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
++{
++  int *d_indicesBuckets, *d_bucketCounters;
++  int *cpuBucketCounters = new int[numOfBuckets];
++  int *h_bucketCounters = new int[numOfBuckets];
++
++  memset(cpuBucketCounters, 0, sizeof(int)*numOfBuckets);
++  // Initialize each bucket counters.
++  for (int i = 0; i < numOfBuckets; i++)
++  {
++    h_bucketCounters[i] = i*NUM_ELEMS;
++  }
++
++  checkCudaErrors(hipMalloc(&d_indicesBuckets, sizeof(int) * NUM_ELEMS * numOfBuckets));
++  checkCudaErrors(hipMalloc(&d_bucketCounters, sizeof(int) * numOfBuckets));
++
++  checkCudaErrors(hipMemcpy(d_bucketCounters, h_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyHostToDevice));
++
++  dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
++  dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK), 1, 1);
++
++  mapToBuckets<<<dimGrid, dimBlock>>>(d_srcArr, d_indicesBuckets, d_bucketCounters, NUM_ELEMS, numOfBuckets);
++
++  checkCudaErrors(hipMemcpy(h_bucketCounters, d_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyDeviceToHost));
++
++  for (int i=0; i < NUM_ELEMS; i++)
++  {
++    cpuBucketCounters[h_srcArr[i]]++;
++  }
++
++  bool allMatch = true;
++  int finalElems = 0;
++  for (int i=0; i < numOfBuckets; i++)
++  {
++    finalElems += (h_bucketCounters[i] - i*NUM_ELEMS);
++    if (cpuBucketCounters[i] != (h_bucketCounters[i] - i*NUM_ELEMS))
++    {
++      allMatch = false;
++      break;
++    }
++  }
++
++  if (!allMatch && finalElems != NUM_ELEMS)
++  {
++      return EXIT_FAILURE;
++  }
++  return EXIT_SUCCESS;
++}
++
++// Warp-aggregated atomic Max in multi bucket
++#if __CUDA_ARCH__ >= 700
++__device__ void atomicAggMaxMulti(const int bucket, int *counter, const int valueForMax)
++{
++  cg::coalesced_group active = cg::coalesced_threads();
++  // group all threads with same bucket value.
++  auto labeledGroup = cg::labeled_partition(active, bucket);
++
++  const int maxValueInGroup = cg::reduce(labeledGroup, valueForMax, cg::greater<int>());
++
++  if (labeledGroup.thread_rank() == 0)
++  {
++    atomicMax(&counter[bucket], maxValueInGroup);
++  }
++}
++#endif
++
++// Performs max calculation in each buckets.
++__global__ void calculateMaxInEachBuckets(const int *srcArr, const int *valueInBuckets, int *bucketsMax, const int srcSize, const int numOfBuckets)
++{
++#if __CUDA_ARCH__ >= 700
++  cg::grid_group grid = cg::this_grid();
++
++  for (int i=grid.thread_rank(); i < srcSize; i += grid.size())
++  {
++    const int bucket = srcArr[i];
++    if (bucket < numOfBuckets)
++    {
++      atomicAggMaxMulti(bucket, bucketsMax, valueInBuckets[i]);
++    }
++  }
++#endif
++}
++
++int calculateMaxInBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
++{
++  int *d_valueInBuckets, *d_bucketsMax;
++  int *h_valueInBuckets = new int[NUM_ELEMS];
++  int *cpuBucketsMax    = new int[numOfBuckets];
++  int *h_bucketsMax     = new int[numOfBuckets];
++
++  memset(cpuBucketsMax, 0, sizeof(int) * numOfBuckets);
++
++  // Here we create values which is assumed to correspond to each 
++  // buckets of srcArr at same array index.
++  for (int i=0; i < NUM_ELEMS; i++)
++  {
++    h_valueInBuckets[i] = rand();
++  }
++
++  checkCudaErrors(hipMalloc(&d_valueInBuckets, sizeof(int) * NUM_ELEMS));
++  checkCudaErrors(hipMalloc(&d_bucketsMax, sizeof(int) * numOfBuckets));
++
++  checkCudaErrors(hipMemset(d_bucketsMax, 0, sizeof(int) * numOfBuckets));
++  checkCudaErrors(hipMemcpy(d_valueInBuckets, h_valueInBuckets, sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
++
++  dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
++  dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK), 1, 1);
++
++  calculateMaxInEachBuckets<<<dimGrid, dimBlock>>>(d_srcArr, d_valueInBuckets, d_bucketsMax, NUM_ELEMS, numOfBuckets);
++
++  checkCudaErrors(hipMemcpy(h_bucketsMax, d_bucketsMax, sizeof(int) * numOfBuckets, hipMemcpyDeviceToHost));
++
++  for (int i = 0; i < NUM_ELEMS; i++)
++  {
++    if (cpuBucketsMax[h_srcArr[i]] < h_valueInBuckets[i])
++    {
++      cpuBucketsMax[h_srcArr[i]] = h_valueInBuckets[i];
++    }
++  }
++
++  bool allMatch = true;
++  int finalElems = 0;
++  for (int i=0; i < numOfBuckets; i++)
++  {
++    if (cpuBucketsMax[i] != h_bucketsMax[i])
++    {
++      allMatch = false;
++      printf("CPU i=%d  max = %d mismatches GPU max = %d\n", i, cpuBucketsMax[i], h_bucketsMax[i]);
++      break;
++    }
++  }
++  if (allMatch)
++  {
++    printf("CPU max matches GPU max\n"); 
++  }
++
++  delete[] h_valueInBuckets;
++  delete[] cpuBucketsMax;
++  delete[] h_bucketsMax;
++  checkCudaErrors(hipFree(d_valueInBuckets));
++  checkCudaErrors(hipFree(d_bucketsMax));
++
++  if (!allMatch && finalElems != NUM_ELEMS)
++  {
++      return EXIT_FAILURE;
++  }
++
++  return EXIT_SUCCESS;
++}
++
++int main(int argc, char **argv) {
++  int *data_to_filter, *filtered_data, nres = 0;
++  int *d_data_to_filter, *d_filtered_data, *d_nres;
++
++  int numOfBuckets = 5;
++
++  data_to_filter = reinterpret_cast<int *>(malloc(sizeof(int) * NUM_ELEMS));
++
++  // Generate input data.
++  for (int i = 0; i < NUM_ELEMS; i++) {
++    data_to_filter[i] = rand() % numOfBuckets;
++  }
++
++  int devId = findCudaDevice(argc, (const char **)argv);
++
++  checkCudaErrors(hipMalloc(&d_data_to_filter, sizeof(int) * NUM_ELEMS));
++  checkCudaErrors(hipMalloc(&d_filtered_data, sizeof(int) * NUM_ELEMS));
++  checkCudaErrors(hipMalloc(&d_nres, sizeof(int)));
++
++  checkCudaErrors(hipMemcpy(d_data_to_filter, data_to_filter,
++                             sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
++  checkCudaErrors(hipMemset(d_nres, 0, sizeof(int)));
++
++  dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
++  dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK) + 1, 1, 1);
++
++  filter_arr<<<dimGrid, dimBlock>>>(d_filtered_data, d_nres, d_data_to_filter,
++                                    NUM_ELEMS);
++
++  checkCudaErrors(
++      hipMemcpy(&nres, d_nres, sizeof(int), hipMemcpyDeviceToHost));
++
++  filtered_data = reinterpret_cast<int *>(malloc(sizeof(int) * nres));
++
++  checkCudaErrors(hipMemcpy(filtered_data, d_filtered_data, sizeof(int) * nres,
++                             hipMemcpyDeviceToHost));
++
++  int *host_filtered_data =
++      reinterpret_cast<int *>(malloc(sizeof(int) * NUM_ELEMS));
++
++  // Generate host output with host filtering code.
++  int host_flt_count = 0;
++  for (int i = 0; i < NUM_ELEMS; i++) {
++    if (data_to_filter[i] > 0) {
++      host_filtered_data[host_flt_count++] = data_to_filter[i];
++    }
++  }
++
++  int major = 0;
++  checkCudaErrors(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, devId));
++
++  int mapIndicesToBucketsStatus = EXIT_SUCCESS;
++  int calculateMaxInBucketsStatus = EXIT_SUCCESS;
++  // atomicAggIncMulti & atomicAggMaxMulti require a GPU of Volta (SM7X) architecture or higher,
++  // so that it can take advantage of the new MATCH capability of Volta hardware
++  if (major >= 7) {
++    mapIndicesToBucketsStatus = mapIndicesToBuckets(data_to_filter, d_data_to_filter, numOfBuckets);
++    calculateMaxInBucketsStatus = calculateMaxInBuckets(data_to_filter, d_data_to_filter, numOfBuckets);
++  }
++
++  printf("\nWarp Aggregated Atomics %s \n",
++         (host_flt_count == nres) && (mapIndicesToBucketsStatus == EXIT_SUCCESS) && 
++         (calculateMaxInBucketsStatus == EXIT_SUCCESS) ? "PASSED" : "FAILED");
++
++  checkCudaErrors(hipFree(d_data_to_filter));
++  checkCudaErrors(hipFree(d_filtered_data));
++  checkCudaErrors(hipFree(d_nres));
++  free(data_to_filter);
++  free(filtered_data);
++  free(host_filtered_data);
++}
+diff --git a/src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG.cu.hip b/src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG.cu.hip
+index e69de29..94deed1 100644
+--- a/src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG.cu.hip
++++ b/src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG.cu.hip
+@@ -0,0 +1,794 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * This sample implements a conjugate gradient solver on multiple GPU using
++ * Unified Memory optimized prefetching and usage hints.
++ *
++ */
++
++// includes, system
++#include <stdio.h>
++#include <stdlib.h>
++#include <string.h>
++#include <map>
++#include <iostream>
++#include <set>
++#include <utility>
++
++#include <hip/hip_runtime.h>
++
++// Utilities and system includes
++#include <helper_cuda.h>  // helper function CUDA error checking and initialization
++#include <helper_functions.h>  // helper for shared functions common to CUDA Samples
++
++#include <hip/hip_cooperative_groups.h>
++#include <cooperative_groups/reduce.h>
++
++namespace cg = cooperative_groups;
++
++const char *sSDKname = "conjugateGradientMultiDeviceCG";
++
++#define ENABLE_CPU_DEBUG_CODE 0
++#define THREADS_PER_BLOCK 512
++
++__device__ double grid_dot_result = 0.0;
++
++/* genTridiag: generate a random tridiagonal symmetric matrix */
++void genTridiag(int *I, int *J, float *val, int N, int nz) {
++  I[0] = 0, J[0] = 0, J[1] = 1;
++  val[0] = (float)rand() / RAND_MAX + 10.0f;
++  val[1] = (float)rand() / RAND_MAX;
++  int start;
++
++  for (int i = 1; i < N; i++) {
++    if (i > 1) {
++      I[i] = I[i - 1] + 3;
++    } else {
++      I[1] = 2;
++    }
++
++    start = (i - 1) * 3 + 2;
++    J[start] = i - 1;
++    J[start + 1] = i;
++
++    if (i < N - 1) {
++      J[start + 2] = i + 1;
++    }
++
++    val[start] = val[start - 1];
++    val[start + 1] = (float)rand() / RAND_MAX + 10.0f;
++
++    if (i < N - 1) {
++      val[start + 2] = (float)rand() / RAND_MAX;
++    }
++  }
++
++  I[N] = nz;
++}
++
++// I - contains location of the given non-zero element in the row of the matrix
++// J - contains location of the given non-zero element in the column of the
++// matrix val - contains values of the given non-zero elements of the matrix
++// inputVecX - input vector to be multiplied
++// outputVecY - resultant vector
++void cpuSpMV(int *I, int *J, float *val, int nnz, int num_rows, float alpha,
++             float *inputVecX, float *outputVecY) {
++  for (int i = 0; i < num_rows; i++) {
++    int num_elems_this_row = I[i + 1] - I[i];
++
++    float output = 0.0;
++    for (int j = 0; j < num_elems_this_row; j++) {
++      output += alpha * val[I[i] + j] * inputVecX[J[I[i] + j]];
++    }
++    outputVecY[i] = output;
++  }
++
++  return;
++}
++
++float dotProduct(float *vecA, float *vecB, int size) {
++  float result = 0.0;
++
++  for (int i = 0; i < size; i++) {
++    result = result + (vecA[i] * vecB[i]);
++  }
++
++  return result;
++}
++
++void scaleVector(float *vec, float alpha, int size) {
++  for (int i = 0; i < size; i++) {
++    vec[i] = alpha * vec[i];
++  }
++}
++
++void saxpy(float *x, float *y, float a, int size) {
++  for (int i = 0; i < size; i++) {
++    y[i] = a * x[i] + y[i];
++  }
++}
++
++void cpuConjugateGrad(int *I, int *J, float *val, float *x, float *Ax, float *p,
++                      float *r, int nnz, int N, float tol) {
++  int max_iter = 10000;
++
++  float alpha = 1.0;
++  float alpham1 = -1.0;
++  float r0 = 0.0, b, a, na;
++
++  cpuSpMV(I, J, val, nnz, N, alpha, x, Ax);
++  saxpy(Ax, r, alpham1, N);
++
++  float r1 = dotProduct(r, r, N);
++
++  int k = 1;
++
++  while (r1 > tol * tol && k <= max_iter) {
++    if (k > 1) {
++      b = r1 / r0;
++      scaleVector(p, b, N);
++
++      saxpy(r, p, alpha, N);
++    } else {
++      for (int i = 0; i < N; i++) p[i] = r[i];
++    }
++
++    cpuSpMV(I, J, val, nnz, N, alpha, p, Ax);
++
++    float dot = dotProduct(p, Ax, N);
++    a = r1 / dot;
++
++    saxpy(p, x, a, N);
++    na = -a;
++    saxpy(Ax, r, na, N);
++
++    r0 = r1;
++    r1 = dotProduct(r, r, N);
++
++    printf("\nCPU code iteration = %3d, residual = %e\n", k, sqrt(r1));
++    k++;
++  }
++}
++
++// Data filled on CPU needed for MultiGPU operations.
++struct MultiDeviceData {
++  unsigned char *hostMemoryArrivedList;
++  unsigned int numDevices;
++  unsigned int deviceRank;
++};
++
++// Class used for coordination of multiple devices.
++class PeerGroup {
++  const MultiDeviceData &data;
++  const cg::grid_group &grid;
++
++  __device__ unsigned char load_arrived(unsigned char *arrived) const {
++#if __CUDA_ARCH__ < 700
++    return *(volatile unsigned char *)arrived;
++#else
++    unsigned int result;
++    asm volatile("ld.acquire.sys.global.u8 %0, [%1];"
++                 : "=r"(result)
++                 : "l"(arrived)
++                 : "memory");
++    return result;
++#endif
++  }
++
++  __device__ void store_arrived(unsigned char *arrived,
++                                unsigned char val) const {
++#if __CUDA_ARCH__ < 700
++    *(volatile unsigned char *)arrived = val;
++#else
++    unsigned int reg_val = val;
++    asm volatile(
++        "st.release.sys.global.u8 [%1], %0;" ::"r"(reg_val) "l"(arrived)
++        : "memory");
++
++    // Avoids compiler warnings from unused variable val.
++    (void)(reg_val = reg_val);
++#endif
++  }
++
++ public:
++  __device__ PeerGroup(const MultiDeviceData &data, const cg::grid_group &grid)
++      : data(data), grid(grid){};
++
++  __device__ unsigned int size() const { return data.numDevices * grid.size(); }
++
++  __device__ unsigned int thread_rank() const {
++    return data.deviceRank * grid.size() + grid.thread_rank();
++  }
++
++  __device__ void sync() const {
++    grid.sync();
++
++    // One thread from each grid participates in the sync.
++    if (grid.thread_rank() == 0) {
++      if (data.deviceRank == 0) {
++        // Leader grid waits for others to join and then releases them.
++        // Other GPUs can arrive in any order, so the leader have to wait for
++        // all others.
++        for (int i = 0; i < data.numDevices - 1; i++) {
++          while (load_arrived(&data.hostMemoryArrivedList[i]) == 0)
++            ;
++        }
++        for (int i = 0; i < data.numDevices - 1; i++) {
++          store_arrived(&data.hostMemoryArrivedList[i], 0);
++        }
++        __threadfence_system();
++      } else {
++        // Other grids note their arrival and wait to be released.
++        store_arrived(&data.hostMemoryArrivedList[data.deviceRank - 1], 1);
++        while (load_arrived(&data.hostMemoryArrivedList[data.deviceRank - 1]) ==
++               1)
++          ;
++      }
++    }
++
++    grid.sync();
++  }
++};
++
++__device__ void gpuSpMV(int *I, int *J, float *val, int nnz, int num_rows,
++                        float alpha, float *inputVecX, float *outputVecY,
++                        const PeerGroup &peer_group) {
++  for (int i = peer_group.thread_rank(); i < num_rows; i += peer_group.size()) {
++    int row_elem = I[i];
++    int next_row_elem = I[i + 1];
++    int num_elems_this_row = next_row_elem - row_elem;
++
++    float output = 0.0;
++    for (int j = 0; j < num_elems_this_row; j++) {
++      output += alpha * val[row_elem + j] * inputVecX[J[row_elem + j]];
++    }
++
++    outputVecY[i] = output;
++  }
++}
++
++__device__ void gpuSaxpy(float *x, float *y, float a, int size,
++                         const PeerGroup &peer_group) {
++  for (int i = peer_group.thread_rank(); i < size; i += peer_group.size()) {
++    y[i] = a * x[i] + y[i];
++  }
++}
++
++__device__ void gpuDotProduct(float *vecA, float *vecB, int size,
++                              const cg::thread_block &cta,
++                              const PeerGroup &peer_group) {
++  extern __shared__ double tmp[];
++
++  double temp_sum = 0.0;
++
++  for (int i = peer_group.thread_rank(); i < size; i += peer_group.size()) {
++    temp_sum += (double)(vecA[i] * vecB[i]);
++  }
++
++  cg::thread_block_tile<32> tile32 = cg::tiled_partition<32>(cta);
++
++  temp_sum = cg::reduce(tile32, temp_sum, cg::plus<double>());
++
++  if (tile32.thread_rank() == 0) {
++    tmp[tile32.meta_group_rank()] = temp_sum;
++  }
++
++  cg::sync(cta);
++
++  if (tile32.meta_group_rank() == 0) {
++    temp_sum = tile32.thread_rank() < tile32.meta_group_size()
++                   ? tmp[tile32.thread_rank()]
++                   : 0.0;
++    temp_sum = cg::reduce(tile32, temp_sum, cg::plus<double>());
++
++    if (tile32.thread_rank() == 0) {
++      atomicAdd(&grid_dot_result, temp_sum);
++    }
++  }
++}
++
++__device__ void gpuCopyVector(float *srcA, float *destB, int size,
++                              const PeerGroup &peer_group) {
++  for (int i = peer_group.thread_rank(); i < size; i += peer_group.size()) {
++    destB[i] = srcA[i];
++  }
++}
++
++__device__ void gpuScaleVectorAndSaxpy(float *x, float *y, float a, float scale,
++                                       int size, const PeerGroup &peer_group) {
++  for (int i = peer_group.thread_rank(); i < size; i += peer_group.size()) {
++    y[i] = a * x[i] + scale * y[i];
++  }
++}
++
++extern "C" __global__ void multiGpuConjugateGradient(
++    int *I, int *J, float *val, float *x, float *Ax, float *p, float *r,
++    double *dot_result, int nnz, int N, float tol,
++    MultiDeviceData multi_device_data) {
++  cg::thread_block cta = cg::this_thread_block();
++  cg::grid_group grid = cg::this_grid();
++  PeerGroup peer_group(multi_device_data, grid);
++
++  const int max_iter = 10000;
++
++  float alpha = 1.0;
++  float alpham1 = -1.0;
++  float r0 = 0.0, r1, b, a, na;
++
++  for (int i = peer_group.thread_rank(); i < N; i += peer_group.size()) {
++    r[i] = 1.0;
++    x[i] = 0.0;
++  }
++
++  cg::sync(grid);
++
++  gpuSpMV(I, J, val, nnz, N, alpha, x, Ax, peer_group);
++
++  cg::sync(grid);
++
++  gpuSaxpy(Ax, r, alpham1, N, peer_group);
++
++  cg::sync(grid);
++
++  gpuDotProduct(r, r, N, cta, peer_group);
++
++  cg::sync(grid);
++
++  if (grid.thread_rank() == 0) {
++    atomicAdd_system(dot_result, grid_dot_result);
++    grid_dot_result = 0.0;
++  }
++  peer_group.sync();
++
++  r1 = *dot_result;
++
++  int k = 1;
++  while (r1 > tol * tol && k <= max_iter) {
++    if (k > 1) {
++      b = r1 / r0;
++      gpuScaleVectorAndSaxpy(r, p, alpha, b, N, peer_group);
++    } else {
++      gpuCopyVector(r, p, N, peer_group);
++    }
++
++    peer_group.sync();
++
++    gpuSpMV(I, J, val, nnz, N, alpha, p, Ax, peer_group);
++
++    if (peer_group.thread_rank() == 0) {
++      *dot_result = 0.0;
++    }
++    peer_group.sync();
++
++    gpuDotProduct(p, Ax, N, cta, peer_group);
++
++    cg::sync(grid);
++
++    if (grid.thread_rank() == 0) {
++      atomicAdd_system(dot_result, grid_dot_result);
++      grid_dot_result = 0.0;
++    }
++    peer_group.sync();
++
++    a = r1 / *dot_result;
++
++    gpuSaxpy(p, x, a, N, peer_group);
++
++    na = -a;
++
++    gpuSaxpy(Ax, r, na, N, peer_group);
++
++    r0 = r1;
++
++    peer_group.sync();
++
++    if (peer_group.thread_rank() == 0) {
++      *dot_result = 0.0;
++    }
++
++    peer_group.sync();
++
++    gpuDotProduct(r, r, N, cta, peer_group);
++
++    cg::sync(grid);
++
++    if (grid.thread_rank() == 0) {
++      atomicAdd_system(dot_result, grid_dot_result);
++      grid_dot_result = 0.0;
++    }
++    peer_group.sync();
++
++    r1 = *dot_result;
++    k++;
++  }
++}
++
++// Map of device version to device number
++std::multimap<std::pair<int, int>, int> getIdenticalGPUs() {
++  int numGpus = 0;
++  checkCudaErrors(hipGetDeviceCount(&numGpus));
++
++  std::multimap<std::pair<int, int>, int> identicalGpus;
++
++  for (int i = 0; i < numGpus; i++) {
++    hipDeviceProp_t deviceProp;
++    checkCudaErrors(hipGetDeviceProperties(&deviceProp, i));
++
++    // Filter unsupported devices
++    if (deviceProp.cooperativeLaunch && deviceProp.concurrentManagedAccess) {
++      identicalGpus.emplace(std::make_pair(deviceProp.major, deviceProp.minor),
++                            i);
++    }
++    printf("GPU Device %d: \"%s\" with compute capability %d.%d\n", i,
++           deviceProp.name, deviceProp.major, deviceProp.minor);
++  }
++
++  return identicalGpus;
++}
++
++int main(int argc, char **argv) {
++  constexpr size_t kNumGpusRequired = 2;
++  int N = 0, nz = 0, *I = NULL, *J = NULL;
++  float *val = NULL;
++  const float tol = 1e-5f;
++  float *x;
++  float rhs = 1.0;
++  float r1;
++  float *r, *p, *Ax;
++
++  printf("Starting [%s]...\n", sSDKname);
++  auto gpusByArch = getIdenticalGPUs();
++
++  auto it = gpusByArch.begin();
++  auto end = gpusByArch.end();
++
++  auto bestFit = std::make_pair(it, it);
++  // use std::distance to find the largest number of GPUs amongst architectures
++  auto distance = [](decltype(bestFit) p) {
++    return std::distance(p.first, p.second);
++  };
++
++  // Read each unique key/pair element in order
++  for (; it != end; it = gpusByArch.upper_bound(it->first)) {
++    // first and second are iterators bounded within the architecture group
++    auto testFit = gpusByArch.equal_range(it->first);
++    // Always use devices with highest architecture version or whichever has the
++    // most devices available
++    if (distance(bestFit) <= distance(testFit)) bestFit = testFit;
++  }
++
++  if (distance(bestFit) < kNumGpusRequired) {
++    printf(
++        "No two or more GPUs with same architecture capable of "
++        "concurrentManagedAccess found. "
++        "\nWaiving the sample\n");
++    exit(EXIT_WAIVED);
++  }
++
++  std::set<int> bestFitDeviceIds;
++
++  // Check & select peer-to-peer access capable GPU devices as enabling p2p
++  // access between participating GPUs gives better performance.
++  for (auto itr = bestFit.first; itr != bestFit.second; itr++) {
++    int deviceId = itr->second;
++    checkCudaErrors(hipSetDevice(deviceId));
++
++    std::for_each(
++        itr, bestFit.second,
++        [&deviceId, &bestFitDeviceIds,
++         &kNumGpusRequired](decltype(*itr) mapPair) {
++          if (deviceId != mapPair.second) {
++            int access = 0;
++            checkCudaErrors(
++                hipDeviceCanAccessPeer(&access, deviceId, mapPair.second));
++            printf("Device=%d %s Access Peer Device=%d\n", deviceId,
++                   access ? "CAN" : "CANNOT", mapPair.second);
++            if (access && bestFitDeviceIds.size() < kNumGpusRequired) {
++              bestFitDeviceIds.emplace(deviceId);
++              bestFitDeviceIds.emplace(mapPair.second);
++            } else {
++              printf("Ignoring device %i (max devices exceeded)\n",
++                     mapPair.second);
++            }
++          }
++        });
++
++    if (bestFitDeviceIds.size() >= kNumGpusRequired) {
++      printf("Selected p2p capable devices - ");
++      for (auto devicesItr = bestFitDeviceIds.begin();
++           devicesItr != bestFitDeviceIds.end(); devicesItr++) {
++        printf("deviceId = %d  ", *devicesItr);
++      }
++      printf("\n");
++      break;
++    }
++  }
++
++  // if bestFitDeviceIds.size() == 0 it means the GPUs in system are not p2p
++  // capable, hence we add it without p2p capability check.
++  if (!bestFitDeviceIds.size()) {
++    printf("Devices involved are not p2p capable.. selecting %zu of them\n",
++           kNumGpusRequired);
++    std::for_each(bestFit.first, bestFit.second,
++                  [&bestFitDeviceIds,
++                   &kNumGpusRequired](decltype(*bestFit.first) mapPair) {
++                    if (bestFitDeviceIds.size() < kNumGpusRequired) {
++                      bestFitDeviceIds.emplace(mapPair.second);
++                    } else {
++                      printf("Ignoring device %i (max devices exceeded)\n",
++                             mapPair.second);
++                    }
++                    // Insert the sequence into the deviceIds set
++                  });
++  } else {
++    // perform hipDeviceEnablePeerAccess in both directions for all
++    // participating devices.
++    for (auto p1_itr = bestFitDeviceIds.begin();
++         p1_itr != bestFitDeviceIds.end(); p1_itr++) {
++      checkCudaErrors(hipSetDevice(*p1_itr));
++      for (auto p2_itr = bestFitDeviceIds.begin();
++           p2_itr != bestFitDeviceIds.end(); p2_itr++) {
++        if (*p1_itr != *p2_itr) {
++          checkCudaErrors(hipDeviceEnablePeerAccess(*p2_itr, 0));
++          checkCudaErrors(hipSetDevice(*p1_itr));
++        }
++      }
++    }
++  }
++
++  /* Generate a random tridiagonal symmetric matrix in CSR format */
++  N = 10485760 * 2;
++  nz = (N - 2) * 3 + 4;
++
++  checkCudaErrors(hipMallocManaged((void **)&I, sizeof(int) * (N + 1)));
++  checkCudaErrors(hipMallocManaged((void **)&J, sizeof(int) * nz));
++  checkCudaErrors(hipMallocManaged((void **)&val, sizeof(float) * nz));
++
++  float *val_cpu = (float *)malloc(sizeof(float) * nz);
++
++  genTridiag(I, J, val_cpu, N, nz);
++
++  memcpy(val, val_cpu, sizeof(float) * nz);
++  checkCudaErrors(
++      hipMemAdvise(I, sizeof(int) * (N + 1), hipMemAdviseSetReadMostly, 0));
++  checkCudaErrors(
++      hipMemAdvise(J, sizeof(int) * nz, hipMemAdviseSetReadMostly, 0));
++  checkCudaErrors(
++      hipMemAdvise(val, sizeof(float) * nz, hipMemAdviseSetReadMostly, 0));
++
++  checkCudaErrors(hipMallocManaged((void **)&x, sizeof(float) * N));
++
++  double *dot_result;
++  checkCudaErrors(hipMallocManaged((void **)&dot_result, sizeof(double)));
++
++  checkCudaErrors(hipMemset(dot_result, 0, sizeof(double)));
++
++  // temp memory for ConjugateGradient
++  checkCudaErrors(hipMallocManaged((void **)&r, N * sizeof(float)));
++  checkCudaErrors(hipMallocManaged((void **)&p, N * sizeof(float)));
++  checkCudaErrors(hipMallocManaged((void **)&Ax, N * sizeof(float)));
++
++  std::cout << "\nRunning on GPUs = " << kNumGpusRequired << std::endl;
++  hipStream_t nStreams[kNumGpusRequired];
++
++  int sMemSize = sizeof(double) * ((THREADS_PER_BLOCK / 32) + 1);
++  int numBlocksPerSm = INT_MAX;
++  int numThreads = THREADS_PER_BLOCK;
++  int numSms = INT_MAX;
++  auto deviceId = bestFitDeviceIds.begin();
++
++  // set numSms & numBlocksPerSm to be lowest of 2 devices
++  while (deviceId != bestFitDeviceIds.end()) {
++    hipDeviceProp_t deviceProp;
++    checkCudaErrors(hipSetDevice(*deviceId));
++    checkCudaErrors(hipGetDeviceProperties(&deviceProp, *deviceId));
++
++    int numBlocksPerSm_current = 0;
++    checkCudaErrors(hipOccupancyMaxActiveBlocksPerMultiprocessor(
++        &numBlocksPerSm_current, multiGpuConjugateGradient, numThreads,
++        sMemSize));
++
++    if (numBlocksPerSm > numBlocksPerSm_current) {
++      numBlocksPerSm = numBlocksPerSm_current;
++    }
++    if (numSms > deviceProp.multiProcessorCount) {
++      numSms = deviceProp.multiProcessorCount;
++    }
++    deviceId++;
++  }
++
++  if (!numBlocksPerSm) {
++    printf(
++        "Max active blocks per SM is returned as 0.\n Hence, Waiving the "
++        "sample\n");
++    exit(EXIT_WAIVED);
++  }
++
++  int device_count = 0;
++  int totalThreadsPerGPU = numSms * numBlocksPerSm * THREADS_PER_BLOCK;
++  deviceId = bestFitDeviceIds.begin();
++  while (deviceId != bestFitDeviceIds.end()) {
++    checkCudaErrors(hipSetDevice(*deviceId));
++    checkCudaErrors(hipStreamCreate(&nStreams[device_count]));
++
++    int perGPUIter = N / (totalThreadsPerGPU * kNumGpusRequired);
++    int offset_Ax = device_count * totalThreadsPerGPU;
++    int offset_r = device_count * totalThreadsPerGPU;
++    int offset_p = device_count * totalThreadsPerGPU;
++    int offset_x = device_count * totalThreadsPerGPU;
++
++    checkCudaErrors(hipMemPrefetchAsync(I, sizeof(int) * N, *deviceId,
++                                         nStreams[device_count]));
++    checkCudaErrors(hipMemPrefetchAsync(val, sizeof(float) * nz, *deviceId,
++                                         nStreams[device_count]));
++    checkCudaErrors(hipMemPrefetchAsync(J, sizeof(float) * nz, *deviceId,
++                                         nStreams[device_count]));
++
++    if (offset_Ax <= N) {
++      for (int i = 0; i < perGPUIter; i++) {
++        hipMemAdvise(Ax + offset_Ax, sizeof(float) * totalThreadsPerGPU,
++                      hipMemAdviseSetPreferredLocation, *deviceId);
++        hipMemAdvise(r + offset_r, sizeof(float) * totalThreadsPerGPU,
++                      hipMemAdviseSetPreferredLocation, *deviceId);
++        hipMemAdvise(x + offset_x, sizeof(float) * totalThreadsPerGPU,
++                      hipMemAdviseSetPreferredLocation, *deviceId);
++        hipMemAdvise(p + offset_p, sizeof(float) * totalThreadsPerGPU,
++                      hipMemAdviseSetPreferredLocation, *deviceId);
++
++        hipMemAdvise(Ax + offset_Ax, sizeof(float) * totalThreadsPerGPU,
++                      hipMemAdviseSetAccessedBy, *deviceId);
++        hipMemAdvise(r + offset_r, sizeof(float) * totalThreadsPerGPU,
++                      hipMemAdviseSetAccessedBy, *deviceId);
++        hipMemAdvise(p + offset_p, sizeof(float) * totalThreadsPerGPU,
++                      hipMemAdviseSetAccessedBy, *deviceId);
++        hipMemAdvise(x + offset_x, sizeof(float) * totalThreadsPerGPU,
++                      hipMemAdviseSetAccessedBy, *deviceId);
++
++        offset_Ax += totalThreadsPerGPU * kNumGpusRequired;
++        offset_r += totalThreadsPerGPU * kNumGpusRequired;
++        offset_p += totalThreadsPerGPU * kNumGpusRequired;
++        offset_x += totalThreadsPerGPU * kNumGpusRequired;
++
++        if (offset_Ax >= N) {
++          break;
++        }
++      }
++    }
++
++    device_count++;
++    deviceId++;
++  }
++
++#if ENABLE_CPU_DEBUG_CODE
++  float *Ax_cpu = (float *)malloc(sizeof(float) * N);
++  float *r_cpu = (float *)malloc(sizeof(float) * N);
++  float *p_cpu = (float *)malloc(sizeof(float) * N);
++  float *x_cpu = (float *)malloc(sizeof(float) * N);
++
++  for (int i = 0; i < N; i++) {
++    r_cpu[i] = 1.0;
++    Ax_cpu[i] = x_cpu[i] = 0.0;
++  }
++#endif
++
++  printf("Total threads per GPU = %d numBlocksPerSm  = %d\n",
++         numSms * numBlocksPerSm * THREADS_PER_BLOCK, numBlocksPerSm);
++  dim3 dimGrid(numSms * numBlocksPerSm, 1, 1),
++      dimBlock(THREADS_PER_BLOCK, 1, 1);
++
++  // Structure used for cross-grid synchronization.
++  MultiDeviceData multi_device_data;
++  checkCudaErrors(hipHostAlloc(
++      &multi_device_data.hostMemoryArrivedList,
++      (kNumGpusRequired - 1) * sizeof(*multi_device_data.hostMemoryArrivedList),
++      hipHostMallocPortable));
++  memset(multi_device_data.hostMemoryArrivedList, 0,
++         (kNumGpusRequired - 1) *
++             sizeof(*multi_device_data.hostMemoryArrivedList));
++  multi_device_data.numDevices = kNumGpusRequired;
++  multi_device_data.deviceRank = 0;
++
++  void *kernelArgs[] = {
++      (void *)&I,  (void *)&J, (void *)&val, (void *)&x,
++      (void *)&Ax, (void *)&p, (void *)&r,   (void *)&dot_result,
++      (void *)&nz, (void *)&N, (void *)&tol, (void *)&multi_device_data,
++  };
++
++  printf("Launching kernel\n");
++
++  deviceId = bestFitDeviceIds.begin();
++  device_count = 0;
++  while (deviceId != bestFitDeviceIds.end()) {
++    checkCudaErrors(hipSetDevice(*deviceId));
++    checkCudaErrors(hipLaunchCooperativeKernel(
++        (void *)multiGpuConjugateGradient, dimGrid, dimBlock, kernelArgs,
++        sMemSize, nStreams[device_count++]));
++    multi_device_data.deviceRank++;
++    deviceId++;
++  }
++
++  checkCudaErrors(hipMemPrefetchAsync(x, sizeof(float) * N, hipCpuDeviceId));
++  checkCudaErrors(
++      hipMemPrefetchAsync(dot_result, sizeof(double), hipCpuDeviceId));
++
++  deviceId = bestFitDeviceIds.begin();
++  device_count = 0;
++  while (deviceId != bestFitDeviceIds.end()) {
++    checkCudaErrors(hipSetDevice(*deviceId));
++    checkCudaErrors(hipStreamSynchronize(nStreams[device_count++]));
++    deviceId++;
++  }
++
++  r1 = (float)*dot_result;
++
++  printf("GPU Final, residual = %e \n  ", sqrt(r1));
++
++#if ENABLE_CPU_DEBUG_CODE
++  cpuConjugateGrad(I, J, val, x_cpu, Ax_cpu, p_cpu, r_cpu, nz, N, tol);
++#endif
++
++  float rsum, diff, err = 0.0;
++
++  for (int i = 0; i < N; i++) {
++    rsum = 0.0;
++
++    for (int j = I[i]; j < I[i + 1]; j++) {
++      rsum += val_cpu[j] * x[J[j]];
++    }
++
++    diff = fabs(rsum - rhs);
++
++    if (diff > err) {
++      err = diff;
++    }
++  }
++
++  checkCudaErrors(hipHostFree(multi_device_data.hostMemoryArrivedList));
++  checkCudaErrors(hipFree(I));
++  checkCudaErrors(hipFree(J));
++  checkCudaErrors(hipFree(val));
++  checkCudaErrors(hipFree(x));
++  checkCudaErrors(hipFree(r));
++  checkCudaErrors(hipFree(p));
++  checkCudaErrors(hipFree(Ax));
++  checkCudaErrors(hipFree(dot_result));
++  free(val_cpu);
++
++#if ENABLE_CPU_DEBUG_CODE
++  free(Ax_cpu);
++  free(r_cpu);
++  free(p_cpu);
++  free(x_cpu);
++#endif
++
++  printf("Test Summary:  Error amount = %f \n", err);
++  fprintf(stdout, "&&&& conjugateGradientMultiDeviceCG %s\n",
++          (sqrt(r1) < tol) ? "PASSED" : "FAILED");
++  exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
++}
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out
+index 885a36f..cffdd4e 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out and b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip
+index 593ea85..62d0b6c 100644
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip
+@@ -30,7 +30,7 @@
+ 
+ #include <hip/hip_runtime.h>
+ 
+-#include "resize_convert.h"
++#include "resize_convert_hipified.h"
+ #include "HIPCHECK.h"
+ __global__ void resizeBGRplanarBatchKernel(hipTextureObject_t texSrc,
+     float *pDst, int nDstPitch, int nDstHeight, int nSrcHeight,
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip
+index 14a3eee..c8e1400 100644
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip
+@@ -29,7 +29,7 @@
+ 
+ #include <hip/hip_runtime.h>
+ 
+-#include "resize_convert.h"
++#include "resize_convert_hipified.h"
+ #include "HIPCHECK.h"
+ __global__ static void resizeNV12BatchKernel(hipTextureObject_t texSrcLuma,
+                                              hipTextureObject_t texSrcChroma,
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_to_bgr_planar.cu.hip b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_to_bgr_planar.cu.hip
+index af91cfe..4c21035 100644
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_to_bgr_planar.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_to_bgr_planar.cu.hip
+@@ -31,7 +31,7 @@
+ #include <hip/hip_runtime.h>
+ 
+ 
+-#include "resize_convert.h"
++#include "resize_convert_hipified.h"
+ 
+ #define CONV_THREADS_X 64
+ #define CONV_THREADS_Y 10
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/resize_convert_main_hipified.cpp b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/resize_convert_main_hipified.cpp
+index 36f76cd..e29b0f7 100644
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/resize_convert_main_hipified.cpp
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/resize_convert_main_hipified.cpp
+@@ -53,7 +53,7 @@ Run
+ 
+ #include <hip/hip_runtime.h>
+ #include <hip/hip_runtime.h>
+-
++#include "HIPCHECK.h"
+ #include <math.h>
+ #include <stdio.h>
+ #include <stdlib.h>
+@@ -63,8 +63,8 @@ Run
+ #include <iostream>
+ #include <memory>
+ 
+-#include "resize_convert.h"
+-#include "utils.h"
++#include "resize_convert_hipified.h"
++#include "utils_hipified.h"
+ 
+ #define TEST_LOOP 20
+ 
+@@ -231,7 +231,7 @@ static int loadNV12Frame(unsigned char *d_inputNV12) {
+   // expand one frame to multi frames for batch processing
+   d_nv12 = d_inputNV12;
+   for (int i = 0; i < g_ctx.batch; i++) {
+-    checkCudaErrors(hipMemcpy2D((void *)d_nv12, g_ctx.ctx_pitch,
++    HIPCHECK(hipMemcpy2D((void *)d_nv12, g_ctx.ctx_pitch,
+                                  pNV12FrameData, g_ctx.width, g_ctx.width,
+                                  g_ctx.ctx_heights, hipMemcpyHostToDevice));
+ 
+@@ -259,18 +259,18 @@ void nv12ResizeAndNV12ToBGR(unsigned char *d_inputNV12) {
+   /* allocate device memory for resized nv12 output */
+   size = g_ctx.dst_width * ceil(g_ctx.dst_height * 3.0f / 2.0f) * g_ctx.batch *
+          sizeof(unsigned char);
+-  checkCudaErrors(hipMalloc((void **)&d_resizedNV12, size));
++  HIPCHECK(hipMalloc((void **)&d_resizedNV12, size));
+ 
+   /* allocate device memory for bgr output */
+   size = g_ctx.dst_pitch * g_ctx.dst_height * 3 * g_ctx.batch * sizeof(float);
+-  checkCudaErrors(hipMalloc((void **)&d_outputBGR, size));
++  HIPCHECK(hipMalloc((void **)&d_outputBGR, size));
+ 
+   hipStream_t stream;
+-  checkCudaErrors(hipStreamCreate(&stream));
++  HIPCHECK(hipStreamCreate(&stream));
+   /* create cuda event handles */
+   hipEvent_t start, stop;
+-  checkCudaErrors(hipEventCreate(&start));
+-  checkCudaErrors(hipEventCreate(&stop));
++  HIPCHECK(hipEventCreate(&start));
++  HIPCHECK(hipEventCreate(&stop));
+   float elapsedTime = 0.0f;
+ 
+   /* resize interlace nv12 */
+@@ -320,11 +320,11 @@ void nv12ResizeAndNV12ToBGR(unsigned char *d_inputNV12) {
+           g_ctx.batch, (char *)"t1", filename);
+ 
+   /* release resources */
+-  checkCudaErrors(hipEventDestroy(start));
+-  checkCudaErrors(hipEventDestroy(stop));
+-  checkCudaErrors(hipStreamDestroy(stream));
+-  checkCudaErrors(hipFree(d_resizedNV12));
+-  checkCudaErrors(hipFree(d_outputBGR));
++  HIPCHECK(hipEventDestroy(start));
++  HIPCHECK(hipEventDestroy(stop));
++  HIPCHECK(hipStreamDestroy(stream));
++  HIPCHECK(hipFree(d_resizedNV12));
++  HIPCHECK(hipFree(d_outputBGR));
+ }
+ 
+ /*
+@@ -339,18 +339,18 @@ void nv12ToBGRandBGRresize(unsigned char *d_inputNV12) {
+ 
+   /* allocate device memory for bgr output */
+   size = g_ctx.ctx_pitch * g_ctx.height * 3 * g_ctx.batch * sizeof(float);
+-  checkCudaErrors(hipMalloc((void **)&d_bgr, size));
++  HIPCHECK(hipMalloc((void **)&d_bgr, size));
+ 
+   /* allocate device memory for resized bgr output */
+   size = g_ctx.dst_width * g_ctx.dst_height * 3 * g_ctx.batch * sizeof(float);
+-  checkCudaErrors(hipMalloc((void **)&d_resizedBGR, size));
++  HIPCHECK(hipMalloc((void **)&d_resizedBGR, size));
+ 
+   hipStream_t stream;
+-  checkCudaErrors(hipStreamCreate(&stream));
++  HIPCHECK(hipStreamCreate(&stream));
+   /* create cuda event handles */
+   hipEvent_t start, stop;
+-  checkCudaErrors(hipEventCreate(&start));
+-  checkCudaErrors(hipEventCreate(&stop));
++  HIPCHECK(hipEventCreate(&start));
++  HIPCHECK(hipEventCreate(&stop));
+   float elapsedTime = 0.0f;
+ 
+   /* convert interlace nv12 to bgr 3 progressive planars */
+@@ -398,11 +398,11 @@ void nv12ToBGRandBGRresize(unsigned char *d_inputNV12) {
+           g_ctx.batch, (char *)"t2", filename);
+ 
+   /* release resources */
+-  checkCudaErrors(hipEventDestroy(start));
+-  checkCudaErrors(hipEventDestroy(stop));
+-  checkCudaErrors(hipStreamDestroy(stream));
+-  checkCudaErrors(hipFree(d_bgr));
+-  checkCudaErrors(hipFree(d_resizedBGR));
++  HIPCHECK(hipEventDestroy(start));
++  HIPCHECK(hipEventDestroy(stop));
++  HIPCHECK(hipStreamDestroy(stream));
++  HIPCHECK(hipFree(d_bgr));
++  HIPCHECK(hipFree(d_resizedBGR));
+ }
+ 
+ int main(int argc, char *argv[]) {
+@@ -420,12 +420,12 @@ int main(int argc, char *argv[]) {
+ 
+   /* load nv12 yuv data into d_inputNV12 with batch of copies */
+ #if USE_UVM_MEM
+-  checkCudaErrors(hipMallocManaged(
++  HIPCHECK(hipMallocManaged(
+       (void **)&d_inputNV12,
+       (g_ctx.ctx_pitch * g_ctx.ctx_heights * g_ctx.batch), hipMemAttachHost));
+   printf("\nUSE_UVM_MEM\n");
+ #else
+-  checkCudaErrors(
++  HIPCHECK(
+       hipMalloc((void **)&d_inputNV12,
+                  (g_ctx.ctx_pitch * g_ctx.ctx_heights * g_ctx.batch)));
+ #endif
+@@ -442,7 +442,7 @@ int main(int argc, char *argv[]) {
+   printf("\nTEST#2:\n");
+   nv12ToBGRandBGRresize(d_inputNV12);
+ 
+-  checkCudaErrors(hipFree(d_inputNV12));
++  HIPCHECK(hipFree(d_inputNV12));
+ 
+   return EXIT_SUCCESS;
+ }
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip
+index 08aa4a6..4365271 100644
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip
+@@ -34,8 +34,8 @@
+ #include <hip/hip_runtime.h>
+ 
+ 
+-#include "resize_convert.h"
+-#include "utils.h"
++#include "resize_convert_hipified.h"
++#include "utils_hipified.h"
+ 
+ __global__ void floatToChar(float *src, unsigned char *dst, int height,
+                             int width, int batchSize) {
+diff --git a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions.out b/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions.out
+index de4d331..00ffcef 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions.out and b/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu.hip b/src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu.hip
+index e69de29..7bc32a0 100644
+--- a/src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu.hip
+@@ -0,0 +1,787 @@
++#include "hip/hip_runtime.h"
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++// Utilities and system includes
++#include <hip/hip_cooperative_groups.h>
++
++namespace cg = cooperative_groups;
++
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"
++
++#include <helper_math.h>
++#include <float.h>  // for FLT_MAX
++
++#include "CudaMath_hipified.h"
++#include "dds_hipified.h"
++#include "permutations_hipified.h"
++
++// Definitions
++#define INPUT_IMAGE "teapot512_std.ppm"
++#define REFERENCE_IMAGE "teapot512_ref.dds"
++
++#define ERROR_THRESHOLD 0.02f
++
++#define NUM_THREADS 64  // Number of threads per block.
++
++#define __debugsync()
++
++template <class T>
++__device__ inline void swap(T &a, T &b) {
++  T tmp = a;
++  a = b;
++  b = tmp;
++}
++
++//__constant__ float3 kColorMetric = { 0.2126f, 0.7152f, 0.0722f };
++__constant__ float3 kColorMetric = {1.0f, 1.0f, 1.0f};
++
++////////////////////////////////////////////////////////////////////////////////
++// Sort colors
++////////////////////////////////////////////////////////////////////////////////
++__device__ void sortColors(const float *values, int *ranks,
++                           cg::thread_group tile) {
++  const int tid = threadIdx.x;
++
++  int rank = 0;
++
++#pragma unroll
++
++  for (int i = 0; i < 16; i++) {
++    rank += (values[i] < values[tid]);
++  }
++
++  ranks[tid] = rank;
++
++  cg::sync(tile);
++
++  // Resolve elements with the same index.
++  for (int i = 0; i < 15; i++) {
++    if (tid > i && ranks[tid] == ranks[i]) {
++      ++ranks[tid];
++    }
++    cg::sync(tile);
++  }
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// Load color block to shared mem
++////////////////////////////////////////////////////////////////////////////////
++__device__ void loadColorBlock(const uint *image, float3 colors[16],
++                               float3 sums[16], int xrefs[16], int blockOffset,
++                               cg::thread_block cta) {
++  const int bid = blockIdx.x + blockOffset;
++  const int idx = threadIdx.x;
++
++  __shared__ float dps[16];
++
++  float3 tmp;
++
++  cg::thread_group tile = cg::tiled_partition(cta, 16);
++
++  if (idx < 16) {
++    // Read color and copy to shared mem.
++    uint c = image[(bid)*16 + idx];
++
++    colors[idx].x = ((c >> 0) & 0xFF) * (1.0f / 255.0f);
++    colors[idx].y = ((c >> 8) & 0xFF) * (1.0f / 255.0f);
++    colors[idx].z = ((c >> 16) & 0xFF) * (1.0f / 255.0f);
++
++    cg::sync(tile);
++    // Sort colors along the best fit line.
++    colorSums(colors, sums, tile);
++
++    cg::sync(tile);
++
++    float3 axis = bestFitLine(colors, sums[0], tile);
++
++    cg::sync(tile);
++
++    dps[idx] = dot(colors[idx], axis);
++
++    cg::sync(tile);
++
++    sortColors(dps, xrefs, tile);
++
++    cg::sync(tile);
++
++    tmp = colors[idx];
++
++    cg::sync(tile);
++
++    colors[xrefs[idx]] = tmp;
++  }
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// Round color to RGB565 and expand
++////////////////////////////////////////////////////////////////////////////////
++inline __device__ float3 roundAndExpand(float3 v, ushort *w) {
++  v.x = rintf(__saturatef(v.x) * 31.0f);
++  v.y = rintf(__saturatef(v.y) * 63.0f);
++  v.z = rintf(__saturatef(v.z) * 31.0f);
++
++  *w = ((ushort)v.x << 11) | ((ushort)v.y << 5) | (ushort)v.z;
++  v.x *= 0.03227752766457f;  // approximate integer bit expansion.
++  v.y *= 0.01583151765563f;
++  v.z *= 0.03227752766457f;
++  return v;
++}
++
++__constant__ float alphaTable4[4] = {9.0f, 0.0f, 6.0f, 3.0f};
++__constant__ float alphaTable3[4] = {4.0f, 0.0f, 2.0f, 2.0f};
++__constant__ const int prods4[4] = {0x090000, 0x000900, 0x040102, 0x010402};
++__constant__ const int prods3[4] = {0x040000, 0x000400, 0x040101, 0x010401};
++
++#define USE_TABLES 1
++
++////////////////////////////////////////////////////////////////////////////////
++// Evaluate permutations
++////////////////////////////////////////////////////////////////////////////////
++static __device__ float evalPermutation4(const float3 *colors, uint permutation,
++                                         ushort *start, ushort *end,
++                                         float3 color_sum) {
++// Compute endpoints using least squares.
++#if USE_TABLES
++  float3 alphax_sum = make_float3(0.0f, 0.0f, 0.0f);
++
++  int akku = 0;
++
++  // Compute alpha & beta for this permutation.
++  for (int i = 0; i < 16; i++) {
++    const uint bits = permutation >> (2 * i);
++
++    alphax_sum += alphaTable4[bits & 3] * colors[i];
++    akku += prods4[bits & 3];
++  }
++
++  float alpha2_sum = float(akku >> 16);
++  float beta2_sum = float((akku >> 8) & 0xff);
++  float alphabeta_sum = float((akku >> 0) & 0xff);
++  float3 betax_sum = (9.0f * color_sum) - alphax_sum;
++#else
++  float alpha2_sum = 0.0f;
++  float beta2_sum = 0.0f;
++  float alphabeta_sum = 0.0f;
++  float3 alphax_sum = make_float3(0.0f, 0.0f, 0.0f);
++
++  // Compute alpha & beta for this permutation.
++  for (int i = 0; i < 16; i++) {
++    const uint bits = permutation >> (2 * i);
++
++    float beta = (bits & 1);
++
++    if (bits & 2) {
++      beta = (1 + beta) * (1.0f / 3.0f);
++    }
++
++    float alpha = 1.0f - beta;
++
++    alpha2_sum += alpha * alpha;
++    beta2_sum += beta * beta;
++    alphabeta_sum += alpha * beta;
++    alphax_sum += alpha * colors[i];
++  }
++
++  float3 betax_sum = color_sum - alphax_sum;
++#endif
++
++  // alpha2, beta2, alphabeta and factor could be precomputed for each
++  // permutation, but it's faster to recompute them.
++  const float factor =
++      1.0f / (alpha2_sum * beta2_sum - alphabeta_sum * alphabeta_sum);
++
++  float3 a = (alphax_sum * beta2_sum - betax_sum * alphabeta_sum) * factor;
++  float3 b = (betax_sum * alpha2_sum - alphax_sum * alphabeta_sum) * factor;
++
++  // Round a, b to the closest 5-6-5 color and expand...
++  a = roundAndExpand(a, start);
++  b = roundAndExpand(b, end);
++
++  // compute the error
++  float3 e = a * a * alpha2_sum + b * b * beta2_sum +
++             2.0f * (a * b * alphabeta_sum - a * alphax_sum - b * betax_sum);
++
++  return (0.111111111111f) * dot(e, kColorMetric);
++}
++
++static __device__ float evalPermutation3(const float3 *colors, uint permutation,
++                                         ushort *start, ushort *end,
++                                         float3 color_sum) {
++// Compute endpoints using least squares.
++#if USE_TABLES
++  float3 alphax_sum = make_float3(0.0f, 0.0f, 0.0f);
++
++  int akku = 0;
++
++  // Compute alpha & beta for this permutation.
++  for (int i = 0; i < 16; i++) {
++    const uint bits = permutation >> (2 * i);
++
++    alphax_sum += alphaTable3[bits & 3] * colors[i];
++    akku += prods3[bits & 3];
++  }
++
++  float alpha2_sum = float(akku >> 16);
++  float beta2_sum = float((akku >> 8) & 0xff);
++  float alphabeta_sum = float((akku >> 0) & 0xff);
++  float3 betax_sum = (4.0f * color_sum) - alphax_sum;
++#else
++  float alpha2_sum = 0.0f;
++  float beta2_sum = 0.0f;
++  float alphabeta_sum = 0.0f;
++  float3 alphax_sum = make_float3(0.0f, 0.0f, 0.0f);
++
++  // Compute alpha & beta for this permutation.
++  for (int i = 0; i < 16; i++) {
++    const uint bits = permutation >> (2 * i);
++
++    float beta = (bits & 1);
++
++    if (bits & 2) {
++      beta = 0.5f;
++    }
++
++    float alpha = 1.0f - beta;
++
++    alpha2_sum += alpha * alpha;
++    beta2_sum += beta * beta;
++    alphabeta_sum += alpha * beta;
++    alphax_sum += alpha * colors[i];
++  }
++
++  float3 betax_sum = color_sum - alphax_sum;
++#endif
++
++  const float factor =
++      1.0f / (alpha2_sum * beta2_sum - alphabeta_sum * alphabeta_sum);
++
++  float3 a = (alphax_sum * beta2_sum - betax_sum * alphabeta_sum) * factor;
++  float3 b = (betax_sum * alpha2_sum - alphax_sum * alphabeta_sum) * factor;
++
++  // Round a, b to the closest 5-6-5 color and expand...
++  a = roundAndExpand(a, start);
++  b = roundAndExpand(b, end);
++
++  // compute the error
++  float3 e = a * a * alpha2_sum + b * b * beta2_sum +
++             2.0f * (a * b * alphabeta_sum - a * alphax_sum - b * betax_sum);
++
++  return (0.25f) * dot(e, kColorMetric);
++}
++
++__device__ void evalAllPermutations(const float3 *colors,
++                                    const uint *permutations, ushort &bestStart,
++                                    ushort &bestEnd, uint &bestPermutation,
++                                    float *errors, float3 color_sum,
++                                    cg::thread_block cta) {
++  const int idx = threadIdx.x;
++
++  float bestError = FLT_MAX;
++
++  __shared__ uint s_permutations[160];
++
++  for (int i = 0; i < 16; i++) {
++    int pidx = idx + NUM_THREADS * i;
++
++    if (pidx >= 992) {
++      break;
++    }
++
++    ushort start, end;
++    uint permutation = permutations[pidx];
++
++    if (pidx < 160) {
++      s_permutations[pidx] = permutation;
++    }
++
++    float error =
++        evalPermutation4(colors, permutation, &start, &end, color_sum);
++
++    if (error < bestError) {
++      bestError = error;
++      bestPermutation = permutation;
++      bestStart = start;
++      bestEnd = end;
++    }
++  }
++
++  if (bestStart < bestEnd) {
++    swap(bestEnd, bestStart);
++    bestPermutation ^= 0x55555555;  // Flip indices.
++  }
++
++  cg::sync(cta);  // Sync here to ensure s_permutations is valid going forward
++
++  for (int i = 0; i < 3; i++) {
++    int pidx = idx + NUM_THREADS * i;
++
++    if (pidx >= 160) {
++      break;
++    }
++
++    ushort start, end;
++    uint permutation = s_permutations[pidx];
++    float error =
++        evalPermutation3(colors, permutation, &start, &end, color_sum);
++
++    if (error < bestError) {
++      bestError = error;
++      bestPermutation = permutation;
++      bestStart = start;
++      bestEnd = end;
++
++      if (bestStart > bestEnd) {
++        swap(bestEnd, bestStart);
++        bestPermutation ^=
++            (~bestPermutation >> 1) & 0x55555555;  // Flip indices.
++      }
++    }
++  }
++
++  errors[idx] = bestError;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// Find index with minimum error
++////////////////////////////////////////////////////////////////////////////////
++__device__ int findMinError(float *errors, cg::thread_block cta) {
++  const int idx = threadIdx.x;
++  __shared__ int indices[NUM_THREADS];
++  indices[idx] = idx;
++
++  cg::sync(cta);
++
++  for (int d = NUM_THREADS / 2; d > 0; d >>= 1) {
++    float err0 = errors[idx];
++    float err1 = (idx + d) < NUM_THREADS ? errors[idx + d] : FLT_MAX;
++    int index1 = (idx + d) < NUM_THREADS ? indices[idx + d] : 0;
++
++    cg::sync(cta);
++
++    if (err1 < err0) {
++      errors[idx] = err1;
++      indices[idx] = index1;
++    }
++
++    cg::sync(cta);
++  }
++
++  return indices[0];
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// Save DXT block
++////////////////////////////////////////////////////////////////////////////////
++__device__ void saveBlockDXT1(ushort start, ushort end, uint permutation,
++                              int xrefs[16], uint2 *result, int blockOffset) {
++  const int bid = blockIdx.x + blockOffset;
++
++  if (start == end) {
++    permutation = 0;
++  }
++
++  // Reorder permutation.
++  uint indices = 0;
++
++  for (int i = 0; i < 16; i++) {
++    int ref = xrefs[i];
++    indices |= ((permutation >> (2 * ref)) & 3) << (2 * i);
++  }
++
++  // Write endpoints.
++  result[bid].x = (end << 16) | start;
++
++  // Write palette indices.
++  result[bid].y = indices;
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// Compress color block
++////////////////////////////////////////////////////////////////////////////////
++__global__ void compress(const uint *permutations, const uint *image,
++                         uint2 *result, int blockOffset) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++
++  const int idx = threadIdx.x;
++
++  __shared__ float3 colors[16];
++  __shared__ float3 sums[16];
++  __shared__ int xrefs[16];
++
++  loadColorBlock(image, colors, sums, xrefs, blockOffset, cta);
++
++  cg::sync(cta);
++
++  ushort bestStart, bestEnd;
++  uint bestPermutation;
++
++  __shared__ float errors[NUM_THREADS];
++
++  evalAllPermutations(colors, permutations, bestStart, bestEnd, bestPermutation,
++                      errors, sums[0], cta);
++
++  // Use a parallel reduction to find minimum error.
++  const int minIdx = findMinError(errors, cta);
++
++  cg::sync(cta);
++
++  // Only write the result of the winner thread.
++  if (idx == minIdx) {
++    saveBlockDXT1(bestStart, bestEnd, bestPermutation, xrefs, result,
++                  blockOffset);
++  }
++}
++
++// Helper structs and functions to validate the output of the compressor.
++// We cannot simply do a bitwise compare, because different compilers produce
++// different
++// results for different targets due to floating point arithmetic.
++
++union Color32 {
++  struct {
++    unsigned char b, g, r, a;
++  };
++  unsigned int u;
++};
++
++union Color16 {
++  struct {
++    unsigned short b : 5;
++    unsigned short g : 6;
++    unsigned short r : 5;
++  };
++  unsigned short u;
++};
++
++struct BlockDXT1 {
++  Color16 col0;
++  Color16 col1;
++  union {
++    unsigned char row[4];
++    unsigned int indices;
++  };
++
++  void decompress(Color32 colors[16]) const;
++};
++
++void BlockDXT1::decompress(Color32 *colors) const {
++  Color32 palette[4];
++
++  // Does bit expansion before interpolation.
++  palette[0].b = (col0.b << 3) | (col0.b >> 2);
++  palette[0].g = (col0.g << 2) | (col0.g >> 4);
++  palette[0].r = (col0.r << 3) | (col0.r >> 2);
++  palette[0].a = 0xFF;
++
++  palette[1].r = (col1.r << 3) | (col1.r >> 2);
++  palette[1].g = (col1.g << 2) | (col1.g >> 4);
++  palette[1].b = (col1.b << 3) | (col1.b >> 2);
++  palette[1].a = 0xFF;
++
++  if (col0.u > col1.u) {
++    // Four-color block: derive the other two colors.
++    palette[2].r = (2 * palette[0].r + palette[1].r) / 3;
++    palette[2].g = (2 * palette[0].g + palette[1].g) / 3;
++    palette[2].b = (2 * palette[0].b + palette[1].b) / 3;
++    palette[2].a = 0xFF;
++
++    palette[3].r = (2 * palette[1].r + palette[0].r) / 3;
++    palette[3].g = (2 * palette[1].g + palette[0].g) / 3;
++    palette[3].b = (2 * palette[1].b + palette[0].b) / 3;
++    palette[3].a = 0xFF;
++  } else {
++    // Three-color block: derive the other color.
++    palette[2].r = (palette[0].r + palette[1].r) / 2;
++    palette[2].g = (palette[0].g + palette[1].g) / 2;
++    palette[2].b = (palette[0].b + palette[1].b) / 2;
++    palette[2].a = 0xFF;
++
++    palette[3].r = 0x00;
++    palette[3].g = 0x00;
++    palette[3].b = 0x00;
++    palette[3].a = 0x00;
++  }
++
++  for (int i = 0; i < 16; i++) {
++    colors[i] = palette[(indices >> (2 * i)) & 0x3];
++  }
++}
++
++static int compareColors(const Color32 *b0, const Color32 *b1) {
++  int sum = 0;
++
++  for (int i = 0; i < 16; i++) {
++    int r = (b0[i].r - b1[i].r);
++    int g = (b0[i].g - b1[i].g);
++    int b = (b0[i].b - b1[i].b);
++    sum += r * r + g * g + b * b;
++  }
++
++  return sum;
++}
++
++static int compareBlock(const BlockDXT1 *b0, const BlockDXT1 *b1) {
++  Color32 colors0[16];
++  Color32 colors1[16];
++
++  if (memcmp(b0, b1, sizeof(BlockDXT1)) == 0) {
++    return 0;
++  } else {
++    b0->decompress(colors0);
++    b1->decompress(colors1);
++
++    return compareColors(colors0, colors1);
++  }
++}
++
++////////////////////////////////////////////////////////////////////////////////
++// Program main
++////////////////////////////////////////////////////////////////////////////////
++int main(int argc, char **argv) {
++  printf("%s Starting...\n\n", argv[0]);
++
++  // use command-line specified CUDA device, otherwise use device with highest
++  // Gflops/s
++  findCudaDevice(argc, (const char **)argv);
++
++  // Load input image.
++  unsigned char *data = NULL;
++  uint W, H;
++
++  char *image_path = sdkFindFilePath(INPUT_IMAGE, argv[0]);
++
++  if (image_path == 0) {
++    printf("Error, unable to find source image  <%s>\n", image_path);
++    exit(EXIT_FAILURE);
++  }
++
++  if (!sdkLoadPPM4ub(image_path, &data, &W, &H)) {
++    printf("Error, unable to open source image file <%s>\n", image_path);
++
++    exit(EXIT_FAILURE);
++  }
++
++  uint w = W, h = H;
++
++  printf("Image Loaded '%s', %d x %d pixels\n\n", image_path, w, h);
++
++  // Allocate input image.
++  const uint memSize = w * h * 4;
++  assert(0 != memSize);
++  uint *block_image = (uint *)malloc(memSize);
++
++  // Convert linear image to block linear.
++  for (uint by = 0; by < h / 4; by++) {
++    for (uint bx = 0; bx < w / 4; bx++) {
++      for (int i = 0; i < 16; i++) {
++        const int x = i & 3;
++        const int y = i / 4;
++        block_image[(by * w / 4 + bx) * 16 + i] =
++            ((uint *)data)[(by * 4 + y) * 4 * (W / 4) + bx * 4 + x];
++      }
++    }
++  }
++
++  // copy into global mem
++  uint *d_data = NULL;
++  checkCudaErrors(hipMalloc((void **)&d_data, memSize));
++
++  // Result
++  uint *d_result = NULL;
++  const uint compressedSize = (w / 4) * (h / 4) * 8;
++  checkCudaErrors(hipMalloc((void **)&d_result, compressedSize));
++  uint *h_result = (uint *)malloc(compressedSize);
++
++  // Compute permutations.
++  uint permutations[1024];
++  computePermutations(permutations);
++
++  // Copy permutations host to devie.
++  uint *d_permutations = NULL;
++  checkCudaErrors(hipMalloc((void **)&d_permutations, 1024 * sizeof(uint)));
++  checkCudaErrors(hipMemcpy(d_permutations, permutations, 1024 * sizeof(uint),
++                             hipMemcpyHostToDevice));
++
++  // create a timer
++  StopWatchInterface *timer = NULL;
++  sdkCreateTimer(&timer);
++
++  // Copy image from host to device
++  checkCudaErrors(
++      hipMemcpy(d_data, block_image, memSize, hipMemcpyHostToDevice));
++
++  // Determine launch configuration and run timed computation numIterations
++  // times
++  uint blocks = ((w + 3) / 4) *
++                ((h + 3) / 4);  // rounds up by 1 block in each dim if %4 != 0
++
++  int devID;
++  hipDeviceProp_t deviceProp;
++
++  // get number of SMs on this GPU
++  checkCudaErrors(hipGetDevice(&devID));
++  checkCudaErrors(hipGetDeviceProperties(&deviceProp, devID));
++
++  // Restrict the numbers of blocks to launch on low end GPUs to avoid kernel
++  // timeout
++  int blocksPerLaunch = min(blocks, 768 * deviceProp.multiProcessorCount);
++
++  printf("Running DXT Compression on %u x %u image...\n", w, h);
++  printf("\n%u Blocks, %u Threads per Block, %u Threads in Grid...\n\n", blocks,
++         NUM_THREADS, blocks * NUM_THREADS);
++  int numIterations = 1;
++
++  for (int i = -1; i < numIterations; ++i) {
++    if (i == 0) {
++      checkCudaErrors(hipDeviceSynchronize());
++      sdkStartTimer(&timer);
++    }
++
++    for (int j = 0; j < (int)blocks; j += blocksPerLaunch) {
++      compress<<<min(blocksPerLaunch, blocks - j), NUM_THREADS>>>(
++          d_permutations, d_data, (uint2 *)d_result, j);
++    }
++  }
++
++  getLastCudaError("compress");
++
++  // sync to host, stop timer, record perf
++  checkCudaErrors(hipDeviceSynchronize());
++  sdkStopTimer(&timer);
++  double dAvgTime = 1.0e-3 * sdkGetTimerValue(&timer) / (double)numIterations;
++  printf(
++      "dxtc, Throughput = %.4f MPixels/s, Time = %.5f s, Size = %u Pixels, "
++      "NumDevsUsed = %i, Workgroup = %d\n",
++      (1.0e-6 * (double)(W * H) / dAvgTime), dAvgTime, (W * H), 1, NUM_THREADS);
++
++  // copy result data from device to host
++  checkCudaErrors(
++      hipMemcpy(h_result, d_result, compressedSize, hipMemcpyDeviceToHost));
++
++  // Write out result data to DDS file
++  char output_filename[1024];
++  strcpy(output_filename, image_path);
++  strcpy(output_filename + strlen(image_path) - 3, "dds");
++  FILE *fp = fopen(output_filename, "wb");
++
++  if (fp == 0) {
++    printf("Error, unable to open output image <%s>\n", output_filename);
++    exit(EXIT_FAILURE);
++  }
++
++  DDSHeader header;
++  header.fourcc = FOURCC_DDS;
++  header.size = 124;
++  header.flags = (DDSD_WIDTH | DDSD_HEIGHT | DDSD_CAPS | DDSD_PIXELFORMAT |
++                  DDSD_LINEARSIZE);
++  header.height = h;
++  header.width = w;
++  header.pitch = compressedSize;
++  header.depth = 0;
++  header.mipmapcount = 0;
++  memset(header.reserved, 0, sizeof(header.reserved));
++  header.pf.size = 32;
++  header.pf.flags = DDPF_FOURCC;
++  header.pf.fourcc = FOURCC_DXT1;
++  header.pf.bitcount = 0;
++  header.pf.rmask = 0;
++  header.pf.gmask = 0;
++  header.pf.bmask = 0;
++  header.pf.amask = 0;
++  header.caps.caps1 = DDSCAPS_TEXTURE;
++  header.caps.caps2 = 0;
++  header.caps.caps3 = 0;
++  header.caps.caps4 = 0;
++  header.notused = 0;
++  fwrite(&header, sizeof(DDSHeader), 1, fp);
++  fwrite(h_result, compressedSize, 1, fp);
++  fclose(fp);
++
++  // Make sure the generated image is correct.
++  const char *reference_image_path = sdkFindFilePath(REFERENCE_IMAGE, argv[0]);
++
++  if (reference_image_path == 0) {
++    printf("Error, unable to find reference image\n");
++
++    exit(EXIT_FAILURE);
++  }
++
++  fp = fopen(reference_image_path, "rb");
++
++  if (fp == 0) {
++    printf("Error, unable to open reference image\n");
++
++    exit(EXIT_FAILURE);
++  }
++
++  fseek(fp, sizeof(DDSHeader), SEEK_SET);
++  uint referenceSize = (W / 4) * (H / 4) * 8;
++  uint *reference = (uint *)malloc(referenceSize);
++  fread(reference, referenceSize, 1, fp);
++  fclose(fp);
++
++  printf("\nChecking accuracy...\n");
++  float rms = 0;
++
++  for (uint y = 0; y < h; y += 4) {
++    for (uint x = 0; x < w; x += 4) {
++      uint referenceBlockIdx = ((y / 4) * (W / 4) + (x / 4));
++      uint resultBlockIdx = ((y / 4) * (w / 4) + (x / 4));
++
++      int cmp = compareBlock(((BlockDXT1 *)h_result) + resultBlockIdx,
++                             ((BlockDXT1 *)reference) + referenceBlockIdx);
++
++      if (cmp != 0.0f) {
++        printf("Deviation at (%4d,%4d):\t%f rms\n", x / 4, y / 4,
++               float(cmp) / 16 / 3);
++      }
++
++      rms += cmp;
++    }
++  }
++
++  rms /= w * h * 3;
++
++  // Free allocated resources and exit
++  checkCudaErrors(hipFree(d_permutations));
++  checkCudaErrors(hipFree(d_data));
++  checkCudaErrors(hipFree(d_result));
++  free(image_path);
++  free(data);
++  free(block_image);
++  free(h_result);
++  free(reference);
++  sdkDeleteTimer(&timer);
++
++  printf("RMS(reference, result) = %f\n\n", rms);
++  printf(rms <= ERROR_THRESHOLD ? "Test passed\n" : "Test failed!\n");
++  /* Return zero if test passed, one otherwise */
++  return rms > ERROR_THRESHOLD;
++}

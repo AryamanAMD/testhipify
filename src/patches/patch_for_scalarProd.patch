@@ -1,0 +1,15 @@
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd_kernel.cuh b/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd_kernel.cuh
+index 6432a28..81fe180 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd_kernel.cuh
++++ b/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd_kernel.cuh
+@@ -25,8 +25,8 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+-#include <cooperative_groups.h>
+-
++//#include <cooperative_groups.h>
++#include <hip/hip_cooperative_groups.h>
+ namespace cg = cooperative_groups;
+ 
+ ///////////////////////////////////////////////////////////////////////////////

@@ -1,0 +1,2160 @@
+diff --git a/src/patches/patch_for_UnifiedMemoryperf.patch b/src/patches/patch_for_UnifiedMemoryperf.patch
+index 9e250f3..e69de29 100644
+--- a/src/patches/patch_for_UnifiedMemoryperf.patch
++++ b/src/patches/patch_for_UnifiedMemoryperf.patch
+@@ -1,782 +0,0 @@
+-diff --git a/src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip b/src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip
+-index bbe91b3..dd4fdfe 100644
+---- a/src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip
+-+++ b/src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip
+-@@ -1,8 +1,4 @@
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+--#include "rocprofiler.h"
+-+
+- #include "HIPCHECK.h"
+- #include "hip/hip_runtime.h"
+- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+-diff --git a/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip
+-index 50a4afa..46b40b2 100644
+---- a/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip
+-+++ b/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip
+-@@ -1,4 +1,4 @@
+--#include "hip/hip_runtime.h"
+-+
+- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+-  *
+-  * Redistribution and use in source and binary forms, with or without
+-@@ -60,14 +60,14 @@
+- 
+- #include <assert.h>
+- #include <stdio.h>
+--#include <hip/hip_runtime.h>
+-+#include "hip/hip_runtime.h"
+- #include <mma.h>
+- #include <cuda/pipeline>
+--
+-+#include "hip/hip_runtime_api.h"
+- // helper functions and utilities to work with CUDA
+--#include <helper_functions.h>
+--#include <helper_cuda.h>
+--
+-+#include "helper_functions.h"
+-+#include "helper_cuda_hipified.h"
+-+#include "HIPCHECK.h"
+- // Externally configurable parameters.
+- 
+- #ifndef CPU_DEBUG
+-@@ -671,7 +671,7 @@ int main(int argc, char **argv)
+-     int dev = findCudaDevice(argc, (const char **)argv);
+- 
+-     hipDeviceProp_t deviceProp;
+--    checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
+-+    HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
+- 
+-     // Tensor cores require a GPU of Volta (SM8X) architecture or higher.
+-     if (deviceProp.major < 8) {
+-@@ -704,10 +704,10 @@ int main(int argc, char **argv)
+-     float *C = NULL;
+-     float *D = NULL;
+- 
+--    checkCudaErrors(hipMalloc((void**)&A, sizeof(float) * M_GLOBAL * K_GLOBAL));
+--    checkCudaErrors(hipMalloc((void**)&B, sizeof(float) * N_GLOBAL * K_GLOBAL));
+--    checkCudaErrors(hipMalloc((void**)&C, sizeof(float) * M_GLOBAL * N_GLOBAL));
+--    checkCudaErrors(hipMalloc((void**)&D, sizeof(float) * M_GLOBAL * N_GLOBAL));
+-+    HIPCHECK(hipMalloc((void**)&A, sizeof(float) * M_GLOBAL * K_GLOBAL));
+-+    HIPCHECK(hipMalloc((void**)&B, sizeof(float) * N_GLOBAL * K_GLOBAL));
+-+    HIPCHECK(hipMalloc((void**)&C, sizeof(float) * M_GLOBAL * N_GLOBAL));
+-+    HIPCHECK(hipMalloc((void**)&D, sizeof(float) * M_GLOBAL * N_GLOBAL));
+- 
+-     assert(((unsigned long long)A) % 128 == 0);
+-     assert(((unsigned long long)B) % 128 == 0);
+-@@ -718,10 +718,10 @@ int main(int argc, char **argv)
+- 
+-     printf("Preparing data for GPU...\n");
+- 
+--    checkCudaErrors(hipMemcpy(A, A_h, sizeof(float) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+--    checkCudaErrors(hipMemcpy(B, B_h, sizeof(float) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+--    checkCudaErrors(hipMemcpy(C, C_h, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
+--    checkCudaErrors(hipMemset(D, 0, sizeof(float) * M_GLOBAL * N_GLOBAL));
+-+    HIPCHECK(hipMemcpy(A, A_h, sizeof(float) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+-+    HIPCHECK(hipMemcpy(B, B_h, sizeof(float) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+-+    HIPCHECK(hipMemcpy(C, C_h, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
+-+    HIPCHECK(hipMemset(D, 0, sizeof(float) * M_GLOBAL * N_GLOBAL));
+- 
+-     enum {
+-         // Compute the right amount of shared memory to request.
+-@@ -739,9 +739,9 @@ int main(int argc, char **argv)
+- 
+-     hipEvent_t start, stop;
+- 
+--    checkCudaErrors(hipEventCreate(&start));    
+--    checkCudaErrors(hipEventCreate(&stop));
+--    checkCudaErrors(hipEventRecord(start));
+-+    HIPCHECK(hipEventCreate(&start));    
+-+    HIPCHECK(hipEventCreate(&stop));
+-+    HIPCHECK(hipEventRecord(start));
+- 
+-     // kernel to run - default (tf32mma_shmem_gemm_async_copy == 0)
+-     kernels selected_kernel = tf32mma_shmem_gemm_async_copy;
+-@@ -765,16 +765,16 @@ int main(int argc, char **argv)
+-         {
+-             case tf32mma_shmem_gemm_async_copy :
+-             default:
+--                checkCudaErrors(hipFuncSetAttribute(compute_tf32gemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+-+                HIPCHECK(hipFuncSetAttribute(compute_tf32gemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+-                 checkKernelErrors((compute_tf32gemm_async_copy<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+-                 break;
+-             case tf32mma_shmem_gemm :
+--                checkCudaErrors(hipFuncSetAttribute(compute_tf32gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+-+                HIPCHECK(hipFuncSetAttribute(compute_tf32gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+-                 checkKernelErrors((compute_tf32gemm<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+-                 break;
+-         }
+- #if CPU_DEBUG
+--        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(float)*M_GLOBAL*N_GLOBAL, hipMemcpyDeviceToHost));
+-+        HIPCHECK(hipMemcpy(result_hD, D, sizeof(float)*M_GLOBAL*N_GLOBAL, hipMemcpyDeviceToHost));
+- #endif
+-     }
+-     else {
+-@@ -792,12 +792,12 @@ int main(int argc, char **argv)
+-         printf("Computing... using simple_wmma_gemm kernel\n");
+-         simple_wmma_tf32gemm<<<gridDim, blockDim>>>(A, B, C, D, M_GLOBAL, N_GLOBAL, K_GLOBAL, alpha, beta);
+- #if CPU_DEBUG
+--        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
+-+        HIPCHECK(hipMemcpy(result_hD, D, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
+- #endif
+-     }
+- 
+--    checkCudaErrors(hipEventRecord(stop));
+--    checkCudaErrors(hipEventSynchronize(stop));
+-+    HIPCHECK(hipEventRecord(stop));
+-+    HIPCHECK(hipEventSynchronize(stop));
+- 
+- #if CPU_DEBUG
+-     printf("Verifying correctness of the computations...\n");
+-@@ -821,7 +821,7 @@ int main(int argc, char **argv)
+- 
+-     float milliseconds = 0;
+- 
+--    checkCudaErrors(hipEventElapsedTime(&milliseconds, start, stop));
+-+    HIPCHECK(hipEventElapsedTime(&milliseconds, start, stop));
+- 
+-     printf("Time: %f ms\n", milliseconds);
+-     printf("TFLOPS: %.2f\n", (((double)M_GLOBAL * N_GLOBAL * K_GLOBAL * 2)/(milliseconds/1000.)) / 1e12);
+-@@ -829,10 +829,10 @@ int main(int argc, char **argv)
+-     free(A_h);
+-     free(B_h);
+-     free(C_h);
+--    checkCudaErrors(hipFree((void*)A));
+--    checkCudaErrors(hipFree((void*)B));
+--    checkCudaErrors(hipFree((void*)C));
+--    checkCudaErrors(hipFree((void*)D));
+-+    HIPCHECK(hipFree((void*)A));
+-+    HIPCHECK(hipFree((void*)B));
+-+    HIPCHECK(hipFree((void*)C));
+-+    HIPCHECK(hipFree((void*)D));
+- 
+-     return 0;
+- }
+-diff --git a/src/samples/Samples/4_CUDA_Libraries/conjugateGradientCudaGraphs/conjugateGradientCudaGraphs.cu.hip b/src/samples/Samples/4_CUDA_Libraries/conjugateGradientCudaGraphs/conjugateGradientCudaGraphs.cu.hip
+-index 274451d..ebeef58 100644
+---- a/src/samples/Samples/4_CUDA_Libraries/conjugateGradientCudaGraphs/conjugateGradientCudaGraphs.cu.hip
+-+++ b/src/samples/Samples/4_CUDA_Libraries/conjugateGradientCudaGraphs/conjugateGradientCudaGraphs.cu.hip
+-@@ -1,3 +1,4 @@
+-+#include "hip/hip_runtime.h"
+- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+-  *
+-  * Redistribution and use in source and binary forms, with or without
+-@@ -33,8 +34,6 @@
+- 
+- // includes, system
+- #include <stdio.h>
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+- #include <stdlib.h>
+- #include <string.h>
+- 
+-@@ -44,8 +43,8 @@
+- #include <hipsparse.h>
+- 
+- // Utilities and system includes
+--#include "helper_cuda_hipified.h"  // helper function CUDA error checking and initialization
+--#include "helper_functions.h"  // helper for shared functions common to CUDA Samples
+-+#include <helper_cuda.h>  // helper function CUDA error checking and initialization
+-+#include <helper_functions.h>  // helper for shared functions common to CUDA Samples
+- 
+- const char *sSDKname = "conjugateGradientCudaGraphs";
+- 
+-@@ -135,7 +134,7 @@ int main(int argc, char **argv) {
+-     exit(EXIT_SUCCESS);
+-   }
+- 
+--  HIPCHECK(hipGetDeviceProperties(&deviceProp, devID));
+-+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, devID));
+- 
+-   // Statistics about the GPU device
+-   printf(
+-@@ -145,12 +144,12 @@ int main(int argc, char **argv) {
+-   /* Generate a random tridiagonal symmetric matrix in CSR format */
+-   N = 1048576;
+-   nz = (N - 2) * 3 + 4;
+--  HIPCHECK(hipHostMalloc(&I, sizeof(int) * (N + 1)));
+--  HIPCHECK(hipHostMalloc(&J, sizeof(int) * nz));
+--  HIPCHECK(hipHostMalloc(&val, sizeof(float) * nz));
+-+  checkCudaErrors(hipHostMalloc(&I, sizeof(int) * (N + 1)));
+-+  checkCudaErrors(hipHostMalloc(&J, sizeof(int) * nz));
+-+  checkCudaErrors(hipHostMalloc(&val, sizeof(float) * nz));
+-   genTridiag(I, J, val, N, nz);
+- 
+--  HIPCHECK(hipHostMalloc(&x, sizeof(float) * N));
+-+  checkCudaErrors(hipHostMalloc(&x, sizeof(float) * N));
+-   rhs = (float *)malloc(sizeof(float) * N);
+- 
+-   for (int i = 0; i < N; i++) {
+-@@ -163,68 +162,68 @@ int main(int argc, char **argv) {
+-   hipblasStatus_t hipblasStatus_t;
+-   hipblasStatus_t = hipblasCreate(&cublasHandle);
+- 
+--  HIPCHECK(hipblasStatus_t);
+-+  checkCudaErrors(hipblasStatus_t);
+- 
+-   /* Get handle to the CUSPARSE context */
+-   hipsparseHandle_t cusparseHandle = 0;
+-   hipsparseStatus_t cusparseStatus;
+-   cusparseStatus = hipsparseCreate(&cusparseHandle);
+- 
+--  HIPCHECK(cusparseStatus);
+-+  checkCudaErrors(cusparseStatus);
+- 
+--  HIPCHECK(hipStreamCreate(&stream1));
+-+  checkCudaErrors(hipStreamCreate(&stream1));
+- 
+--  HIPCHECK(hipMalloc((void **)&d_col, nz * sizeof(int)));
+--  HIPCHECK(hipMalloc((void **)&d_row, (N + 1) * sizeof(int)));
+--  HIPCHECK(hipMalloc((void **)&d_val, nz * sizeof(float)));
+--  HIPCHECK(hipMalloc((void **)&d_x, N * sizeof(float)));
+--  HIPCHECK(hipMalloc((void **)&d_r, N * sizeof(float)));
+--  HIPCHECK(hipMalloc((void **)&d_p, N * sizeof(float)));
+--  HIPCHECK(hipMalloc((void **)&d_Ax, N * sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_col, nz * sizeof(int)));
+-+  checkCudaErrors(hipMalloc((void **)&d_row, (N + 1) * sizeof(int)));
+-+  checkCudaErrors(hipMalloc((void **)&d_val, nz * sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_x, N * sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_r, N * sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_p, N * sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_Ax, N * sizeof(float)));
+- 
+-   float *d_r1, *d_r0, *d_dot, *d_a, *d_na, *d_b;
+--  HIPCHECK(hipMalloc((void **)&d_r1, sizeof(float)));
+--  HIPCHECK(hipMalloc((void **)&d_r0, sizeof(float)));
+--  HIPCHECK(hipMalloc((void **)&d_dot, sizeof(float)));
+--  HIPCHECK(hipMalloc((void **)&d_a, sizeof(float)));
+--  HIPCHECK(hipMalloc((void **)&d_na, sizeof(float)));
+--  HIPCHECK(hipMalloc((void **)&d_b, sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_r1, sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_r0, sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_dot, sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_a, sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_na, sizeof(float)));
+-+  checkCudaErrors(hipMalloc((void **)&d_b, sizeof(float)));
+- 
+-   /* Wrap raw data into cuSPARSE generic API objects */
+-   hipsparseSpMatDescr_t matA = NULL;
+--  HIPCHECK(hipsparseCreateCsr(&matA, N, N, nz, d_row, d_col, d_val,
+-+  checkCudaErrors(hipsparseCreateCsr(&matA, N, N, nz, d_row, d_col, d_val,
+-                                     HIPSPARSE_INDEX_32I, HIPSPARSE_INDEX_32I,
+-                                     HIPSPARSE_INDEX_BASE_ZERO, HIPBLAS_R_32F));
+-   hipsparseDnVecDescr_t vecx = NULL;
+--  HIPCHECK(hipsparseCreateDnVec(&vecx, N, d_x, HIPBLAS_R_32F));
+-+  checkCudaErrors(hipsparseCreateDnVec(&vecx, N, d_x, HIPBLAS_R_32F));
+-   hipsparseDnVecDescr_t vecp = NULL;
+--  HIPCHECK(hipsparseCreateDnVec(&vecp, N, d_p, HIPBLAS_R_32F));
+-+  checkCudaErrors(hipsparseCreateDnVec(&vecp, N, d_p, HIPBLAS_R_32F));
+-   hipsparseDnVecDescr_t vecAx = NULL;
+--  HIPCHECK(hipsparseCreateDnVec(&vecAx, N, d_Ax, HIPBLAS_R_32F));
+-+  checkCudaErrors(hipsparseCreateDnVec(&vecAx, N, d_Ax, HIPBLAS_R_32F));
+- 
+-   /* Allocate workspace for cuSPARSE */
+-   size_t bufferSize = 0;
+--  HIPCHECK(hipsparseSpMV_bufferSize(
+-+  checkCudaErrors(hipsparseSpMV_bufferSize(
+-       cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, vecx,
+-       &beta, vecAx, HIPBLAS_R_32F, HIPSPARSE_SPMV_ALG_DEFAULT, &bufferSize));
+-   void *buffer = NULL;
+--  HIPCHECK(hipMalloc(&buffer, bufferSize));
+-+  checkCudaErrors(hipMalloc(&buffer, bufferSize));
+- 
+-   hipsparseMatDescr_t descr = 0;
+--  HIPCHECK(hipsparseCreateMatDescr(&descr));
+-+  checkCudaErrors(hipsparseCreateMatDescr(&descr));
+- 
+--  HIPCHECK(hipsparseSetMatType(descr, HIPSPARSE_MATRIX_TYPE_GENERAL));
+--  HIPCHECK(hipsparseSetMatIndexBase(descr, HIPSPARSE_INDEX_BASE_ZERO));
+-+  checkCudaErrors(hipsparseSetMatType(descr, HIPSPARSE_MATRIX_TYPE_GENERAL));
+-+  checkCudaErrors(hipsparseSetMatIndexBase(descr, HIPSPARSE_INDEX_BASE_ZERO));
+- 
+-   int numBlocks = 0, blockSize = 0;
+--  HIPCHECK(
+-+  checkCudaErrors(
+-       hipOccupancyMaxPotentialBlockSize(&numBlocks, &blockSize, initVectors));
+- 
+--  HIPCHECK(hipMemcpyAsync(d_col, J, nz * sizeof(int),
+-+  checkCudaErrors(hipMemcpyAsync(d_col, J, nz * sizeof(int),
+-                                   hipMemcpyHostToDevice, stream1));
+--  HIPCHECK(hipMemcpyAsync(d_row, I, (N + 1) * sizeof(int),
+-+  checkCudaErrors(hipMemcpyAsync(d_row, I, (N + 1) * sizeof(int),
+-                                   hipMemcpyHostToDevice, stream1));
+--  HIPCHECK(hipMemcpyAsync(d_val, val, nz * sizeof(float),
+-+  checkCudaErrors(hipMemcpyAsync(d_val, val, nz * sizeof(float),
+-                                   hipMemcpyHostToDevice, stream1));
+- 
+-   initVectors<<<numBlocks, blockSize, 0, stream1>>>(d_r, d_x, N);
+-@@ -233,141 +232,141 @@ int main(int argc, char **argv) {
+-   alpham1 = -1.0;
+-   beta = 0.0;
+- 
+--  HIPCHECK(hipsparseSetStream(cusparseHandle, stream1));
+--  HIPCHECK(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
+-+  checkCudaErrors(hipsparseSetStream(cusparseHandle, stream1));
+-+  checkCudaErrors(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
+-                                &alpha, matA, vecx, &beta, vecAx, HIPBLAS_R_32F,
+-                                HIPSPARSE_SPMV_ALG_DEFAULT, buffer));
+- 
+--  HIPCHECK(hipblasSetStream(cublasHandle, stream1));
+--  HIPCHECK(hipblasSaxpy(cublasHandle, N, &alpham1, d_Ax, 1, d_r, 1));
+-+  checkCudaErrors(hipblasSetStream(cublasHandle, stream1));
+-+  checkCudaErrors(hipblasSaxpy(cublasHandle, N, &alpham1, d_Ax, 1, d_r, 1));
+- 
+--  HIPCHECK(
+-+  checkCudaErrors(
+-       hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_DEVICE));
+--  HIPCHECK(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+-+  checkCudaErrors(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+- 
+-   k = 1;
+-   // First Iteration when k=1 starts
+--  HIPCHECK(hipblasScopy(cublasHandle, N, d_r, 1, d_p, 1));
+--  HIPCHECK(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
+-+  checkCudaErrors(hipblasScopy(cublasHandle, N, d_r, 1, d_p, 1));
+-+  checkCudaErrors(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
+-                                &alpha, matA, vecp, &beta, vecAx, HIPBLAS_R_32F,
+-                                HIPSPARSE_SPMV_ALG_DEFAULT, buffer));
+- 
+--  HIPCHECK(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
+-+  checkCudaErrors(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
+- 
+-   r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_dot, d_a);
+- 
+--  HIPCHECK(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
+-+  checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
+- 
+-   a_minus<<<1, 1, 0, stream1>>>(d_a, d_na);
+- 
+--  HIPCHECK(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
+-+  checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
+- 
+--  HIPCHECK(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
+-+  checkCudaErrors(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
+-                                   hipMemcpyDeviceToDevice, stream1));
+- 
+--  HIPCHECK(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+-+  checkCudaErrors(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+- 
+--  HIPCHECK(hipMemcpyAsync(&r1, d_r1, sizeof(float),
+-+  checkCudaErrors(hipMemcpyAsync(&r1, d_r1, sizeof(float),
+-                                   hipMemcpyDeviceToHost, stream1));
+--  HIPCHECK(hipStreamSynchronize(stream1));
+-+  checkCudaErrors(hipStreamSynchronize(stream1));
+-   printf("iteration = %3d, residual = %e\n", k, sqrt(r1));
+-   // First Iteration when k=1 ends
+-   k++;
+- 
+- #if WITH_GRAPH
+-   hipGraph_t initGraph;
+--  HIPCHECK(hipStreamCreate(&streamForGraph));
+--  HIPCHECK(hipblasSetStream(cublasHandle, stream1));
+--  HIPCHECK(hipsparseSetStream(cusparseHandle, stream1));
+--  HIPCHECK(hipStreamBeginCapture(stream1, hipStreamCaptureModeGlobal));
+-+  checkCudaErrors(hipStreamCreate(&streamForGraph));
+-+  checkCudaErrors(hipblasSetStream(cublasHandle, stream1));
+-+  checkCudaErrors(hipsparseSetStream(cusparseHandle, stream1));
+-+  checkCudaErrors(hipStreamBeginCapture(stream1, hipStreamCaptureModeGlobal));
+- 
+-   r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_r0, d_b);
+-   hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_DEVICE);
+--  HIPCHECK(hipblasSscal(cublasHandle, N, d_b, d_p, 1));
+-+  checkCudaErrors(hipblasSscal(cublasHandle, N, d_b, d_p, 1));
+-   hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_HOST);
+--  HIPCHECK(hipblasSaxpy(cublasHandle, N, &alpha, d_r, 1, d_p, 1));
+-+  checkCudaErrors(hipblasSaxpy(cublasHandle, N, &alpha, d_r, 1, d_p, 1));
+-   hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_DEVICE);
+- 
+--  HIPCHECK(
+-+  checkCudaErrors(
+-       hipsparseSetPointerMode(cusparseHandle, HIPSPARSE_POINTER_MODE_HOST));
+--  HIPCHECK(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
+-+  checkCudaErrors(hipsparseSpMV(cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE,
+-                                &alpha, matA, vecp, &beta, vecAx, HIPBLAS_R_32F,
+-                                HIPSPARSE_SPMV_ALG_DEFAULT, buffer));
+- 
+--  HIPCHECK(hipMemsetAsync(d_dot, 0, sizeof(float), stream1));
+--  HIPCHECK(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
+-+  checkCudaErrors(hipMemsetAsync(d_dot, 0, sizeof(float), stream1));
+-+  checkCudaErrors(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
+- 
+-   r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_dot, d_a);
+- 
+--  HIPCHECK(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
+-+  checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
+- 
+-   a_minus<<<1, 1, 0, stream1>>>(d_a, d_na);
+- 
+--  HIPCHECK(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
+-+  checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
+- 
+--  HIPCHECK(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
+-+  checkCudaErrors(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
+-                                   hipMemcpyDeviceToDevice, stream1));
+--  HIPCHECK(hipMemsetAsync(d_r1, 0, sizeof(float), stream1));
+-+  checkCudaErrors(hipMemsetAsync(d_r1, 0, sizeof(float), stream1));
+- 
+--  HIPCHECK(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+-+  checkCudaErrors(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+- 
+--  HIPCHECK(hipMemcpyAsync((float *)&r1, d_r1, sizeof(float),
+-+  checkCudaErrors(hipMemcpyAsync((float *)&r1, d_r1, sizeof(float),
+-                                   hipMemcpyDeviceToHost, stream1));
+- 
+--  HIPCHECK(hipStreamEndCapture(stream1, &initGraph));
+-+  checkCudaErrors(hipStreamEndCapture(stream1, &initGraph));
+-   hipGraphExec_t graphExec;
+--  HIPCHECK(hipGraphInstantiate(&graphExec, initGraph, NULL, NULL, 0));
+-+  checkCudaErrors(hipGraphInstantiate(&graphExec, initGraph, NULL, NULL, 0));
+- #endif
+- 
+--  HIPCHECK(hipblasSetStream(cublasHandle, stream1));
+--  HIPCHECK(hipsparseSetStream(cusparseHandle, stream1));
+-+  checkCudaErrors(hipblasSetStream(cublasHandle, stream1));
+-+  checkCudaErrors(hipsparseSetStream(cusparseHandle, stream1));
+- 
+-   while (r1 > tol * tol && k <= max_iter) {
+- #if WITH_GRAPH
+--    HIPCHECK(hipGraphLaunch(graphExec, streamForGraph));
+--    HIPCHECK(hipStreamSynchronize(streamForGraph));
+-+    checkCudaErrors(hipGraphLaunch(graphExec, streamForGraph));
+-+    checkCudaErrors(hipStreamSynchronize(streamForGraph));
+- #else
+-     r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_r0, d_b);
+-     hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_DEVICE);
+--    HIPCHECK(hipblasSscal(cublasHandle, N, d_b, d_p, 1));
+-+    checkCudaErrors(hipblasSscal(cublasHandle, N, d_b, d_p, 1));
+- 
+-     hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_HOST);
+--    HIPCHECK(hipblasSaxpy(cublasHandle, N, &alpha, d_r, 1, d_p, 1));
+-+    checkCudaErrors(hipblasSaxpy(cublasHandle, N, &alpha, d_r, 1, d_p, 1));
+- 
+--    HIPCHECK(hipsparseSpMV(
+-+    checkCudaErrors(hipsparseSpMV(
+-         cusparseHandle, HIPSPARSE_OPERATION_NON_TRANSPOSE, &alpha, matA, vecp,
+-         &beta, vecAx, HIPBLAS_R_32F, HIPSPARSE_SPMV_ALG_DEFAULT, buffer));
+- 
+-     hipblasSetPointerMode(cublasHandle, HIPBLAS_POINTER_MODE_DEVICE);
+--    HIPCHECK(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
+-+    checkCudaErrors(hipblasSdot(cublasHandle, N, d_p, 1, d_Ax, 1, d_dot));
+- 
+-     r1_div_x<<<1, 1, 0, stream1>>>(d_r1, d_dot, d_a);
+- 
+--    HIPCHECK(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
+-+    checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_a, d_p, 1, d_x, 1));
+- 
+-     a_minus<<<1, 1, 0, stream1>>>(d_a, d_na);
+--    HIPCHECK(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
+-+    checkCudaErrors(hipblasSaxpy(cublasHandle, N, d_na, d_Ax, 1, d_r, 1));
+- 
+--    HIPCHECK(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
+-+    checkCudaErrors(hipMemcpyAsync(d_r0, d_r1, sizeof(float),
+-                                     hipMemcpyDeviceToDevice, stream1));
+- 
+--    HIPCHECK(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+--    HIPCHECK(hipMemcpyAsync((float *)&r1, d_r1, sizeof(float),
+-+    checkCudaErrors(hipblasSdot(cublasHandle, N, d_r, 1, d_r, 1, d_r1));
+-+    checkCudaErrors(hipMemcpyAsync((float *)&r1, d_r1, sizeof(float),
+-                                     hipMemcpyDeviceToHost, stream1));
+--    HIPCHECK(hipStreamSynchronize(stream1));
+-+    checkCudaErrors(hipStreamSynchronize(stream1));
+- #endif
+-     printf("iteration = %3d, residual = %e\n", k, sqrt(r1));
+-     k++;
+-   }
+- 
+- #if WITH_GRAPH
+--  HIPCHECK(hipMemcpyAsync(x, d_x, N * sizeof(float),
+-+  checkCudaErrors(hipMemcpyAsync(x, d_x, N * sizeof(float),
+-                                   hipMemcpyDeviceToHost, streamForGraph));
+--  HIPCHECK(hipStreamSynchronize(streamForGraph));
+-+  checkCudaErrors(hipStreamSynchronize(streamForGraph));
+- #else
+--  HIPCHECK(hipMemcpyAsync(x, d_x, N * sizeof(float),
+-+  checkCudaErrors(hipMemcpyAsync(x, d_x, N * sizeof(float),
+-                                   hipMemcpyDeviceToHost, stream1));
+--  HIPCHECK(hipStreamSynchronize(stream1));
+-+  checkCudaErrors(hipStreamSynchronize(stream1));
+- #endif
+- 
+-   float rsum, diff, err = 0.0;
+-@@ -387,39 +386,39 @@ int main(int argc, char **argv) {
+-   }
+- 
+- #if WITH_GRAPH
+--  HIPCHECK(hipGraphExecDestroy(graphExec));
+--  HIPCHECK(hipGraphDestroy(initGraph));
+--  HIPCHECK(hipStreamDestroy(streamForGraph));
+-+  checkCudaErrors(hipGraphExecDestroy(graphExec));
+-+  checkCudaErrors(hipGraphDestroy(initGraph));
+-+  checkCudaErrors(hipStreamDestroy(streamForGraph));
+- #endif
+--  HIPCHECK(hipStreamDestroy(stream1));
+-+  checkCudaErrors(hipStreamDestroy(stream1));
+-   hipsparseDestroy(cusparseHandle);
+-   hipblasDestroy(cublasHandle);
+- 
+-   if (matA) {
+--    HIPCHECK(hipsparseDestroySpMat(matA));
+-+    checkCudaErrors(hipsparseDestroySpMat(matA));
+-   }
+-   if (vecx) {
+--    HIPCHECK(hipsparseDestroyDnVec(vecx));
+-+    checkCudaErrors(hipsparseDestroyDnVec(vecx));
+-   }
+-   if (vecAx) {
+--    HIPCHECK(hipsparseDestroyDnVec(vecAx));
+-+    checkCudaErrors(hipsparseDestroyDnVec(vecAx));
+-   }
+-   if (vecp) {
+--    HIPCHECK(hipsparseDestroyDnVec(vecp));
+-+    checkCudaErrors(hipsparseDestroyDnVec(vecp));
+-   }
+- 
+--  HIPCHECK(hipHostFree(I));
+--  HIPCHECK(hipHostFree(J));
+--  HIPCHECK(hipHostFree(val));
+--  HIPCHECK(hipHostFree(x));
+-+  checkCudaErrors(hipHostFree(I));
+-+  checkCudaErrors(hipHostFree(J));
+-+  checkCudaErrors(hipHostFree(val));
+-+  checkCudaErrors(hipHostFree(x));
+-   free(rhs);
+--  HIPCHECK(hipFree(d_col));
+--  HIPCHECK(hipFree(d_row));
+--  HIPCHECK(hipFree(d_val));
+--  HIPCHECK(hipFree(d_x));
+--  HIPCHECK(hipFree(d_r));
+--  HIPCHECK(hipFree(d_p));
+--  HIPCHECK(hipFree(d_Ax));
+-+  checkCudaErrors(hipFree(d_col));
+-+  checkCudaErrors(hipFree(d_row));
+-+  checkCudaErrors(hipFree(d_val));
+-+  checkCudaErrors(hipFree(d_x));
+-+  checkCudaErrors(hipFree(d_r));
+-+  checkCudaErrors(hipFree(d_p));
+-+  checkCudaErrors(hipFree(d_Ax));
+- 
+-   printf("Test Summary:  Error amount = %f\n", err);
+-   exit((k <= max_iter) ? 0 : 1);
+-diff --git a/src/samples/Samples/4_CUDA_Libraries/simpleCUFFT/simpleCUFFT.cu.hip b/src/samples/Samples/4_CUDA_Libraries/simpleCUFFT/simpleCUFFT.cu.hip
+-index 730a6c1..a783aef 100644
+---- a/src/samples/Samples/4_CUDA_Libraries/simpleCUFFT/simpleCUFFT.cu.hip
+-+++ b/src/samples/Samples/4_CUDA_Libraries/simpleCUFFT/simpleCUFFT.cu.hip
+-@@ -1,3 +1,4 @@
+-+#include "hip/hip_runtime.h"
+- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+-  *
+-  * Redistribution and use in source and binary forms, with or without
+-@@ -30,8 +31,6 @@
+- // includes, system
+- #include <math.h>
+- #include <stdio.h>
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+- #include <stdlib.h>
+- #include <string.h>
+- 
+-@@ -107,41 +106,41 @@ void runTest(int argc, char **argv) {
+- 
+-   // Allocate device memory for signal
+-   Complex *d_signal;
+--  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_signal), mem_size));
+-+  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_signal), mem_size));
+-   // Copy host memory to device
+--  HIPCHECK(
+-+  checkCudaErrors(
+-       hipMemcpy(d_signal, h_padded_signal, mem_size, hipMemcpyHostToDevice));
+- 
+-   // Allocate device memory for filter kernel
+-   Complex *d_filter_kernel;
+--  HIPCHECK(
+-+  checkCudaErrors(
+-       hipMalloc(reinterpret_cast<void **>(&d_filter_kernel), mem_size));
+- 
+-   // Copy host memory to device
+--  HIPCHECK(hipMemcpy(d_filter_kernel, h_padded_filter_kernel, mem_size,
+-+  checkCudaErrors(hipMemcpy(d_filter_kernel, h_padded_filter_kernel, mem_size,
+-                              hipMemcpyHostToDevice));
+- 
+-   // CUFFT plan simple API
+-   hipfftHandle plan;
+--  HIPCHECK(hipfftPlan1d(&plan, new_size, HIPFFT_C2C, 1));
+-+  checkCudaErrors(hipfftPlan1d(&plan, new_size, HIPFFT_C2C, 1));
+- 
+-   // CUFFT plan advanced API
+-   hipfftHandle plan_adv;
+-   size_t workSize;
+-   long long int new_size_long = new_size;
+- 
+--  HIPCHECK(hipfftCreate(&plan_adv));
+--  HIPCHECK(cufftXtMakePlanMany(plan_adv, 1, &new_size_long, NULL, 1, 1,
+-+  checkCudaErrors(hipfftCreate(&plan_adv));
+-+  checkCudaErrors(cufftXtMakePlanMany(plan_adv, 1, &new_size_long, NULL, 1, 1,
+-                                       HIPBLAS_C_32F, NULL, 1, 1, HIPBLAS_C_32F, 1,
+-                                       &workSize, HIPBLAS_C_32F));
+-   printf("Temporary buffer size %li bytes\n", workSize);
+- 
+-   // Transform signal and kernel
+--  printf("Transforming signal cufftExecC2C\n");
+--  HIPCHECK(hipfftExecC2C(plan, reinterpret_cast<hipfftComplex *>(d_signal),
+-+  printf("Transforming signal hipfftExecC2C\n");
+-+  checkCudaErrors(hipfftExecC2C(plan, reinterpret_cast<hipfftComplex *>(d_signal),
+-                                reinterpret_cast<hipfftComplex *>(d_signal),
+-                                HIPFFT_FORWARD));
+--  HIPCHECK(hipfftExecC2C(
+-+  checkCudaErrors(hipfftExecC2C(
+-       plan_adv, reinterpret_cast<hipfftComplex *>(d_filter_kernel),
+-       reinterpret_cast<hipfftComplex *>(d_filter_kernel), HIPFFT_FORWARD));
+- 
+-@@ -154,14 +153,14 @@ void runTest(int argc, char **argv) {
+-   getLastCudaError("Kernel execution failed [ ComplexPointwiseMulAndScale ]");
+- 
+-   // Transform signal back
+--  printf("Transforming signal back cufftExecC2C\n");
+--  HIPCHECK(hipfftExecC2C(plan, reinterpret_cast<hipfftComplex *>(d_signal),
+-+  printf("Transforming signal back hipfftExecC2C\n");
+-+  checkCudaErrors(hipfftExecC2C(plan, reinterpret_cast<hipfftComplex *>(d_signal),
+-                                reinterpret_cast<hipfftComplex *>(d_signal),
+-                                HIPFFT_BACKWARD));
+- 
+-   // Copy device memory to host
+-   Complex *h_convolved_signal = h_padded_signal;
+--  HIPCHECK(hipMemcpy(h_convolved_signal, d_signal, mem_size,
+-+  checkCudaErrors(hipMemcpy(h_convolved_signal, d_signal, mem_size,
+-                              hipMemcpyDeviceToHost));
+- 
+-   // Allocate host memory for the convolution result
+-@@ -178,8 +177,8 @@ void runTest(int argc, char **argv) {
+-       reinterpret_cast<float *>(h_convolved_signal), 2 * SIGNAL_SIZE, 1e-5f);
+- 
+-   // Destroy CUFFT context
+--  HIPCHECK(hipfftDestroy(plan));
+--  HIPCHECK(hipfftDestroy(plan_adv));
+-+  checkCudaErrors(hipfftDestroy(plan));
+-+  checkCudaErrors(hipfftDestroy(plan_adv));
+- 
+-   // cleanup memory
+-   free(h_signal);
+-@@ -187,8 +186,8 @@ void runTest(int argc, char **argv) {
+-   free(h_padded_signal);
+-   free(h_padded_filter_kernel);
+-   free(h_convolved_signal_ref);
+--  HIPCHECK(hipFree(d_signal));
+--  HIPCHECK(hipFree(d_filter_kernel));
+-+  checkCudaErrors(hipFree(d_signal));
+-+  checkCudaErrors(hipFree(d_filter_kernel));
+- 
+-   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
+- }
+-@@ -286,6 +285,3 @@ static __global__ void ComplexPointwiseMulAndScale(Complex *a, const Complex *b,
+-     a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
+-   }
+- }
+--i = threadID; i < size; i += numThreads) {
+--    a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
+--  }
+-diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/commonKernels.cu.hip b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/commonKernels.cu.hip
+-index 9edc498..ed8cd7e 100644
+---- a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/commonKernels.cu.hip
+-+++ b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/commonKernels.cu.hip
+-@@ -1,3 +1,4 @@
+-+#include "hip/hip_runtime.h"
+- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+-  *
+-  * Redistribution and use in source and binary forms, with or without
+-@@ -25,8 +26,6 @@
+-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-  */
+- 
+--
+--#include <hip/hip_runtime.h>
+- #include "commonKernels.hpp"
+- 
+- __global__ void spinWhileLessThanOne(volatile unsigned int *latch) {
+-diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+-index 0742df9..d283210 100644
+---- a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+-+++ b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+-@@ -1,3 +1,4 @@
+-+
+- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+-  *
+-  * Redistribution and use in source and binary forms, with or without
+-@@ -24,15 +25,14 @@
+-  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+-  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-  */
+--
+--
+- #include <hip/hip_runtime.h>
+- #include "helper_cuda_hipified.h"
+- #include <helper_timer.h>
+--#include "commonDefs_hipified.hpp"
+--#include "commonKernels_hipified.hpp"
+-+#include "commonDefs.hpp"
+-+#include "commonKernels.hpp"
+- #include "HIPCHECK.h"
+- #define VERIFY_GPU_CORRECTNESS 0
+-+#include "hip_runtime_api_modified.h"
+- size_t maxSampleSizeInMb = 64;
+- int numKernelRuns = 20;
+- int verboseResults = 0;
+-@@ -125,7 +125,7 @@ void verifyMatrixData(float *expectedData, float *observedData,
+- }
+- 
+- #define BLOCK_SIZE 32
+--__global__ void matrixMultiplyKernel(float *C,float *A,float *B,
+-+__global__ void matrixMultiplyKernel(float *C, float *A, float *B,
+-                                      unsigned int matrixDim) {
+-   // Block index
+-   int bx = blockIdx.x;
+-@@ -206,12 +206,15 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
+-                              double *gpuLaunchTransferSyncTimes,
+-                              double *cpuAccessTimes, double *overallTimes,
+-                              int device_id) {
+--  void *dptrA = NULL,  *hptrA = NULL;
+--  void *dptrB = NULL,  *hptrB = NULL;
+--  void *dptrC = NULL,  *hptrC = NULL;
+--  //float *dptrA = NULL,  *hptrA = NULL;
+--  //float *dptrB = NULL,  *hptrB = NULL;
+--  //float *dptrC = NULL,  *hptrC = NULL;
+-+  float *dptrA = NULL, *hptrA = NULL;
+-+  float *dptrB = NULL, *hptrB = NULL;
+-+  float *dptrC = NULL, *hptrC = NULL;
+-+  void *dptrA1=(void*)dptrA;
+-+  void *dptrB1=(void*)dptrB;
+-+  void *dptrC1=(void*)dptrC;
+-+  void *hptrA1=(void*)hptrA;
+-+  void *hptrB1=(void*)hptrB;
+-+  void *hptrC1=(void*)hptrC;
+- 
+-   float *randValuesX = NULL, *randValuesY = NULL;
+-   float *randValuesVerifyXmulY = NULL, *randValuesVerifyYmulX = NULL;
+-@@ -261,8 +264,8 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
+-   HIPCHECK(
+-       hipMemcpyAsync(dptrA, randValuesX, size, hipMemcpyHostToDevice));
+-   HIPCHECK(
+--      hipMemcpyAsync(dptrB, randValuesY, size, hipMemcpyHostToDevice));  
+--matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
+-+      hipMemcpyAsync(dptrB, randValuesY, size, hipMemcpyHostToDevice));
+-+  matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
+-   HIPCHECK(hipMemcpyAsync(randValuesVerifyXmulY, dptrC, size,
+-                                   hipMemcpyDeviceToHost));
+-   HIPCHECK(hipStreamSynchronize(NULL));
+-@@ -318,9 +321,9 @@ matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
+-       HIPCHECK(hipHostMalloc(&hptrA, size));
+-       HIPCHECK(hipHostMalloc(&hptrB, size));
+-       HIPCHECK(hipHostMalloc(&hptrC, size));
+--      HIPCHECK(hipHostGetDevicePointer(&dptrA, hptrA, 0));
+--      HIPCHECK(hipHostGetDevicePointer(&dptrB, hptrB, 0));
+--      HIPCHECK(hipHostGetDevicePointer(&dptrC, hptrC, 0));
+-+      HIPCHECK(hipHostGetDevicePointer(&dptrA1, hptrA1, 0));
+-+      HIPCHECK(hipHostGetDevicePointer(&dptrB1, hptrB1, 0));
+-+      HIPCHECK(hipHostGetDevicePointer(&dptrC1, hptrC1, 0));
+-       break;
+- 
+-     case USE_MANAGED_MEMORY:
+-diff --git a/src/samples/bin/x86_64/linux/release/simpleSeparateCompilation b/src/samples/bin/x86_64/linux/release/simpleSeparateCompilation
+-index 3e00bac..717a4c0 100755
+-Binary files a/src/samples/bin/x86_64/linux/release/simpleSeparateCompilation and b/src/samples/bin/x86_64/linux/release/simpleSeparateCompilation differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiQ/src/src.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/MC_EstimatePiQ/src/src.cu.hip
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu.hip
+index 40f4bca..75ad1e8 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu.hip
+@@ -61,9 +61,9 @@
+ #include <math.h>
+ 
+ // includes, project
+-#include "helper_functions.h"
+-#include "helper_cuda_hipified.h"
+-//#include <hipify/__clang_cuda_intrinsics.h>
++#include <helper_functions.h>
++#include <helper_cuda.h>
++
+ #include <hip/hip_runtime.h>
+ 
+ const char *sSDKsample = "reductionMultiBlockCG";
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/segmentationTreeThrust/segmentationTreeThrust.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/segmentationTreeThrust/segmentationTreeThrust.cu.hip
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip
+index 11a668d..51910f1 100644
+--- a/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip
+@@ -64,7 +64,7 @@
+ #include <cuda_bf16.h>
+ #include <mma.h>
+ #include <cuda/pipeline>
+-
++#include "HIPCHECK.h"
+ // helper functions and utilities to work with CUDA
+ #include "helper_functions.h"
+ #include "helper_cuda_hipified.h"
+@@ -745,11 +745,11 @@ int main(int argc, char **argv)
+         {
+             case bf16mma_shmem_gemm_async_copy :
+             default:
+-                HIPCHECK(hipFuncSetAttribute(compute_bf16gemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
++                HIPCHECK(hipFuncSetAttribute((const void *)compute_bf16gemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                 checkKernelErrors((compute_bf16gemm_async_copy<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+                 break;
+             case bf16mma_shmem_gemm :
+-                HIPCHECK(hipFuncSetAttribute(compute_bf16gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
++                HIPCHECK(hipFuncSetAttribute((const void *)compute_bf16gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                 checkKernelErrors((compute_bf16gemm<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+                 break;
+         }
+@@ -816,10 +816,4 @@ int main(int argc, char **argv)
+ 
+     return 0;
+ }
+-ors(hipFree((void*)A));
+-    checkCudaErrors(hipFree((void*)B));
+-    checkCudaErrors(hipFree((void*)C));
+-    checkCudaErrors(hipFree((void*)D));
+ 
+-    return 0;
+-}
+diff --git a/src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.cu.hip b/src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.cu.hip
+index 68a5536..302a757 100644
+--- a/src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.cu.hip
+@@ -46,8 +46,8 @@
+ 
+ #include <stdio.h>
+ #include <hip/hip_cooperative_groups.h>
+-#include <cooperative_groups/reduce.h>
+-#include "helper_cuda_hipified.h"
++#include "cooperative_groups/reduce.h"
++#include <helper_cuda.h>
+ 
+ namespace cg = cooperative_groups;
+ 
+@@ -107,27 +107,27 @@ int main(int argc, const char **argv) {
+   int *h_sumOfOddEvenElems, *d_sumOfOddEvenElems;
+   unsigned int arrSize = 1024 * 100;
+ 
+-  HIPCHECK(hipHostMalloc(&h_inputArr, sizeof(int) * arrSize));
+-  HIPCHECK(hipHostMalloc(&h_numOfOdds, sizeof(int)));
+-  HIPCHECK(hipHostMalloc(&h_sumOfOddEvenElems, sizeof(int) * 2));
++  checkCudaErrors(hipHostMalloc(&h_inputArr, sizeof(int) * arrSize));
++  checkCudaErrors(hipHostMalloc(&h_numOfOdds, sizeof(int)));
++  checkCudaErrors(hipHostMalloc(&h_sumOfOddEvenElems, sizeof(int) * 2));
+   initOddEvenArr(h_inputArr, arrSize);
+ 
+   hipStream_t stream;
+-  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+-  HIPCHECK(hipMalloc(&d_inputArr, sizeof(int) * arrSize));
+-  HIPCHECK(hipMalloc(&d_numOfOdds, sizeof(int)));
+-  HIPCHECK(hipMalloc(&d_sumOfOddEvenElems, sizeof(int) * 2));
++  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
++  checkCudaErrors(hipMalloc(&d_inputArr, sizeof(int) * arrSize));
++  checkCudaErrors(hipMalloc(&d_numOfOdds, sizeof(int)));
++  checkCudaErrors(hipMalloc(&d_sumOfOddEvenElems, sizeof(int) * 2));
+ 
+-  HIPCHECK(hipMemcpyAsync(d_inputArr, h_inputArr, sizeof(int) * arrSize,
++  checkCudaErrors(hipMemcpyAsync(d_inputArr, h_inputArr, sizeof(int) * arrSize,
+                                   hipMemcpyHostToDevice, stream));
+-  HIPCHECK(hipMemsetAsync(d_numOfOdds, 0, sizeof(int), stream));
+-  HIPCHECK(
++  checkCudaErrors(hipMemsetAsync(d_numOfOdds, 0, sizeof(int), stream));
++  checkCudaErrors(
+       hipMemsetAsync(d_sumOfOddEvenElems, 0, 2 * sizeof(int), stream));
+ 
+   // Launch the kernel
+   int threadsPerBlock = 0;
+   int blocksPerGrid = 0;
+-  HIPCHECK(hipOccupancyMaxPotentialBlockSize(
++  checkCudaErrors(hipOccupancyMaxPotentialBlockSize(
+       &blocksPerGrid, &threadsPerBlock, oddEvenCountAndSumCG, 0, 0));
+ 
+   printf("\nLaunching %d blocks with %d threads...\n\n", blocksPerGrid,
+@@ -136,29 +136,23 @@ int main(int argc, const char **argv) {
+   oddEvenCountAndSumCG<<<blocksPerGrid, threadsPerBlock, 0, stream>>>(
+       d_inputArr, d_numOfOdds, d_sumOfOddEvenElems, arrSize);
+ 
+-  HIPCHECK(hipMemcpyAsync(h_numOfOdds, d_numOfOdds, sizeof(int),
++  checkCudaErrors(hipMemcpyAsync(h_numOfOdds, d_numOfOdds, sizeof(int),
+                                   hipMemcpyDeviceToHost, stream));
+-  HIPCHECK(hipMemcpyAsync(h_sumOfOddEvenElems, d_sumOfOddEvenElems,
++  checkCudaErrors(hipMemcpyAsync(h_sumOfOddEvenElems, d_sumOfOddEvenElems,
+                                   2 * sizeof(int), hipMemcpyDeviceToHost,
+                                   stream));
+-  HIPCHECK(hipStreamSynchronize(stream));
++  checkCudaErrors(hipStreamSynchronize(stream));
+ 
+   printf("Array size = %d Num of Odds = %d Sum of Odds = %d Sum of Evens %d\n",
+          arrSize, h_numOfOdds[0], h_sumOfOddEvenElems[0],
+          h_sumOfOddEvenElems[1]);
+   printf("\n...Done.\n\n");
+ 
+-  HIPCHECK(hipHostFree(h_inputArr));
+-  HIPCHECK(hipHostFree(h_numOfOdds));
+-  HIPCHECK(hipHostFree(h_sumOfOddEvenElems));
++  checkCudaErrors(hipHostFree(h_inputArr));
++  checkCudaErrors(hipHostFree(h_numOfOdds));
++  checkCudaErrors(hipHostFree(h_sumOfOddEvenElems));
+ 
+-  HIPCHECK(hipFree(d_inputArr));
+-  HIPCHECK(hipFree(d_numOfOdds));
+-  HIPCHECK(hipFree(d_sumOfOddEvenElems));
+-
+-  return EXIT_SUCCESS;
+-}
+-s(hipFree(d_inputArr));
++  checkCudaErrors(hipFree(d_inputArr));
+   checkCudaErrors(hipFree(d_numOfOdds));
+   checkCudaErrors(hipFree(d_sumOfOddEvenElems));
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/cdpBezierTessellation/BezierLineCDP.cu.hip b/src/samples/Samples/3_CUDA_Features/cdpBezierTessellation/BezierLineCDP.cu.hip
+index 4a9bb21..295d9d4 100644
+--- a/src/samples/Samples/3_CUDA_Features/cdpBezierTessellation/BezierLineCDP.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cdpBezierTessellation/BezierLineCDP.cu.hip
+@@ -1,4 +1,4 @@
+-
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -25,8 +25,9 @@
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+-#include "hip/hip_runtime.h"
++
+ #include <stdio.h>
++#include <hip/hip_runtime_api.h>
+ #include <helper_cuda.h>
+ #include <string.h>
+ #include "HIPCHECK.h"
+@@ -97,7 +98,8 @@ __global__ void computeBezierLinesCDP(BezierLine *bLines, int nLines) {
+ 
+     if (bLines[lidx].vertexPos == NULL) {
+       bLines[lidx].nVertices = nTessPoints;
+-      hipMalloc(&bLines[lidx].vertexPos, nTessPoints * sizeof(float2));
++      hipMalloc((void **)&bLines[lidx].vertexPos,
++                 nTessPoints * sizeof(float2));
+     }
+ 
+     computeBezierLinePositions<<<ceilf((float)bLines[lidx].nVertices / 32.0f),
+diff --git a/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip
+index 69ee2f6..2a6d4dc 100644
+--- a/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip
+@@ -63,7 +63,8 @@
+ 
+ #include <assert.h>
+ #include <hip/hip_runtime.h>
+-#include <mma.h>
++//#include <mma.h>
++#include "rocwmma.hpp"
+ #include <stdio.h>
+ 
+ // helper functions and utilities to work with CUDA
+diff --git a/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip
+index 8ebd122..5895df3 100644
+--- a/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip
+@@ -64,14 +64,14 @@
+ #include <hip/hip_runtime.h>
+ #include <mma.h>
+ #include <hip/hip_cooperative_groups.h>
+-#include <cooperative_groups/memcpy_async.h>
++#include "cooperative_groups/memcpy_async.h"
+ #include <cuda/std/type_traits>
+ #include <cuda/barrier>
+ #include <cuda/pipeline>
+ 
+ // helper functions and utilities to work with CUDA
+-#include "helper_functions.h"
+-#include "helper_cuda_hipified.h"
++#include <helper_functions.h>
++#include <helper_cuda.h>
+ 
+ // Externally configurable parameters.
+ 
+@@ -837,7 +837,7 @@ int main(int argc, char **argv)
+     int dev = findCudaDevice(argc, (const char **)argv);
+ 
+     hipDeviceProp_t deviceProp;
+-    HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
++    checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
+ 
+     // Double precision Tensor cores require a GPU of Ampere (SM8X) architecture or higher.
+     if (deviceProp.major < 8) {
+@@ -870,10 +870,10 @@ int main(int argc, char **argv)
+     double *C = NULL;
+     double *D = NULL;
+ 
+-    HIPCHECK(hipMalloc((void**)&A, sizeof(double) * M_GLOBAL * K_GLOBAL));
+-    HIPCHECK(hipMalloc((void**)&B, sizeof(double) * N_GLOBAL * K_GLOBAL));
+-    HIPCHECK(hipMalloc((void**)&C, sizeof(double) * M_GLOBAL * N_GLOBAL));
+-    HIPCHECK(hipMalloc((void**)&D, sizeof(double) * M_GLOBAL * N_GLOBAL));
++    checkCudaErrors(hipMalloc((void**)&A, sizeof(double) * M_GLOBAL * K_GLOBAL));
++    checkCudaErrors(hipMalloc((void**)&B, sizeof(double) * N_GLOBAL * K_GLOBAL));
++    checkCudaErrors(hipMalloc((void**)&C, sizeof(double) * M_GLOBAL * N_GLOBAL));
++    checkCudaErrors(hipMalloc((void**)&D, sizeof(double) * M_GLOBAL * N_GLOBAL));
+ 
+     assert(((unsigned long long)A) % 128 == 0);
+     assert(((unsigned long long)B) % 128 == 0);
+@@ -884,10 +884,10 @@ int main(int argc, char **argv)
+ 
+     printf("Preparing data for GPU...\n");
+ 
+-    HIPCHECK(hipMemcpy(A, A_h, sizeof(double) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+-    HIPCHECK(hipMemcpy(B, B_h, sizeof(double) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+-    HIPCHECK(hipMemcpy(C, C_h, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
+-    HIPCHECK(hipMemset(D, 0, sizeof(double) * M_GLOBAL * N_GLOBAL));
++    checkCudaErrors(hipMemcpy(A, A_h, sizeof(double) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
++    checkCudaErrors(hipMemcpy(B, B_h, sizeof(double) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
++    checkCudaErrors(hipMemcpy(C, C_h, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
++    checkCudaErrors(hipMemset(D, 0, sizeof(double) * M_GLOBAL * N_GLOBAL));
+ 
+     enum {
+         // Compute the right amount of shared memory to request.
+@@ -905,9 +905,9 @@ int main(int argc, char **argv)
+ 
+     hipEvent_t start, stop;
+ 
+-    HIPCHECK(hipEventCreate(&start));
+-    HIPCHECK(hipEventCreate(&stop));
+-    HIPCHECK(hipEventRecord(start));
++    checkCudaErrors(hipEventCreate(&start));
++    checkCudaErrors(hipEventCreate(&stop));
++    checkCudaErrors(hipEventRecord(start));
+ 
+     kernels selected_kernel = dmma_shmem_gemm_async_copy;
+ 
+@@ -934,21 +934,21 @@ int main(int argc, char **argv)
+         {
+             case dmma_shmem_gemm_async_copy :
+             default:
+-                HIPCHECK(hipFuncSetAttribute(compute_dgemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
++                checkCudaErrors(hipFuncSetAttribute(compute_dgemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                 checkKernelErrors((compute_dgemm_async_copy<<<deviceProp.multiProcessorCount*3, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+                 break;
+             case dmma_shmem_gemm_cg_async_copy :
+-                HIPCHECK(hipFuncSetAttribute(compute_dgemm_cg_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
++                checkCudaErrors(hipFuncSetAttribute(compute_dgemm_cg_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                 checkKernelErrors((compute_dgemm_cg_async_copy<<<deviceProp.multiProcessorCount*3, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+                 break;
+             case dmma_shmem_gemm :
+-                HIPCHECK(hipFuncSetAttribute(compute_dgemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
++                checkCudaErrors(hipFuncSetAttribute(compute_dgemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                 checkKernelErrors((compute_dgemm<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+                 break;
+         }
+ 
+ #if CPU_DEBUG
+-        HIPCHECK(hipMemcpy(result_hD, D, sizeof(double)*M_GLOBAL*N_GLOBAL, hipMemcpyDeviceToHost));
++        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(double)*M_GLOBAL*N_GLOBAL, hipMemcpyDeviceToHost));
+ #endif
+     }
+     else
+@@ -967,12 +967,12 @@ int main(int argc, char **argv)
+         printf("Computing... using simple_wmma_gemm kernel\n");
+         simple_wmma_gemm<<<gridDim, blockDim>>>(A, B, C, D, M_GLOBAL, N_GLOBAL, K_GLOBAL, alpha, beta);
+ #if CPU_DEBUG
+-        HIPCHECK(hipMemcpy(result_hD, D, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
++        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
+ #endif
+     }
+ 
+-    HIPCHECK(hipEventRecord(stop));
+-    HIPCHECK(hipEventSynchronize(stop));
++    checkCudaErrors(hipEventRecord(stop));
++    checkCudaErrors(hipEventSynchronize(stop));
+ 
+ #if CPU_DEBUG
+     printf("Verifying correctness of the computations...\n");
+@@ -1004,7 +1004,7 @@ int main(int argc, char **argv)
+ 
+     float milliseconds = 0;
+ 
+-    HIPCHECK(hipEventElapsedTime(&milliseconds, start, stop));
++    checkCudaErrors(hipEventElapsedTime(&milliseconds, start, stop));
+ 
+     printf("Time: %f ms\n", milliseconds);
+     printf("FP64 TFLOPS: %.2f\n", (((double)M_GLOBAL * N_GLOBAL * K_GLOBAL * 2)/(milliseconds/1000.)) / 1e12);
+@@ -1012,14 +1012,7 @@ int main(int argc, char **argv)
+     free(A_h);
+     free(B_h);
+     free(C_h);
+-    HIPCHECK(hipFree((void*)A));
+-    HIPCHECK(hipFree((void*)B));
+-    HIPCHECK(hipFree((void*)C));
+-    HIPCHECK(hipFree((void*)D));
+-
+-    return 0;
+-}
+-CudaErrors(hipFree((void*)A));
++    checkCudaErrors(hipFree((void*)A));
+     checkCudaErrors(hipFree((void*)B));
+     checkCudaErrors(hipFree((void*)C));
+     checkCudaErrors(hipFree((void*)D));
+diff --git a/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.out.hip b/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.out.hip
+deleted file mode 100644
+index e69de29..0000000
+diff --git a/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip b/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
+index 103a347..bfc7c82 100644
+--- a/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
+@@ -55,8 +55,8 @@
+ namespace cg = cooperative_groups;
+ 
+ // Helper functions and utilities to work with CUDA
+-#include "helper_functions.h"
+-#include "helper_cuda_hipified.h"
++#include <helper_functions.h>
++#include <helper_cuda.h>
+ 
+ enum kernels {
+   AsyncCopyMultiStageLargeChunk = 0,
+@@ -762,11 +762,11 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+   unsigned int size_A = dimsA.x * dimsA.y;
+   unsigned int mem_size_A = sizeof(float) * size_A;
+   float *h_A;
+-  HIPCHECK(hipHostMalloc(&h_A, mem_size_A));
++  checkCudaErrors(hipHostMalloc(&h_A, mem_size_A));
+   unsigned int size_B = dimsB.x * dimsB.y;
+   unsigned int mem_size_B = sizeof(float) * size_B;
+   float *h_B;
+-  HIPCHECK(hipHostMalloc(&h_B, mem_size_B));
++  checkCudaErrors(hipHostMalloc(&h_B, mem_size_B));
+   hipStream_t stream;
+ 
+   // Initialize host memory
+@@ -781,29 +781,29 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+   dim3 dimsC(dimsB.x, dimsA.y, 1);
+   unsigned int mem_size_C = dimsC.x * dimsC.y * sizeof(float);
+   float *h_C;
+-  HIPCHECK(hipHostMalloc(&h_C, mem_size_C));
++  checkCudaErrors(hipHostMalloc(&h_C, mem_size_C));
+ 
+   if (h_C == NULL) {
+     fprintf(stderr, "Failed to allocate host matrix C!\n");
+     exit(EXIT_FAILURE);
+   }
+ 
+-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_A), mem_size_A));
+-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_B), mem_size_B));
+-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_C), mem_size_C));
++  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_A), mem_size_A));
++  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_B), mem_size_B));
++  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_C), mem_size_C));
+   // Allocate CUDA events that we'll use for timing
+   hipEvent_t start, stop;
+-  HIPCHECK(hipEventCreate(&start));
+-  HIPCHECK(hipEventCreate(&stop));
++  checkCudaErrors(hipEventCreate(&start));
++  checkCudaErrors(hipEventCreate(&stop));
+ 
+-  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
++  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+ 
+   // copy host memory to device
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMemcpyAsync(d_A, h_A, mem_size_A, hipMemcpyHostToDevice, stream));
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMemcpyAsync(d_B, h_B, mem_size_B, hipMemcpyHostToDevice, stream));
+-  HIPCHECK(hipMemsetAsync(d_C, 0, mem_size_C, stream));
++  checkCudaErrors(hipMemsetAsync(d_C, 0, mem_size_C, stream));
+ 
+   // Setup execution parameters
+   dim3 threads(blockSize, blockSize);
+@@ -861,13 +861,13 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+   }
+ 
+   printf("done\n");
+-  HIPCHECK(hipStreamSynchronize(stream));
++  checkCudaErrors(hipStreamSynchronize(stream));
+ 
+   // Execute the kernel
+   int nIter = 100;
+ 
+   // Record the start event
+-  HIPCHECK(hipEventRecord(start, stream));
++  checkCudaErrors(hipEventRecord(start, stream));
+ 
+   for (int j = 0; j < nIter; j++) {
+     switch (kernel_number) {
+@@ -911,13 +911,13 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+   }
+ 
+   // Record the stop event
+-  HIPCHECK(hipEventRecord(stop, stream));
++  checkCudaErrors(hipEventRecord(stop, stream));
+ 
+   // Wait for the stop event to complete
+-  HIPCHECK(hipEventSynchronize(stop));
++  checkCudaErrors(hipEventSynchronize(stop));
+ 
+   float msecTotal = 0.0f;
+-  HIPCHECK(hipEventElapsedTime(&msecTotal, start, stop));
++  checkCudaErrors(hipEventElapsedTime(&msecTotal, start, stop));
+ 
+   // Compute and print the performance
+   float msecPerMatrixMul = msecTotal / nIter;
+@@ -932,9 +932,9 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+       gigaFlops, msecPerMatrixMul, flopsPerMatrixMul, threads.x * threads.y);
+ 
+   // Copy result from device to host
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMemcpyAsync(h_C, d_C, mem_size_C, hipMemcpyDeviceToHost, stream));
+-  HIPCHECK(hipStreamSynchronize(stream));
++  checkCudaErrors(hipStreamSynchronize(stream));
+ 
+   printf("Checking computed result for correctness: ");
+   bool correct = true;
+@@ -959,14 +959,14 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
+   printf("%s\n", correct ? "Result = PASS" : "Result = FAIL");
+ 
+   // Clean up memory
+-  HIPCHECK(hipHostFree(h_A));
+-  HIPCHECK(hipHostFree(h_B));
+-  HIPCHECK(hipHostFree(h_C));
+-  HIPCHECK(hipFree(d_A));
+-  HIPCHECK(hipFree(d_B));
+-  HIPCHECK(hipFree(d_C));
+-  HIPCHECK(hipEventDestroy(start));
+-  HIPCHECK(hipEventDestroy(stop));
++  checkCudaErrors(hipHostFree(h_A));
++  checkCudaErrors(hipHostFree(h_B));
++  checkCudaErrors(hipHostFree(h_C));
++  checkCudaErrors(hipFree(d_A));
++  checkCudaErrors(hipFree(d_B));
++  checkCudaErrors(hipFree(d_C));
++  checkCudaErrors(hipEventDestroy(start));
++  checkCudaErrors(hipEventDestroy(stop));
+   printf(
+       "\nNOTE: The CUDA Samples are not meant for performance "
+       "measurements. Results may vary when GPU Boost is enabled.\n");
+@@ -1056,7 +1056,7 @@ int main(int argc, char **argv) {
+   }
+ 
+   int major = 0;
+-  HIPCHECK(
++  checkCudaErrors(
+       hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, dev));
+   if (major < 7) {
+     printf("globalToShmemAsyncCopy requires SM 7.0 or higher.  Exiting...\n");
+@@ -1070,10 +1070,3 @@ int main(int argc, char **argv) {
+ 
+   exit(matrix_result);
+ }
+-rintf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y, dimsB.x,
+-         dimsB.y);
+-
+-  int matrix_result = MatrixMultiply(argc, argv, dimsA, dimsB, selected_kernel);
+-
+-  exit(matrix_result);
+-}
+diff --git a/src/samples/Samples/3_CUDA_Features/graphMemoryNodes/graphMemoryNodes.cu.hip b/src/samples/Samples/3_CUDA_Features/graphMemoryNodes/graphMemoryNodes.cu.hip
+index d226ff8..e1d90f4 100644
+--- a/src/samples/Samples/3_CUDA_Features/graphMemoryNodes/graphMemoryNodes.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/graphMemoryNodes/graphMemoryNodes.cu.hip
+@@ -37,8 +37,8 @@
+ #include <hip/hip_runtime.h>
+ 
+ // helper functions and utilities to work with CUDA
+-#include "helper_cuda_hipified.h"
+-#include "helper_functions.h"
++#include <helper_cuda.h>
++#include <helper_functions.h>
+ 
+ #define THREADS_PER_BLOCK 512
+ #define ALLOWABLE_VARIANCE 1.e-6f
+@@ -108,13 +108,13 @@ void createFreeGraph(hipGraphExec_t *graphExec, float *dPtr) {
+   hipGraph_t graph;
+   hipGraphNode_t freeNode;
+ 
+-  HIPCHECK(hipGraphCreate(&graph, 0));
++  checkCudaErrors(hipGraphCreate(&graph, 0));
+ 
+-  HIPCHECK(
++  checkCudaErrors(
+       cudaGraphAddMemFreeNode(&freeNode, graph, NULL, 0, (void *)dPtr));
+ 
+-  HIPCHECK(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
+-  HIPCHECK(hipGraphDestroy(graph));
++  checkCudaErrors(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
++  checkCudaErrors(hipGraphDestroy(graph));
+ }
+ 
+ /**
+@@ -176,21 +176,21 @@ void createNegateSquaresGraphExplicitly(hipGraphExec_t *graphExec, int device,
+   // Buffer for storing graph node dependencies
+   std::vector<hipGraphNode_t> nodeDependencies;
+ 
+-  HIPCHECK(hipGraphCreate(&graph, 0));
++  checkCudaErrors(hipGraphCreate(&graph, 0));
+ 
+-  HIPCHECK(
++  checkCudaErrors(
+       cudaGraphAddMemAllocNode(&allocNodeInput, graph, NULL, 0, &allocParams));
+   d_input = (float *)allocParams.dptr;
+ 
+   // To keep the graph structure simple (fewer branching dependencies),
+   // allocNodeSquare should depend on allocNodeInput
+-  HIPCHECK(cudaGraphAddMemAllocNode(&allocNodeSquare, graph,
++  checkCudaErrors(cudaGraphAddMemAllocNode(&allocNodeSquare, graph,
+                                            &allocNodeInput, 1, &allocParams));
+   d_square = (float *)allocParams.dptr;
+ 
+   // copyNodeInput needs to depend on allocNodeInput because copyNodeInput
+   // writes to d_input. It does so here indirectly through allocNodeSquare.
+-  HIPCHECK(hipGraphAddMemcpyNode1D(
++  checkCudaErrors(hipGraphAddMemcpyNode1D(
+       &copyNodeInput, graph, &allocNodeSquare, 1, d_input, hostArrays->input,
+       hostArrays->bytes, hipMemcpyHostToDevice));
+ 
+@@ -201,10 +201,10 @@ void createNegateSquaresGraphExplicitly(hipGraphExec_t *graphExec, int device,
+ 
+   // Square kernel depends on copyNodeInput to ensure all data is on the device
+   // before kernel launch.
+-  HIPCHECK(hipGraphAddKernelNode(&squareKernelNode, graph,
++  checkCudaErrors(hipGraphAddKernelNode(&squareKernelNode, graph,
+                                          &copyNodeInput, 1, &kernelNodeParams));
+ 
+-  HIPCHECK(hipGraphAddMemcpyNode1D(
++  checkCudaErrors(hipGraphAddMemcpyNode1D(
+       &copyNodeSquare, graph, &squareKernelNode, 1, hostArrays->square,
+       d_square, hostArrays->bytes, hipMemcpyDeviceToHost));
+ 
+@@ -212,11 +212,11 @@ void createNegateSquaresGraphExplicitly(hipGraphExec_t *graphExec, int device,
+   // freed while being read by the kernel. It also depends on the alloc of
+   // d_input via squareKernelNode > copyNodeInput > allocNodeSquare >
+   // allocNodeInput.
+-  HIPCHECK(cudaGraphAddMemFreeNode(&freeNodeInput, graph,
++  checkCudaErrors(cudaGraphAddMemFreeNode(&freeNodeInput, graph,
+                                           &squareKernelNode, 1, d_input));
+ 
+   // Allocation of C depends on free of A so CUDA can reuse the virtual address.
+-  HIPCHECK(cudaGraphAddMemAllocNode(&allocNodeNegSquare, graph,
++  checkCudaErrors(cudaGraphAddMemAllocNode(&allocNodeNegSquare, graph,
+                                            &freeNodeInput, 1, &allocParams));
+   d_negSquare = (float *)allocParams.dptr;
+ 
+@@ -231,30 +231,30 @@ void createNegateSquaresGraphExplicitly(hipGraphExec_t *graphExec, int device,
+   kernelNodeParams.func = (void *)negateArray;
+   kernelNodeParams.kernelParams = (void **)negateKernelArgs;
+ 
+-  HIPCHECK(hipGraphAddKernelNode(
++  checkCudaErrors(hipGraphAddKernelNode(
+       &negateKernelNode, graph, &allocNodeNegSquare, 1, &kernelNodeParams));
+ 
+   nodeDependencies.push_back(copyNodeSquare);
+   nodeDependencies.push_back(negateKernelNode);
+-  HIPCHECK(cudaGraphAddMemFreeNode(&freeNodeSquare, graph,
++  checkCudaErrors(cudaGraphAddMemFreeNode(&freeNodeSquare, graph,
+                                           nodeDependencies.data(),
+                                           nodeDependencies.size(), d_square));
+   nodeDependencies.clear();
+ 
+-  HIPCHECK(hipGraphAddMemcpyNode1D(
++  checkCudaErrors(hipGraphAddMemcpyNode1D(
+       &copyNodeNegSquare, graph, &negateKernelNode, 1, hostArrays->negSquare,
+       d_negSquare, hostArrays->bytes, hipMemcpyDeviceToHost));
+ 
+   if (d_negSquare_out == NULL) {
+     hipGraphNode_t freeNodeNegSquare;
+-    HIPCHECK(cudaGraphAddMemFreeNode(
++    checkCudaErrors(cudaGraphAddMemFreeNode(
+         &freeNodeNegSquare, graph, &copyNodeNegSquare, 1, d_negSquare));
+   } else {
+     *d_negSquare_out = d_negSquare;
+   }
+ 
+-  HIPCHECK(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
+-  HIPCHECK(hipGraphDestroy(graph));
++  checkCudaErrors(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
++  checkCudaErrors(hipGraphDestroy(graph));
+ }
+ 
+ /**
+@@ -301,53 +301,53 @@ void doNegateSquaresInStream(hipStream_t stream1, negSquareArrays *hostArrays,
+   hipEvent_t squareKernelCompleteEvent, negateKernelCompleteEvent,
+       squareFreeEvent;
+ 
+-  HIPCHECK(hipStreamCreateWithFlags(&stream2, hipStreamNonBlocking));
++  checkCudaErrors(hipStreamCreateWithFlags(&stream2, hipStreamNonBlocking));
+ 
+-  HIPCHECK(hipEventCreate(&squareKernelCompleteEvent));
+-  HIPCHECK(hipEventCreate(&negateKernelCompleteEvent));
+-  HIPCHECK(hipEventCreate(&squareFreeEvent));
++  checkCudaErrors(hipEventCreate(&squareKernelCompleteEvent));
++  checkCudaErrors(hipEventCreate(&negateKernelCompleteEvent));
++  checkCudaErrors(hipEventCreate(&squareFreeEvent));
+ 
+   // Virtual addresses are assigned synchronously when hipMallocAsync is
+   // called, thus there is no performace benefit gained by separating the
+   // allocations into two streams.
+-  HIPCHECK(hipMallocAsync(&d_input, hostArrays->bytes, stream1));
+-  HIPCHECK(hipMallocAsync(&d_square, hostArrays->bytes, stream1));
++  checkCudaErrors(hipMallocAsync(&d_input, hostArrays->bytes, stream1));
++  checkCudaErrors(hipMallocAsync(&d_square, hostArrays->bytes, stream1));
+ 
+-  HIPCHECK(hipMemcpyAsync(d_input, hostArrays->input, hostArrays->bytes,
++  checkCudaErrors(hipMemcpyAsync(d_input, hostArrays->input, hostArrays->bytes,
+                                   hipMemcpyHostToDevice, stream1));
+   squareArray<<<hostArrays->numBlocks, THREADS_PER_BLOCK, 0, stream1>>>(
+       d_input, d_square, hostArrays->numElements);
+-  HIPCHECK(hipEventRecord(squareKernelCompleteEvent, stream1));
++  checkCudaErrors(hipEventRecord(squareKernelCompleteEvent, stream1));
+ 
+-  HIPCHECK(hipStreamWaitEvent(stream2, squareKernelCompleteEvent, 0));
+-  HIPCHECK(hipMemcpyAsync(hostArrays->square, d_square,
++  checkCudaErrors(hipStreamWaitEvent(stream2, squareKernelCompleteEvent, 0));
++  checkCudaErrors(hipMemcpyAsync(hostArrays->square, d_square,
+                                   hostArrays->bytes, hipMemcpyDeviceToHost,
+                                   stream2));
+ 
+-  HIPCHECK(hipFreeAsync(d_input, stream1));
+-  HIPCHECK(hipMallocAsync(&d_negSquare, hostArrays->bytes, stream1));
++  checkCudaErrors(hipFreeAsync(d_input, stream1));
++  checkCudaErrors(hipMallocAsync(&d_negSquare, hostArrays->bytes, stream1));
+   negateArray<<<hostArrays->numBlocks, THREADS_PER_BLOCK, 0, stream1>>>(
+       d_square, d_negSquare, hostArrays->numElements);
+-  HIPCHECK(hipEventRecord(negateKernelCompleteEvent, stream1));
+-  HIPCHECK(hipMemcpyAsync(hostArrays->negSquare, d_negSquare,
++  checkCudaErrors(hipEventRecord(negateKernelCompleteEvent, stream1));
++  checkCudaErrors(hipMemcpyAsync(hostArrays->negSquare, d_negSquare,
+                                   hostArrays->bytes, hipMemcpyDeviceToHost,
+                                   stream1));
+   if (d_negSquare_out == NULL) {
+-    HIPCHECK(hipFreeAsync(d_negSquare, stream1));
++    checkCudaErrors(hipFreeAsync(d_negSquare, stream1));
+   } else {
+     *d_negSquare_out = d_negSquare;
+   }
+ 
+-  HIPCHECK(hipStreamWaitEvent(stream2, negateKernelCompleteEvent, 0));
+-  HIPCHECK(hipFreeAsync(d_square, stream2));
+-  HIPCHECK(hipEventRecord(squareFreeEvent, stream2));
++  checkCudaErrors(hipStreamWaitEvent(stream2, negateKernelCompleteEvent, 0));
++  checkCudaErrors(hipFreeAsync(d_square, stream2));
++  checkCudaErrors(hipEventRecord(squareFreeEvent, stream2));
+ 
+-  HIPCHECK(hipStreamWaitEvent(stream1, squareFreeEvent, 0));
++  checkCudaErrors(hipStreamWaitEvent(stream1, squareFreeEvent, 0));
+ 
+-  HIPCHECK(hipStreamDestroy(stream2));
+-  HIPCHECK(hipEventDestroy(squareKernelCompleteEvent));
+-  HIPCHECK(hipEventDestroy(negateKernelCompleteEvent));
+-  HIPCHECK(hipEventDestroy(squareFreeEvent));
++  checkCudaErrors(hipStreamDestroy(stream2));
++  checkCudaErrors(hipEventDestroy(squareKernelCompleteEvent));
++  checkCudaErrors(hipEventDestroy(negateKernelCompleteEvent));
++  checkCudaErrors(hipEventDestroy(squareFreeEvent));
+ }
+ 
+ /**
+@@ -361,15 +361,15 @@ void createNegateSquaresGraphWithStreamCapture(hipGraphExec_t *graphExec,
+   hipGraph_t graph;
+   hipStream_t stream;
+ 
+-  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
++  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+ 
+-  HIPCHECK(hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal));
++  checkCudaErrors(hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal));
+   doNegateSquaresInStream(stream, hostArrays, d_negSquare_out);
+-  HIPCHECK(hipStreamEndCapture(stream, &graph));
++  checkCudaErrors(hipStreamEndCapture(stream, &graph));
+ 
+-  HIPCHECK(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
+-  HIPCHECK(hipStreamDestroy(stream));
+-  HIPCHECK(hipGraphDestroy(graph));
++  checkCudaErrors(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
++  checkCudaErrors(hipStreamDestroy(stream));
++  checkCudaErrors(hipGraphDestroy(graph));
+ }
+ 
+ void prepareRefArrays(negSquareArrays *hostArrays,
+@@ -383,12 +383,12 @@ void prepareRefArrays(negSquareArrays *hostArrays,
+     hostArrays->negSquare[i] = hostArrays->square[i] * -1;
+   }
+ 
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMalloc((void **)&deviceRefArrays->negSquare, deviceRefArrays->bytes));
+-  HIPCHECK(hipMemcpy(deviceRefArrays->negSquare, hostArrays->negSquare,
++  checkCudaErrors(hipMemcpy(deviceRefArrays->negSquare, hostArrays->negSquare,
+                              hostArrays->bytes, hipMemcpyHostToDevice));
+ 
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMallocManaged((void **)foundValidationFailure, sizeof(bool)));
+ }
+ 
+@@ -468,12 +468,12 @@ int main(int argc, char **argv) {
+ 
+   prepareHostArrays(&hostArrays);
+   prepareRefArrays(&hostArrays, &deviceRefArrays, &foundValidationFailure);
+-  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
++  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+   printf("Setup complete.\n\n");
+ 
+   printf("Running negateSquares in a stream.\n");
+   doNegateSquaresInStream(stream, &hostArrays);
+-  HIPCHECK(hipStreamSynchronize(stream));
++  checkCudaErrors(hipStreamSynchronize(stream));
+   printf("Validating negateSquares in a stream...\n");
+   validateHost(&hostArrays, foundValidationFailure);
+   checkValidationFailure(foundValidationFailure);
+@@ -481,8 +481,8 @@ int main(int argc, char **argv) {
+ 
+   printf("Running negateSquares in a stream-captured graph.\n");
+   createNegateSquaresGraphWithStreamCapture(&graphExec, &hostArrays);
+-  HIPCHECK(hipGraphLaunch(graphExec, stream));
+-  HIPCHECK(hipStreamSynchronize(stream));
++  checkCudaErrors(hipGraphLaunch(graphExec, stream));
++  checkCudaErrors(hipStreamSynchronize(stream));
+   printf("Validating negateSquares in a stream-captured graph...\n");
+   validateHost(&hostArrays, foundValidationFailure);
+   checkValidationFailure(foundValidationFailure);
+@@ -490,8 +490,8 @@ int main(int argc, char **argv) {
+ 
+   printf("Running negateSquares in an explicitly constructed graph.\n");
+   createNegateSquaresGraphExplicitly(&graphExec, device, &hostArrays);
+-  HIPCHECK(hipGraphLaunch(graphExec, stream));
+-  HIPCHECK(hipStreamSynchronize(stream));
++  checkCudaErrors(hipGraphLaunch(graphExec, stream));
++  checkCudaErrors(hipStreamSynchronize(stream));
+   printf("Validating negateSquares in an explicitly constructed graph...\n");
+   validateHost(&hostArrays, foundValidationFailure);
+   checkValidationFailure(foundValidationFailure);
+@@ -504,13 +504,13 @@ int main(int argc, char **argv) {
+   printf("Running negateSquares with d_negSquare freed outside the stream.\n");
+   createNegateSquaresGraphExplicitly(&graphExec, device, &hostArrays,
+                                      &d_negSquare);
+-  HIPCHECK(hipGraphLaunch(graphExec, stream));
++  checkCudaErrors(hipGraphLaunch(graphExec, stream));
+   validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
+       d_negSquare, deviceRefArrays, foundValidationFailure);
+   // Since hipFree is synchronous, the stream must synchronize before freeing
+   // d_negSquare to ensure d_negSquare no longer being accessed.
+-  HIPCHECK(hipStreamSynchronize(stream));
+-  HIPCHECK(hipFree(d_negSquare));
++  checkCudaErrors(hipStreamSynchronize(stream));
++  checkCudaErrors(hipFree(d_negSquare));
+   printf(
+       "Validating negateSquares with d_negSquare freed outside the "
+       "stream...\n");
+@@ -519,11 +519,11 @@ int main(int argc, char **argv) {
+   resetOutputArrays(&hostArrays);
+ 
+   printf("Running negateSquares with d_negSquare freed outside the graph.\n");
+-  HIPCHECK(hipGraphLaunch(graphExec, stream));
++  checkCudaErrors(hipGraphLaunch(graphExec, stream));
+   validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
+       d_negSquare, deviceRefArrays, foundValidationFailure);
+-  HIPCHECK(hipFreeAsync(d_negSquare, stream));
+-  HIPCHECK(hipStreamSynchronize(stream));
++  checkCudaErrors(hipFreeAsync(d_negSquare, stream));
++  checkCudaErrors(hipStreamSynchronize(stream));
+   printf(
+       "Validating negateSquares with d_negSquare freed outside the graph...\n");
+   checkValidationFailure(foundValidationFailure);
+@@ -532,29 +532,16 @@ int main(int argc, char **argv) {
+   printf(
+       "Running negateSquares with d_negSquare freed in a different graph.\n");
+   createFreeGraph(&graphExecFreeC, d_negSquare);
+-  HIPCHECK(hipGraphLaunch(graphExec, stream));
++  checkCudaErrors(hipGraphLaunch(graphExec, stream));
+   validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
+       d_negSquare, deviceRefArrays, foundValidationFailure);
+-  HIPCHECK(hipGraphLaunch(graphExecFreeC, stream));
+-  HIPCHECK(hipStreamSynchronize(stream));
++  checkCudaErrors(hipGraphLaunch(graphExecFreeC, stream));
++  checkCudaErrors(hipStreamSynchronize(stream));
+   printf(
+       "Validating negateSquares with d_negSquare freed in a different "
+       "graph...\n");
+   checkValidationFailure(foundValidationFailure);
+ 
+-  printf("Cleaning up sample.\n");
+-  HIPCHECK(hipGraphExecDestroy(graphExec));
+-  HIPCHECK(hipGraphExecDestroy(graphExecFreeC));
+-  HIPCHECK(hipStreamDestroy(stream));
+-  HIPCHECK(hipFree(foundValidationFailure));
+-  HIPCHECK(hipFree(deviceRefArrays.negSquare));
+-  free(hostArrays.input);
+-  free(hostArrays.square);
+-  free(hostArrays.negSquare);
+-  printf("Cleanup complete. Exiting sample.\n");
+-}aph...\n");
+-  checkValidationFailure(foundValidationFailure);
+-
+   printf("Cleaning up sample.\n");
+   checkCudaErrors(hipGraphExecDestroy(graphExec));
+   checkCudaErrors(hipGraphExecDestroy(graphExecFreeC));
+diff --git a/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip
+index 0ded558..f454f9a 100644
+--- a/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu.hip
+@@ -70,8 +70,8 @@
+ #include <stdio.h>
+ 
+ // helper functions and utilities to work with CUDA
+-#include "helper_cuda_hipified.h"
+-#include "helper_functions.h"
++#include <helper_cuda.h>
++#include <helper_functions.h>
+ 
+ // Externally configurable parameters.
+ 
+@@ -492,7 +492,7 @@ int main(int argc, char **argv) {
+   int dev = findCudaDevice(argc, (const char **)argv);
+ 
+   hipDeviceProp_t deviceProp;
+-  HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
++  checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
+ 
+   // Tensor cores require a GPU of Volta (SM72) architecture or higher.
+   if (deviceProp.major < 7 || (deviceProp.major <= 7 && deviceProp.minor < 2)) {
+@@ -527,12 +527,12 @@ int main(int argc, char **argv) {
+   int *C = NULL;
+   int *D = NULL;
+ 
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMalloc(reinterpret_cast<void **>(&A), sizeof(uint8_t) * M_GLOBAL * K_GLOBAL));
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMalloc(reinterpret_cast<void **>(&B), sizeof(uint8_t) * N_GLOBAL * K_GLOBAL));
+-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&C), sizeof(int) * M_GLOBAL * N_GLOBAL));
+-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&D), sizeof(int) * M_GLOBAL * N_GLOBAL));
++  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&C), sizeof(int) * M_GLOBAL * N_GLOBAL));
++  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&D), sizeof(int) * M_GLOBAL * N_GLOBAL));
+ 
+   assert(((unsigned long long)A) % 128 == 0);
+   assert(((unsigned long long)B) % 128 == 0);
+@@ -541,13 +541,13 @@ int main(int argc, char **argv) {
+ 
+   init_host_matrices(A_h, B_h, C_h);
+ 
+-  HIPCHECK(hipMemcpy(A, A_h, sizeof(uint8_t) * M_GLOBAL * K_GLOBAL,
++  checkCudaErrors(hipMemcpy(A, A_h, sizeof(uint8_t) * M_GLOBAL * K_GLOBAL,
+                              hipMemcpyHostToDevice));
+-  HIPCHECK(hipMemcpy(B, B_h, sizeof(uint8_t) * N_GLOBAL * K_GLOBAL,
++  checkCudaErrors(hipMemcpy(B, B_h, sizeof(uint8_t) * N_GLOBAL * K_GLOBAL,
+                              hipMemcpyHostToDevice));
+-  HIPCHECK(hipMemcpy(C, C_h, sizeof(int) * M_GLOBAL * N_GLOBAL,
++  checkCudaErrors(hipMemcpy(C, C_h, sizeof(int) * M_GLOBAL * N_GLOBAL,
+                              hipMemcpyHostToDevice));
+-  HIPCHECK(hipMemset(D, 0, sizeof(int) * M_GLOBAL * N_GLOBAL));
++  checkCudaErrors(hipMemset(D, 0, sizeof(int) * M_GLOBAL * N_GLOBAL));
+ 
+   printf("Preparing data for GPU...\n");
+ 
+@@ -576,22 +576,22 @@ int main(int argc, char **argv) {
+ 
+   hipEvent_t start, stop;
+ 
+-  HIPCHECK(hipEventCreate(&start));
+-  HIPCHECK(hipEventCreate(&stop));
+-  HIPCHECK(hipEventRecord(start));
++  checkCudaErrors(hipEventCreate(&start));
++  checkCudaErrors(hipEventCreate(&stop));
++  checkCudaErrors(hipEventRecord(start));
+ 
+   // If enough shared memory available on the GPU use high performant kernel
+   if (deviceProp.sharedMemPerMultiprocessor >= SHMEM_SZ) {
+     printf("Computing... using high performance kernel compute_gemm_imma \n");
+ 
+-    HIPCHECK(hipFuncSetAttribute(
++    checkCudaErrors(hipFuncSetAttribute(
+         compute_gemm_imma, hipFuncAttributeMaxDynamicSharedMemorySize,
+         SHMEM_SZ));
+     checkKernelErrors(
+         (compute_gemm_imma<<<deviceProp.multiProcessorCount, THREADS_PER_BLOCK,
+                              SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
+ #if CPU_DEBUG
+-    HIPCHECK(hipMemcpy(result_hD, D, sizeof(int) * M_GLOBAL * N_GLOBAL,
++    checkCudaErrors(hipMemcpy(result_hD, D, sizeof(int) * M_GLOBAL * N_GLOBAL,
+                                hipMemcpyDeviceToHost));
+ #endif
+   } else {
+@@ -611,13 +611,13 @@ int main(int argc, char **argv) {
+     simple_wmma_gemm_imma<<<gridDim, blockDim>>>(A, B, C, D, M_GLOBAL, N_GLOBAL,
+                                                  K_GLOBAL, alpha, beta);
+ #if CPU_DEBUG
+-    HIPCHECK(hipMemcpy(result_hD, D, sizeof(int) * M_GLOBAL * N_GLOBAL,
++    checkCudaErrors(hipMemcpy(result_hD, D, sizeof(int) * M_GLOBAL * N_GLOBAL,
+                                hipMemcpyDeviceToHost));
+ #endif
+   }
+ 
+-  HIPCHECK(hipEventRecord(stop));
+-  HIPCHECK(hipEventSynchronize(stop));
++  checkCudaErrors(hipEventRecord(stop));
++  checkCudaErrors(hipEventSynchronize(stop));
+ 
+ #if CPU_DEBUG
+   printf("Verifying correctness of the computations...\n");
+@@ -639,7 +639,7 @@ int main(int argc, char **argv) {
+ 
+   float milliseconds = 0;
+ 
+-  HIPCHECK(hipEventElapsedTime(&milliseconds, start, stop));
++  checkCudaErrors(hipEventElapsedTime(&milliseconds, start, stop));
+ 
+     printf("Time: %f ms\n", milliseconds);
+     printf("TOPS: %.2f\n", (((double)M_GLOBAL * N_GLOBAL * K_GLOBAL * 2)/(milliseconds/1000.)) / 1e12);
+@@ -647,14 +647,8 @@ int main(int argc, char **argv) {
+   free(A_h);
+   free(B_h);
+   free(C_h);
+-  HIPCHECK(hipFree(reinterpret_cast<void *>(A)));
+-  HIPCHECK(hipFree(reinterpret_cast<void *>(B)));
+-  HIPCHECK(hipFree(reinterpret_cast<void *>(C)));
+-  HIPCHECK(hipFree(reinterpret_cast<void *>(D)));
+-
+-  return EXIT_SUCCESS;
+-}
+-void *>(B)));
++  checkCudaErrors(hipFree(reinterpret_cast<void *>(A)));
++  checkCudaErrors(hipFree(reinterpret_cast<void *>(B)));
+   checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
+   checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip
+index f145adf..0f654a9 100644
+--- a/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/tf32TensorCoreGemm/tf32TensorCoreGemm.cu.hip
+@@ -65,9 +65,9 @@
+ #include <cuda/pipeline>
+ 
+ // helper functions and utilities to work with CUDA
+-#include "helper_functions.h"
+-#include "helper_cuda_hipified.h"
+-
++#include <helper_functions.h>
++#include <helper_cuda.h>
++#include "HIPCHECK.h"
+ // Externally configurable parameters.
+ 
+ #ifndef CPU_DEBUG
+@@ -836,10 +836,3 @@ int main(int argc, char **argv)
+ 
+     return 0;
+ }
+-ors(hipFree((void*)A));
+-    checkCudaErrors(hipFree((void*)B));
+-    checkCudaErrors(hipFree((void*)C));
+-    checkCudaErrors(hipFree((void*)D));
+-
+-    return 0;
+-}
+diff --git a/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip b/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip
+index c17a1ee..e0fec53 100644
+--- a/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu.hip
+@@ -28,8 +28,8 @@
+ 
+ #include <stdio.h>
+ // includes, project
+-#include "helper_cuda_hipified.h"
+-#include "helper_functions.h"
++#include <helper_cuda.h>
++#include <helper_functions.h>
+ 
+ #include <hip/hip_runtime.h>
+ 
+@@ -118,17 +118,17 @@ int mapIndicesToBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
+     h_bucketCounters[i] = i*NUM_ELEMS;
+   }
+ 
+-  HIPCHECK(hipMalloc(&d_indicesBuckets, sizeof(int) * NUM_ELEMS * numOfBuckets));
+-  HIPCHECK(hipMalloc(&d_bucketCounters, sizeof(int) * numOfBuckets));
++  checkCudaErrors(hipMalloc(&d_indicesBuckets, sizeof(int) * NUM_ELEMS * numOfBuckets));
++  checkCudaErrors(hipMalloc(&d_bucketCounters, sizeof(int) * numOfBuckets));
+ 
+-  HIPCHECK(hipMemcpy(d_bucketCounters, h_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyHostToDevice));
++  checkCudaErrors(hipMemcpy(d_bucketCounters, h_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyHostToDevice));
+ 
+   dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
+   dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK), 1, 1);
+ 
+   mapToBuckets<<<dimGrid, dimBlock>>>(d_srcArr, d_indicesBuckets, d_bucketCounters, NUM_ELEMS, numOfBuckets);
+ 
+-  HIPCHECK(hipMemcpy(h_bucketCounters, d_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyDeviceToHost));
++  checkCudaErrors(hipMemcpy(h_bucketCounters, d_bucketCounters, sizeof(int)*numOfBuckets, hipMemcpyDeviceToHost));
+ 
+   for (int i=0; i < NUM_ELEMS; i++)
+   {
+@@ -204,18 +204,18 @@ int calculateMaxInBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
+     h_valueInBuckets[i] = rand();
+   }
+ 
+-  HIPCHECK(hipMalloc(&d_valueInBuckets, sizeof(int) * NUM_ELEMS));
+-  HIPCHECK(hipMalloc(&d_bucketsMax, sizeof(int) * numOfBuckets));
++  checkCudaErrors(hipMalloc(&d_valueInBuckets, sizeof(int) * NUM_ELEMS));
++  checkCudaErrors(hipMalloc(&d_bucketsMax, sizeof(int) * numOfBuckets));
+ 
+-  HIPCHECK(hipMemset(d_bucketsMax, 0, sizeof(int) * numOfBuckets));
+-  HIPCHECK(hipMemcpy(d_valueInBuckets, h_valueInBuckets, sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
++  checkCudaErrors(hipMemset(d_bucketsMax, 0, sizeof(int) * numOfBuckets));
++  checkCudaErrors(hipMemcpy(d_valueInBuckets, h_valueInBuckets, sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
+ 
+   dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
+   dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK), 1, 1);
+ 
+   calculateMaxInEachBuckets<<<dimGrid, dimBlock>>>(d_srcArr, d_valueInBuckets, d_bucketsMax, NUM_ELEMS, numOfBuckets);
+ 
+-  HIPCHECK(hipMemcpy(h_bucketsMax, d_bucketsMax, sizeof(int) * numOfBuckets, hipMemcpyDeviceToHost));
++  checkCudaErrors(hipMemcpy(h_bucketsMax, d_bucketsMax, sizeof(int) * numOfBuckets, hipMemcpyDeviceToHost));
+ 
+   for (int i = 0; i < NUM_ELEMS; i++)
+   {
+@@ -244,8 +244,8 @@ int calculateMaxInBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
+   delete[] h_valueInBuckets;
+   delete[] cpuBucketsMax;
+   delete[] h_bucketsMax;
+-  HIPCHECK(hipFree(d_valueInBuckets));
+-  HIPCHECK(hipFree(d_bucketsMax));
++  checkCudaErrors(hipFree(d_valueInBuckets));
++  checkCudaErrors(hipFree(d_bucketsMax));
+ 
+   if (!allMatch && finalElems != NUM_ELEMS)
+   {
+@@ -270,13 +270,13 @@ int main(int argc, char **argv) {
+ 
+   int devId = findCudaDevice(argc, (const char **)argv);
+ 
+-  HIPCHECK(hipMalloc(&d_data_to_filter, sizeof(int) * NUM_ELEMS));
+-  HIPCHECK(hipMalloc(&d_filtered_data, sizeof(int) * NUM_ELEMS));
+-  HIPCHECK(hipMalloc(&d_nres, sizeof(int)));
++  checkCudaErrors(hipMalloc(&d_data_to_filter, sizeof(int) * NUM_ELEMS));
++  checkCudaErrors(hipMalloc(&d_filtered_data, sizeof(int) * NUM_ELEMS));
++  checkCudaErrors(hipMalloc(&d_nres, sizeof(int)));
+ 
+-  HIPCHECK(hipMemcpy(d_data_to_filter, data_to_filter,
++  checkCudaErrors(hipMemcpy(d_data_to_filter, data_to_filter,
+                              sizeof(int) * NUM_ELEMS, hipMemcpyHostToDevice));
+-  HIPCHECK(hipMemset(d_nres, 0, sizeof(int)));
++  checkCudaErrors(hipMemset(d_nres, 0, sizeof(int)));
+ 
+   dim3 dimBlock(NUM_THREADS_PER_BLOCK, 1, 1);
+   dim3 dimGrid((NUM_ELEMS / NUM_THREADS_PER_BLOCK) + 1, 1, 1);
+@@ -284,12 +284,12 @@ int main(int argc, char **argv) {
+   filter_arr<<<dimGrid, dimBlock>>>(d_filtered_data, d_nres, d_data_to_filter,
+                                     NUM_ELEMS);
+ 
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMemcpy(&nres, d_nres, sizeof(int), hipMemcpyDeviceToHost));
+ 
+   filtered_data = reinterpret_cast<int *>(malloc(sizeof(int) * nres));
+ 
+-  HIPCHECK(hipMemcpy(filtered_data, d_filtered_data, sizeof(int) * nres,
++  checkCudaErrors(hipMemcpy(filtered_data, d_filtered_data, sizeof(int) * nres,
+                              hipMemcpyDeviceToHost));
+ 
+   int *host_filtered_data =
+@@ -304,7 +304,7 @@ int main(int argc, char **argv) {
+   }
+ 
+   int major = 0;
+-  HIPCHECK(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, devId));
++  checkCudaErrors(hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, devId));
+ 
+   int mapIndicesToBucketsStatus = EXIT_SUCCESS;
+   int calculateMaxInBucketsStatus = EXIT_SUCCESS;
+@@ -319,14 +319,8 @@ int main(int argc, char **argv) {
+          (host_flt_count == nres) && (mapIndicesToBucketsStatus == EXIT_SUCCESS) && 
+          (calculateMaxInBucketsStatus == EXIT_SUCCESS) ? "PASSED" : "FAILED");
+ 
+-  HIPCHECK(hipFree(d_data_to_filter));
+-  HIPCHECK(hipFree(d_filtered_data));
+-  HIPCHECK(hipFree(d_nres));
+-  free(data_to_filter);
+-  free(filtered_data);
+-  free(host_filtered_data);
+-}
+-eckCudaErrors(hipFree(d_filtered_data));
++  checkCudaErrors(hipFree(d_data_to_filter));
++  checkCudaErrors(hipFree(d_filtered_data));
+   checkCudaErrors(hipFree(d_nres));
+   free(data_to_filter);
+   free(filtered_data);
+diff --git a/src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_MGPU/simpleCUFFT_MGPU.cu.hip b/src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_MGPU/simpleCUFFT_MGPU.cu.hip
+index 1b699c8..8738cb3 100644
+--- a/src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_MGPU/simpleCUFFT_MGPU.cu.hip
++++ b/src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_MGPU/simpleCUFFT_MGPU.cu.hip
+@@ -1,3 +1,4 @@
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -30,8 +31,6 @@
+ // System includes
+ #include <stdlib.h>
+ #include <stdio.h>
+-#include "rocprofiler.h"
+-#include "HIPCHECK.h"
+ 
+ #include <string.h>
+ #include <math.h>
+@@ -79,7 +78,7 @@ int main(int argc, char **argv) {
+   printf("\n[simpleCUFFT_MGPU] is starting...\n\n");
+ 
+   int GPU_N;
+-  HIPCHECK(hipGetDeviceCount(&GPU_N));
++  checkCudaErrors(hipGetDeviceCount(&GPU_N));
+ 
+   if (GPU_N < GPU_COUNT) {
+     printf("No. of GPU on node %d\n", GPU_N);
+@@ -95,7 +94,7 @@ int main(int argc, char **argv) {
+ 
+   for (int i = 0; i < GPU_N; i++) {
+     hipDeviceProp_t deviceProp;
+-    HIPCHECK(hipGetDeviceProperties(&deviceProp, i));
++    checkCudaErrors(hipGetDeviceProperties(&deviceProp, i));
+     major_minor[i * 2] = deviceProp.major;
+     major_minor[i * 2 + 1] = deviceProp.minor;
+     printf("GPU Device %d: \"%s\" with compute capability %d.%d\n", i,
+@@ -151,10 +150,10 @@ int main(int argc, char **argv) {
+       PadData(h_signal, &h_padded_signal, SIGNAL_SIZE, h_filter_kernel,
+               &h_padded_filter_kernel, FILTER_KERNEL_SIZE);
+ 
+-  // cufftCreate() - Create an empty plan
++  // hipfftCreate() - Create an empty plan
+   hipfftResult result;
+   hipfftHandle plan_input;
+-  HIPCHECK(hipfftCreate(&plan_input));
++  checkCudaErrors(hipfftCreate(&plan_input));
+ 
+   // cufftXtSetGPUs() - Define which GPUs to use
+   result = cufftXtSetGPUs(plan_input, nGPUs, whichGPUs);
+@@ -164,7 +163,7 @@ int main(int argc, char **argv) {
+     printf("No such board was found. Waiving sample.\n");
+     exit(EXIT_WAIVED);
+   } else if (result != HIPFFT_SUCCESS) {
+-    printf("hipfftXtSetGPUs failed\n");
++    printf("cufftXtSetGPUs failed\n");
+     exit(EXIT_FAILURE);
+   }
+ 
+@@ -172,7 +171,7 @@ int main(int argc, char **argv) {
+   printf("\nRunning on GPUs\n");
+   for (int i = 0; i < nGPUs; i++) {
+     hipDeviceProp_t deviceProp;
+-    HIPCHECK(hipGetDeviceProperties(&deviceProp, whichGPUs[i]));
++    checkCudaErrors(hipGetDeviceProperties(&deviceProp, whichGPUs[i]));
+     printf("GPU Device %d: \"%s\" with compute capability %d.%d\n",
+            whichGPUs[i], deviceProp.name, deviceProp.major, deviceProp.minor);
+   }
+@@ -180,42 +179,42 @@ int main(int argc, char **argv) {
+   size_t *worksize;
+   worksize = (size_t *)malloc(sizeof(size_t) * nGPUs);
+ 
+-  // cufftMakePlan1d() - Create the plan
+-  HIPCHECK(
++  // hipfftMakePlan1d() - Create the plan
++  checkCudaErrors(
+       hipfftMakePlan1d(plan_input, new_size, HIPFFT_C2C, 1, worksize));
+ 
+   // cufftXtMalloc() - Malloc data on multiple GPUs
+   cudaLibXtDesc *d_signal;
+-  HIPCHECK(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_signal,
++  checkCudaErrors(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_signal,
+                                 CUFFT_XT_FORMAT_INPLACE));
+   cudaLibXtDesc *d_out_signal;
+-  HIPCHECK(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_out_signal,
++  checkCudaErrors(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_out_signal,
+                                 CUFFT_XT_FORMAT_INPLACE));
+   cudaLibXtDesc *d_filter_kernel;
+-  HIPCHECK(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_filter_kernel,
++  checkCudaErrors(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_filter_kernel,
+                                 CUFFT_XT_FORMAT_INPLACE));
+   cudaLibXtDesc *d_out_filter_kernel;
+-  HIPCHECK(cufftXtMalloc(plan_input,
++  checkCudaErrors(cufftXtMalloc(plan_input,
+                                 (cudaLibXtDesc **)&d_out_filter_kernel,
+                                 CUFFT_XT_FORMAT_INPLACE));
+ 
+   // cufftXtMemcpy() - Copy data from host to multiple GPUs
+-  HIPCHECK(cufftXtMemcpy(plan_input, d_signal, h_padded_signal,
++  checkCudaErrors(cufftXtMemcpy(plan_input, d_signal, h_padded_signal,
+                                 CUFFT_COPY_HOST_TO_DEVICE));
+-  HIPCHECK(cufftXtMemcpy(plan_input, d_filter_kernel,
++  checkCudaErrors(cufftXtMemcpy(plan_input, d_filter_kernel,
+                                 h_padded_filter_kernel,
+                                 CUFFT_COPY_HOST_TO_DEVICE));
+ 
+   // cufftXtExecDescriptorC2C() - Execute FFT on data on multiple GPUs
+-  HIPCHECK(
++  checkCudaErrors(
+       cufftXtExecDescriptorC2C(plan_input, d_signal, d_signal, HIPFFT_FORWARD));
+-  HIPCHECK(cufftXtExecDescriptorC2C(plan_input, d_filter_kernel,
++  checkCudaErrors(cufftXtExecDescriptorC2C(plan_input, d_filter_kernel,
+                                            d_filter_kernel, HIPFFT_FORWARD));
+ 
+   // cufftXtMemcpy() - Copy the data to natural order on GPUs
+-  HIPCHECK(cufftXtMemcpy(plan_input, d_out_signal, d_signal,
++  checkCudaErrors(cufftXtMemcpy(plan_input, d_out_signal, d_signal,
+                                 CUFFT_COPY_DEVICE_TO_DEVICE));
+-  HIPCHECK(cufftXtMemcpy(plan_input, d_out_filter_kernel,
++  checkCudaErrors(cufftXtMemcpy(plan_input, d_out_filter_kernel,
+                                 d_filter_kernel, CUFFT_COPY_DEVICE_TO_DEVICE));
+ 
+   printf("\n\nValue of Library Descriptor\n");
+@@ -232,8 +231,8 @@ int main(int argc, char **argv) {
+                       1.0f / new_size, nGPUs);
+ 
+   // cufftXtExecDescriptorC2C() - Execute inverse  FFT on data on multiple GPUs
+-  printf("Transforming signal back cufftExecC2C\n");
+-  HIPCHECK(cufftXtExecDescriptorC2C(plan_input, d_out_signal,
++  printf("Transforming signal back hipfftExecC2C\n");
++  checkCudaErrors(cufftXtExecDescriptorC2C(plan_input, d_out_signal,
+                                            d_out_signal, HIPFFT_BACKWARD));
+ 
+   // Create host pointer pointing to padded signal
+@@ -244,7 +243,7 @@ int main(int argc, char **argv) {
+       (Complex *)malloc(sizeof(Complex) * SIGNAL_SIZE);
+ 
+   // cufftXtMemcpy() - Copy data from multiple GPUs to host
+-  HIPCHECK(cufftXtMemcpy(plan_input, h_convolved_signal, d_out_signal,
++  checkCudaErrors(cufftXtMemcpy(plan_input, h_convolved_signal, d_out_signal,
+                                 CUFFT_COPY_DEVICE_TO_HOST));
+ 
+   // Convolve on the host
+@@ -267,13 +266,13 @@ int main(int argc, char **argv) {
+   free(h_convolved_signal_ref);
+ 
+   // cudaXtFree() - Free GPU memory
+-  HIPCHECK(cufftXtFree(d_signal));
+-  HIPCHECK(cufftXtFree(d_filter_kernel));
+-  HIPCHECK(cufftXtFree(d_out_signal));
+-  HIPCHECK(cufftXtFree(d_out_filter_kernel));
++  checkCudaErrors(cufftXtFree(d_signal));
++  checkCudaErrors(cufftXtFree(d_filter_kernel));
++  checkCudaErrors(cufftXtFree(d_out_signal));
++  checkCudaErrors(cufftXtFree(d_out_filter_kernel));
+ 
+-  // cufftDestroy() - Destroy FFT plan
+-  HIPCHECK(hipfftDestroy(plan_input));
++  // hipfftDestroy() - Destroy FFT plan
++  checkCudaErrors(hipfftDestroy(plan_input));
+ 
+   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
+@@ -344,7 +343,7 @@ void multiplyCoefficient(cudaLibXtDesc *d_signal,
+     device = d_signal->descriptor->GPUs[i];
+ 
+     // Set device
+-    HIPCHECK(hipSetDevice(device));
++    checkCudaErrors(hipSetDevice(device));
+ 
+     // Perform GPU computations
+     ComplexPointwiseMulAndScale<<<32, 256>>>(
+@@ -356,7 +355,7 @@ void multiplyCoefficient(cudaLibXtDesc *d_signal,
+   // Wait for device to finish all operation
+   for (int i = 0; i < nGPUs; i++) {
+     device = d_signal->descriptor->GPUs[i];
+-    HIPCHECK(hipSetDevice(device));
++    checkCudaErrors(hipSetDevice(device));
+     hipDeviceSynchronize();
+     // Check if kernel execution generated and error
+     getLastCudaError("Kernel execution failed [ ComplexPointwiseMulAndScale ]");
+@@ -400,7 +399,3 @@ static __global__ void ComplexPointwiseMulAndScale(hipfftComplex *a,
+     a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
+   }
+ }
+-t threadID = blockIdx.x * blockDim.x + threadIdx.x;
+-  for (int i = threadID; i < size; i += numThreads) {
+-    a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
+-  }
+diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/UnifiedMemoryPerf.out b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/UnifiedMemoryPerf.out
+index f74cacd..deda2e7 100755
+Binary files a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/UnifiedMemoryPerf.out and b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/UnifiedMemoryPerf.out differ
+diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+index d283210..28d90cc 100644
+--- a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
++++ b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+@@ -1,4 +1,4 @@
+-
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -25,14 +25,14 @@
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+-#include <hip/hip_runtime.h>
++
+ #include "helper_cuda_hipified.h"
+ #include <helper_timer.h>
+ #include "commonDefs.hpp"
+ #include "commonKernels.hpp"
+ #include "HIPCHECK.h"
+ #define VERIFY_GPU_CORRECTNESS 0
+-#include "hip_runtime_api_modified.h"
++
+ size_t maxSampleSizeInMb = 64;
+ int numKernelRuns = 20;
+ int verboseResults = 0;
+@@ -209,13 +209,6 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
+   float *dptrA = NULL, *hptrA = NULL;
+   float *dptrB = NULL, *hptrB = NULL;
+   float *dptrC = NULL, *hptrC = NULL;
+-  void *dptrA1=(void*)dptrA;
+-  void *dptrB1=(void*)dptrB;
+-  void *dptrC1=(void*)dptrC;
+-  void *hptrA1=(void*)hptrA;
+-  void *hptrB1=(void*)hptrB;
+-  void *hptrC1=(void*)hptrC;
+-
+   float *randValuesX = NULL, *randValuesY = NULL;
+   float *randValuesVerifyXmulY = NULL, *randValuesVerifyYmulX = NULL;
+   bool copyRequired = false, hintsRequired = false;
+@@ -321,9 +314,9 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
+       HIPCHECK(hipHostMalloc(&hptrA, size));
+       HIPCHECK(hipHostMalloc(&hptrB, size));
+       HIPCHECK(hipHostMalloc(&hptrC, size));
+-      HIPCHECK(hipHostGetDevicePointer(&dptrA1, hptrA1, 0));
+-      HIPCHECK(hipHostGetDevicePointer(&dptrB1, hptrB1, 0));
+-      HIPCHECK(hipHostGetDevicePointer(&dptrC1, hptrC1, 0));
++      HIPCHECK(hipHostGetDevicePointer((void **)&dptrA, hptrA, 0));
++      HIPCHECK(hipHostGetDevicePointer((void **)&dptrB, hptrB, 0));
++      HIPCHECK(hipHostGetDevicePointer((void **)&dptrC, hptrC, 0));
+       break;
+ 
+     case USE_MANAGED_MEMORY:

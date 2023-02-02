@@ -1,0 +1,15 @@
+diff --git a/src/samples/Samples/0_Introduction/template/template.cu.hip b/src/samples/Samples/0_Introduction/template/template.cu.hip
+index 4482e65..c929826 100644
+--- a/src/samples/Samples/0_Introduction/template/template.cu.hip
++++ b/src/samples/Samples/0_Introduction/template/template.cu.hip
+@@ -42,8 +42,8 @@
+ #include <hip/hip_runtime.h>
+ 
+ // includes, project
+-#include <helper_cuda.h>
+-#include <helper_functions.h> // helper functions for SDK examples
++#include "helper_cuda_hipified.h"
++#include "helper_functions.h" // helper functions for SDK examples
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ // declaration, forward

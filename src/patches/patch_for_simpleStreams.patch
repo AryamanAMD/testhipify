@@ -1,0 +1,1109 @@
+diff --git a/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip b/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip
+index 32654ed..3a32418 100644
+--- a/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip
+@@ -43,12 +43,12 @@
+ 
+ #include <hip/hip_runtime.h>
+ #include <stdio.h>
+-#include "rocprofiler.h"
++//#include "rocprofiler.h"
+ #include "HIPCHECK.h"
+ 
+ // helper functions and utilities to work with CUDA
+ #include <helper_functions.h>
+-#include <helper_cuda.h>
++#include "helper_cuda_hipified.h"
+ 
+ #include "multithreading.h"
+ 
+@@ -57,8 +57,7 @@ const int N_elements_per_workload = 100000;
+ 
+ CUTBarrier thread_barrier;
+ 
+-void CUDART_CB myStreamCallback(hipStream_t event, hipError_t status,
+-                                void *data);
++void (CUDART_CB* myStreamCallback)(hipStream_t event, hipError_t status, void *data);
+ 
+ struct heterogeneous_workload {
+   int id;
+@@ -144,8 +143,7 @@ CUT_THREADPROC postprocess(void *void_arg) {
+   CUT_THREADEND;
+ }
+ 
+-void CUDART_CB myStreamCallback(hipStream_t stream, hipError_t status,
+-                                void *data) {
++void (CUDART_CB* myStreamCallback)(hipStream_t stream, hipError_t status, void *data) {
+   // Check status of GPU after stream operations are done
+   HIPCHECK(status);
+ 
+diff --git a/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.cu.hip b/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.cu.hip
+index e69de29..96ce636 100644
+--- a/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.cu.hip
+@@ -0,0 +1,446 @@
++
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++/*
++ * This sample illustrates the usage of CUDA streams for overlapping
++ * kernel execution with device/host memcopies.  The kernel is used to
++ * initialize an array to a specific value, after which the array is
++ * copied to the host (CPU) memory.  To increase performance, multiple
++ * kernel/memcopy pairs are launched asynchronously, each pair in its
++ * own stream.  Devices with Compute Capability 1.1 can overlap a kernel
++ * and a memcopy as long as they are issued in different streams.  Kernels
++ * are serialized.  Thus, if n pairs are launched, streamed approach
++ * can reduce the memcopy cost to the (1/n)th of a single copy of the entire
++ * data set.
++ *
++ * Additionally, this sample uses CUDA events to measure elapsed time for
++ * CUDA calls.  Events are a part of CUDA API and provide a system independent
++ * way to measure execution times on CUDA devices with approximately 0.5
++ * microsecond precision.
++ *
++ * Elapsed times are averaged over nreps repetitions (10 by default).
++ *
++*/
++
++const char *sSDKsample = "simpleStreams";
++
++const char *sEventSyncMethod[] = {"hipEventDefault", "hipEventBlockingSync",
++                                  "hipEventDisableTiming", NULL};
++
++const char *sDeviceSyncMethod[] = {
++    "hipDeviceScheduleAuto",         "hipDeviceScheduleSpin",
++    "hipDeviceScheduleYield",        "INVALID",
++    "hipDeviceScheduleBlockingSync", NULL};
++
++// System includes
++#include <stdio.h>
++#include <assert.h>
++
++// CUDA runtime
++#include <hip/hip_runtime.h>
++
++// helper functions and utilities to work with CUDA
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"
++
++#ifndef WIN32
++#include <sys/mman.h>  // for mmap() / munmap()
++#endif
++
++// Macro to aligned up to the memory size in question
++#define MEMORY_ALIGNMENT 4096
++#define ALIGN_UP(x, size) (((size_t)x + (size - 1)) & (~(size - 1)))
++
++__global__ void init_array(int *g_data, int *factor, int num_iterations) {
++  int idx = blockIdx.x * blockDim.x + threadIdx.x;
++
++  for (int i = 0; i < num_iterations; i++) {
++    g_data[idx] += *factor;  // non-coalesced on purpose, to burn time
++  }
++}
++
++bool correct_data(int *a, const int n, const int c) {
++  for (int i = 0; i < n; i++) {
++    if (a[i] != c) {
++      printf("%d: %d %d\n", i, a[i], c);
++      return false;
++    }
++  }
++
++  return true;
++}
++
++inline void AllocateHostMemory(bool bPinGenericMemory, int **pp_a,
++                               int **ppAligned_a, int nbytes) {
++#if CUDART_VERSION >= 4000
++#if !defined(__arm__) && !defined(__aarch64__)
++  if (bPinGenericMemory) {
++// allocate a generic page-aligned chunk of system memory
++#ifdef WIN32
++    printf(
++        "> VirtualAlloc() allocating %4.2f Mbytes of (generic page-aligned "
++        "system memory)\n",
++        (float)nbytes / 1048576.0f);
++    *pp_a = (int *)VirtualAlloc(NULL, (nbytes + MEMORY_ALIGNMENT),
++                                MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
++#else
++    printf(
++        "> mmap() allocating %4.2f Mbytes (generic page-aligned system "
++        "memory)\n",
++        (float)nbytes / 1048576.0f);
++    *pp_a = (int *)mmap(NULL, (nbytes + MEMORY_ALIGNMENT),
++                        PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANON, -1, 0);
++#endif
++
++    *ppAligned_a = (int *)ALIGN_UP(*pp_a, MEMORY_ALIGNMENT);
++
++    printf(
++        "> hipHostRegister() registering %4.2f Mbytes of generic allocated "
++        "system memory\n",
++        (float)nbytes / 1048576.0f);
++    // pin allocate memory
++    checkCudaErrors(
++        hipHostRegister(*ppAligned_a, nbytes, hipHostRegisterMapped));
++  } else
++#endif
++#endif
++  {
++    printf("> hipHostMalloc() allocating %4.2f Mbytes of system memory\n",
++           (float)nbytes / 1048576.0f);
++    // allocate host memory (pinned is required for achieve asynchronicity)
++    checkCudaErrors(hipHostMalloc((void **)pp_a, nbytes));
++    *ppAligned_a = *pp_a;
++  }
++}
++
++inline void FreeHostMemory(bool bPinGenericMemory, int **pp_a,
++                           int **ppAligned_a, int nbytes) {
++#if CUDART_VERSION >= 4000
++#if !defined(__arm__) && !defined(__aarch64__)
++  // CUDA 4.0 support pinning of generic host memory
++  if (bPinGenericMemory) {
++    // unpin and delete host memory
++    checkCudaErrors(hipHostUnregister(*ppAligned_a));
++#ifdef WIN32
++    VirtualFree(*pp_a, 0, MEM_RELEASE);
++#else
++    munmap(*pp_a, nbytes);
++#endif
++  } else
++#endif
++#endif
++  {
++    hipHostFree(*pp_a);
++  }
++}
++
++static const char *sSyncMethod[] = {
++    "0 (Automatic Blocking)",
++    "1 (Spin Blocking)",
++    "2 (Yield Blocking)",
++    "3 (Undefined Blocking Method)",
++    "4 (Blocking Sync Event) = low CPU utilization",
++    NULL};
++
++void printHelp() {
++  printf("Usage: %s [options below]\n", sSDKsample);
++  printf("\t--sync_method=n for CPU/GPU synchronization\n");
++  printf("\t             n=%s\n", sSyncMethod[0]);
++  printf("\t             n=%s\n", sSyncMethod[1]);
++  printf("\t             n=%s\n", sSyncMethod[2]);
++  printf("\t   <Default> n=%s\n", sSyncMethod[4]);
++  printf(
++      "\t--use_generic_memory (default) use generic page-aligned for system "
++      "memory\n");
++  printf(
++      "\t--use_cuda_malloc_host (optional) use hipHostMalloc to allocate "
++      "system memory\n");
++}
++
++#if defined(__APPLE__) || defined(MACOSX)
++#define DEFAULT_PINNED_GENERIC_MEMORY false
++#else
++#define DEFAULT_PINNED_GENERIC_MEMORY true
++#endif
++
++int main(int argc, char **argv) {
++  int cuda_device = 0;
++  int nstreams = 4;              // number of streams for CUDA calls
++  int nreps = 10;                // number of times each experiment is repeated
++  int n = 16 * 1024 * 1024;      // number of ints in the data set
++  int nbytes = n * sizeof(int);  // number of data bytes
++  dim3 threads, blocks;          // kernel launch configuration
++  float elapsed_time, time_memcpy, time_kernel;  // timing variables
++  float scale_factor = 1.0f;
++
++  // allocate generic memory and pin it laster instead of using hipHostAlloc()
++
++  bool bPinGenericMemory =
++      DEFAULT_PINNED_GENERIC_MEMORY;  // we want this to be the default behavior
++  int device_sync_method =
++      hipDeviceScheduleBlockingSync;  // by default we use BlockingSync
++
++  int niterations;  // number of iterations for the loop inside the kernel
++
++  printf("[ %s ]\n\n", sSDKsample);
++
++  if (checkCmdLineFlag(argc, (const char **)argv, "help")) {
++    printHelp();
++    return EXIT_SUCCESS;
++  }
++
++  if ((device_sync_method = getCmdLineArgumentInt(argc, (const char **)argv,
++                                                  "sync_method")) >= 0) {
++    if (device_sync_method == 0 || device_sync_method == 1 ||
++        device_sync_method == 2 || device_sync_method == 4) {
++      printf("Device synchronization method set to = %s\n",
++             sSyncMethod[device_sync_method]);
++      printf("Setting reps to 100 to demonstrate steady state\n");
++      nreps = 100;
++    } else {
++      printf("Invalid command line option sync_method=\"%d\"\n",
++             device_sync_method);
++      return EXIT_FAILURE;
++    }
++  } else {
++    printHelp();
++    return EXIT_SUCCESS;
++  }
++
++  if (checkCmdLineFlag(argc, (const char **)argv, "use_generic_memory")) {
++#if defined(__APPLE__) || defined(MACOSX)
++    bPinGenericMemory = false;  // Generic Pinning of System Paged memory not
++                                // currently supported on Mac OSX
++#else
++    bPinGenericMemory = true;
++#endif
++  }
++
++  if (checkCmdLineFlag(argc, (const char **)argv, "use_cuda_malloc_host")) {
++    bPinGenericMemory = false;
++  }
++
++  printf("\n> ");
++  cuda_device = findCudaDevice(argc, (const char **)argv);
++
++  // check the compute capability of the device
++  int num_devices = 0;
++  checkCudaErrors(hipGetDeviceCount(&num_devices));
++
++  if (0 == num_devices) {
++    printf(
++        "your system does not have a CUDA capable device, waiving test...\n");
++    return EXIT_WAIVED;
++  }
++
++  // check if the command-line chosen device ID is within range, exit if not
++  if (cuda_device >= num_devices) {
++    printf(
++        "cuda_device=%d is invalid, must choose device ID between 0 and %d\n",
++        cuda_device, num_devices - 1);
++    return EXIT_FAILURE;
++  }
++
++  checkCudaErrors(hipSetDevice(cuda_device));
++
++  // Checking for compute capabilities
++  hipDeviceProp_t deviceProp;
++  checkCudaErrors(hipGetDeviceProperties(&deviceProp, cuda_device));
++
++  niterations = 5;
++
++  // Check if GPU can map host memory (Generic Method), if not then we override
++  // bPinGenericMemory to be false
++  if (bPinGenericMemory) {
++    printf("Device: <%s> canMapHostMemory: %s\n", deviceProp.name,
++           deviceProp.canMapHostMemory ? "Yes" : "No");
++
++    if (deviceProp.canMapHostMemory == 0) {
++      printf(
++          "Using hipHostMalloc, CUDA device does not support mapping of "
++          "generic host memory\n");
++      bPinGenericMemory = false;
++    }
++  }
++
++  // Anything that is less than 32 Cores will have scaled down workload
++  scale_factor =
++      max((32.0f / (_ConvertSMVer2Cores(deviceProp.major, deviceProp.minor) *
++                    (float)deviceProp.multiProcessorCount)),
++          1.0f);
++  n = (int)rint((float)n / scale_factor);
++
++  printf("> CUDA Capable: SM %d.%d hardware\n", deviceProp.major,
++         deviceProp.minor);
++  printf("> %d Multiprocessor(s) x %d (Cores/Multiprocessor) = %d (Cores)\n",
++         deviceProp.multiProcessorCount,
++         _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor),
++         _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor) *
++             deviceProp.multiProcessorCount);
++
++  printf("> scale_factor = %1.4f\n", 1.0f / scale_factor);
++  printf("> array_size   = %d\n\n", n);
++
++  // enable use of blocking sync, to reduce CPU usage
++  printf("> Using CPU/GPU Device Synchronization method (%s)\n",
++         sDeviceSyncMethod[device_sync_method]);
++  checkCudaErrors(hipSetDeviceFlags(
++      device_sync_method | (bPinGenericMemory ? hipDeviceMapHost : 0)));
++
++  // allocate host memory
++  int c = 5;            // value to which the array will be initialized
++  int *h_a = 0;         // pointer to the array data in host memory
++  int *hAligned_a = 0;  // pointer to the array data in host memory (aligned to
++                        // MEMORY_ALIGNMENT)
++
++  // Allocate Host memory (could be using hipHostMalloc or VirtualAlloc/mmap if
++  // using the new CUDA 4.0 features
++  AllocateHostMemory(bPinGenericMemory, &h_a, &hAligned_a, nbytes);
++
++  // allocate device memory
++  int *d_a = 0,
++      *d_c = 0;  // pointers to data and init value in the device memory
++  checkCudaErrors(hipMalloc((void **)&d_a, nbytes));
++  checkCudaErrors(hipMemset(d_a, 0x0, nbytes));
++  checkCudaErrors(hipMalloc((void **)&d_c, sizeof(int)));
++  checkCudaErrors(hipMemcpy(d_c, &c, sizeof(int), hipMemcpyHostToDevice));
++
++  printf("\nStarting Test\n");
++
++  // allocate and initialize an array of stream handles
++  hipStream_t *streams =
++      (hipStream_t *)malloc(nstreams * sizeof(hipStream_t));
++
++  for (int i = 0; i < nstreams; i++) {
++    checkCudaErrors(hipStreamCreate(&(streams[i])));
++  }
++
++  // create CUDA event handles
++  // use blocking sync
++  hipEvent_t start_event, stop_event;
++  int eventflags =
++      ((device_sync_method == hipDeviceScheduleBlockingSync) ? hipEventBlockingSync
++                                                      : hipEventDefault);
++
++  checkCudaErrors(hipEventCreateWithFlags(&start_event, eventflags));
++  checkCudaErrors(hipEventCreateWithFlags(&stop_event, eventflags));
++
++  // time memcopy from device
++  checkCudaErrors(hipEventRecord(start_event, 0));  // record in stream-0, to
++                                                     // ensure that all previous
++                                                     // CUDA calls have
++                                                     // completed
++  checkCudaErrors(hipMemcpyAsync(hAligned_a, d_a, nbytes,
++                                  hipMemcpyDeviceToHost, streams[0]));
++  checkCudaErrors(hipEventRecord(stop_event, 0));
++  checkCudaErrors(hipEventSynchronize(
++      stop_event));  // block until the event is actually recorded
++  checkCudaErrors(hipEventElapsedTime(&time_memcpy, start_event, stop_event));
++  printf("memcopy:\t%.2f\n", time_memcpy);
++
++  // time kernel
++  threads = dim3(512, 1);
++  blocks = dim3(n / threads.x, 1);
++  checkCudaErrors(hipEventRecord(start_event, 0));
++  init_array<<<blocks, threads, 0, streams[0]>>>(d_a, d_c, niterations);
++  checkCudaErrors(hipEventRecord(stop_event, 0));
++  checkCudaErrors(hipEventSynchronize(stop_event));
++  checkCudaErrors(hipEventElapsedTime(&time_kernel, start_event, stop_event));
++  printf("kernel:\t\t%.2f\n", time_kernel);
++
++  //////////////////////////////////////////////////////////////////////
++  // time non-streamed execution for reference
++  threads = dim3(512, 1);
++  blocks = dim3(n / threads.x, 1);
++  checkCudaErrors(hipEventRecord(start_event, 0));
++
++  for (int k = 0; k < nreps; k++) {
++    init_array<<<blocks, threads>>>(d_a, d_c, niterations);
++    checkCudaErrors(
++        hipMemcpy(hAligned_a, d_a, nbytes, hipMemcpyDeviceToHost));
++  }
++
++  checkCudaErrors(hipEventRecord(stop_event, 0));
++  checkCudaErrors(hipEventSynchronize(stop_event));
++  checkCudaErrors(hipEventElapsedTime(&elapsed_time, start_event, stop_event));
++  printf("non-streamed:\t%.2f\n", elapsed_time / nreps);
++
++  //////////////////////////////////////////////////////////////////////
++  // time execution with nstreams streams
++  threads = dim3(512, 1);
++  blocks = dim3(n / (nstreams * threads.x), 1);
++  memset(hAligned_a, 255,
++         nbytes);  // set host memory bits to all 1s, for testing correctness
++  checkCudaErrors(hipMemset(
++      d_a, 0, nbytes));  // set device memory to all 0s, for testing correctness
++  checkCudaErrors(hipEventRecord(start_event, 0));
++
++  for (int k = 0; k < nreps; k++) {
++    // asynchronously launch nstreams kernels, each operating on its own portion
++    // of data
++    for (int i = 0; i < nstreams; i++) {
++      init_array<<<blocks, threads, 0, streams[i]>>>(d_a + i * n / nstreams,
++                                                     d_c, niterations);
++    }
++
++    // asynchronously launch nstreams memcopies.  Note that memcopy in stream x
++    // will only
++    //   commence executing when all previous CUDA calls in stream x have
++    //   completed
++    for (int i = 0; i < nstreams; i++) {
++      checkCudaErrors(hipMemcpyAsync(hAligned_a + i * n / nstreams,
++                                      d_a + i * n / nstreams, nbytes / nstreams,
++                                      hipMemcpyDeviceToHost, streams[i]));
++    }
++  }
++
++  checkCudaErrors(hipEventRecord(stop_event, 0));
++  checkCudaErrors(hipEventSynchronize(stop_event));
++  checkCudaErrors(hipEventElapsedTime(&elapsed_time, start_event, stop_event));
++  printf("%d streams:\t%.2f\n", nstreams, elapsed_time / nreps);
++
++  // check whether the output is correct
++  printf("-------------------------------\n");
++  bool bResults = correct_data(hAligned_a, n, c * nreps * niterations);
++
++  // release resources
++  for (int i = 0; i < nstreams; i++) {
++    checkCudaErrors(hipStreamDestroy(streams[i]));
++  }
++
++  checkCudaErrors(hipEventDestroy(start_event));
++  checkCudaErrors(hipEventDestroy(stop_event));
++
++  // Free hipHostMalloc or Generic Host allocated memory (from CUDA 4.0)
++  FreeHostMemory(bPinGenericMemory, &h_a, &hAligned_a, nbytes);
++
++  checkCudaErrors(hipFree(d_a));
++  checkCudaErrors(hipFree(d_c));
++
++  return bResults ? EXIT_SUCCESS : EXIT_FAILURE;
++}
+diff --git a/src/samples/Samples/6_Performance/transpose/transpose.cu.hip b/src/samples/Samples/6_Performance/transpose/transpose.cu.hip
+index e69de29..c5c786c 100644
+--- a/src/samples/Samples/6_Performance/transpose/transpose.cu.hip
++++ b/src/samples/Samples/6_Performance/transpose/transpose.cu.hip
+@@ -0,0 +1,614 @@
++
++/* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions
++ * are met:
++ *  * Redistributions of source code must retain the above copyright
++ *    notice, this list of conditions and the following disclaimer.
++ *  * Redistributions in binary form must reproduce the above copyright
++ *    notice, this list of conditions and the following disclaimer in the
++ *    documentation and/or other materials provided with the distribution.
++ *  * Neither the name of NVIDIA CORPORATION nor the names of its
++ *    contributors may be used to endorse or promote products derived
++ *    from this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS ``AS IS'' AND ANY
++ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
++ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
++ * PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT OWNER OR
++ * CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
++ * EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
++ * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
++ * PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY
++ * OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ */
++
++// -----------------------------------------------------------------------------
++// Transpose
++//
++// This file contains both device and host code for transposing a floating-point
++// matrix.  It performs several transpose kernels, which incrementally improve
++// performance through coalescing, removing shared memory bank conflicts, and
++// eliminating partition camping.  Several of the kernels perform a copy, used
++// to represent the best case performance that a transpose can achieve.
++//
++// Please see the whitepaper in the docs folder of the transpose project for a
++// detailed description of this performance study.
++// -----------------------------------------------------------------------------
++
++#include <hip/hip_cooperative_groups.h>
++
++namespace cg = cooperative_groups;
++// Utilities and system includes
++#include <helper_string.h>    // helper for string parsing
++#include <helper_image.h>     // helper for image and data comparison
++#include "helper_cuda_hipified.h"      // helper for cuda error checking functions
++#include "hip/hip_runtime.h"
++const char *sSDKsample = "Transpose";
++
++// Each block transposes/copies a tile of TILE_DIM x TILE_DIM elements
++// using TILE_DIM x BLOCK_ROWS threads, so that each thread transposes
++// TILE_DIM/BLOCK_ROWS elements.  TILE_DIM must be an integral multiple of
++// BLOCK_ROWS
++
++#define TILE_DIM 16
++#define BLOCK_ROWS 16
++
++// This sample assumes that MATRIX_SIZE_X = MATRIX_SIZE_Y
++int MATRIX_SIZE_X = 1024;
++int MATRIX_SIZE_Y = 1024;
++int MUL_FACTOR = TILE_DIM;
++
++#define FLOOR(a, b) (a - (a % b))
++
++// Compute the tile size necessary to illustrate performance cases for SM20+
++// hardware
++int MAX_TILES = (FLOOR(MATRIX_SIZE_X, 512) * FLOOR(MATRIX_SIZE_Y, 512)) /
++                (TILE_DIM * TILE_DIM);
++
++// Number of repetitions used for timing.  Two sets of repetitions are
++// performed: 1) over kernel launches and 2) inside the kernel over just the
++// loads and stores
++
++#define NUM_REPS 100
++
++// -------------------------------------------------------
++// Copies
++// width and height must be integral multiples of TILE_DIM
++// -------------------------------------------------------
++
++__global__ void copy(float *odata, float *idata, int width, int height) {
++  int xIndex = blockIdx.x * TILE_DIM + threadIdx.x;
++  int yIndex = blockIdx.y * TILE_DIM + threadIdx.y;
++
++  int index = xIndex + width * yIndex;
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    odata[index + i * width] = idata[index + i * width];
++  }
++}
++
++__global__ void copySharedMem(float *odata, float *idata, int width,
++                              int height) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  __shared__ float tile[TILE_DIM][TILE_DIM];
++
++  int xIndex = blockIdx.x * TILE_DIM + threadIdx.x;
++  int yIndex = blockIdx.y * TILE_DIM + threadIdx.y;
++
++  int index = xIndex + width * yIndex;
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    if (xIndex < width && yIndex < height) {
++      tile[threadIdx.y][threadIdx.x] = idata[index];
++    }
++  }
++
++  cg::sync(cta);
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    if (xIndex < height && yIndex < width) {
++      odata[index] = tile[threadIdx.y][threadIdx.x];
++    }
++  }
++}
++
++// -------------------------------------------------------
++// Transposes
++// width and height must be integral multiples of TILE_DIM
++// -------------------------------------------------------
++
++__global__ void transposeNaive(float *odata, float *idata, int width,
++                               int height) {
++  int xIndex = blockIdx.x * TILE_DIM + threadIdx.x;
++  int yIndex = blockIdx.y * TILE_DIM + threadIdx.y;
++
++  int index_in = xIndex + width * yIndex;
++  int index_out = yIndex + height * xIndex;
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    odata[index_out + i] = idata[index_in + i * width];
++  }
++}
++
++// coalesced transpose (with bank conflicts)
++
++__global__ void transposeCoalesced(float *odata, float *idata, int width,
++                                   int height) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  __shared__ float tile[TILE_DIM][TILE_DIM];
++
++  int xIndex = blockIdx.x * TILE_DIM + threadIdx.x;
++  int yIndex = blockIdx.y * TILE_DIM + threadIdx.y;
++  int index_in = xIndex + (yIndex)*width;
++
++  xIndex = blockIdx.y * TILE_DIM + threadIdx.x;
++  yIndex = blockIdx.x * TILE_DIM + threadIdx.y;
++  int index_out = xIndex + (yIndex)*height;
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    tile[threadIdx.y + i][threadIdx.x] = idata[index_in + i * width];
++  }
++
++  cg::sync(cta);
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    odata[index_out + i * height] = tile[threadIdx.x][threadIdx.y + i];
++  }
++}
++
++// Coalesced transpose with no bank conflicts
++
++__global__ void transposeNoBankConflicts(float *odata, float *idata, int width,
++                                         int height) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  __shared__ float tile[TILE_DIM][TILE_DIM + 1];
++
++  int xIndex = blockIdx.x * TILE_DIM + threadIdx.x;
++  int yIndex = blockIdx.y * TILE_DIM + threadIdx.y;
++  int index_in = xIndex + (yIndex)*width;
++
++  xIndex = blockIdx.y * TILE_DIM + threadIdx.x;
++  yIndex = blockIdx.x * TILE_DIM + threadIdx.y;
++  int index_out = xIndex + (yIndex)*height;
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    tile[threadIdx.y + i][threadIdx.x] = idata[index_in + i * width];
++  }
++
++  cg::sync(cta);
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    odata[index_out + i * height] = tile[threadIdx.x][threadIdx.y + i];
++  }
++}
++
++// Transpose that effectively reorders execution of thread blocks along
++// diagonals of the matrix (also coalesced and has no bank conflicts)
++//
++// Here blockIdx.x is interpreted as the distance along a diagonal and
++// blockIdx.y as corresponding to different diagonals
++//
++// blockIdx_x and blockIdx_y expressions map the diagonal coordinates to the
++// more commonly used cartesian coordinates so that the only changes to the code
++// from the coalesced version are the calculation of the blockIdx_x and
++// blockIdx_y and replacement of blockIdx.x and bloclIdx.y with the subscripted
++// versions in the remaining code
++
++__global__ void transposeDiagonal(float *odata, float *idata, int width,
++                                  int height) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  __shared__ float tile[TILE_DIM][TILE_DIM + 1];
++
++  int blockIdx_x, blockIdx_y;
++
++  // do diagonal reordering
++  if (width == height) {
++    blockIdx_y = blockIdx.x;
++    blockIdx_x = (blockIdx.x + blockIdx.y) % gridDim.x;
++  } else {
++    int bid = blockIdx.x + gridDim.x * blockIdx.y;
++    blockIdx_y = bid % gridDim.y;
++    blockIdx_x = ((bid / gridDim.y) + blockIdx_y) % gridDim.x;
++  }
++
++  // from here on the code is same as previous kernel except blockIdx_x replaces
++  // blockIdx.x and similarly for y
++
++  int xIndex = blockIdx_x * TILE_DIM + threadIdx.x;
++  int yIndex = blockIdx_y * TILE_DIM + threadIdx.y;
++  int index_in = xIndex + (yIndex)*width;
++
++  xIndex = blockIdx_y * TILE_DIM + threadIdx.x;
++  yIndex = blockIdx_x * TILE_DIM + threadIdx.y;
++  int index_out = xIndex + (yIndex)*height;
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    tile[threadIdx.y + i][threadIdx.x] = idata[index_in + i * width];
++  }
++
++  cg::sync(cta);
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    odata[index_out + i * height] = tile[threadIdx.x][threadIdx.y + i];
++  }
++}
++
++// --------------------------------------------------------------------
++// Partial transposes
++// NB: the coarse- and fine-grained routines only perform part of a
++//     transpose and will fail the test against the reference solution
++//
++//     They are used to assess performance characteristics of different
++//     components of a full transpose
++// --------------------------------------------------------------------
++
++__global__ void transposeFineGrained(float *odata, float *idata, int width,
++                                     int height) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  __shared__ float block[TILE_DIM][TILE_DIM + 1];
++
++  int xIndex = blockIdx.x * TILE_DIM + threadIdx.x;
++  int yIndex = blockIdx.y * TILE_DIM + threadIdx.y;
++  int index = xIndex + (yIndex)*width;
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    block[threadIdx.y + i][threadIdx.x] = idata[index + i * width];
++  }
++
++  cg::sync(cta);
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    odata[index + i * height] = block[threadIdx.x][threadIdx.y + i];
++  }
++}
++
++__global__ void transposeCoarseGrained(float *odata, float *idata, int width,
++                                       int height) {
++  // Handle to thread block group
++  cg::thread_block cta = cg::this_thread_block();
++  __shared__ float block[TILE_DIM][TILE_DIM + 1];
++
++  int xIndex = blockIdx.x * TILE_DIM + threadIdx.x;
++  int yIndex = blockIdx.y * TILE_DIM + threadIdx.y;
++  int index_in = xIndex + (yIndex)*width;
++
++  xIndex = blockIdx.y * TILE_DIM + threadIdx.x;
++  yIndex = blockIdx.x * TILE_DIM + threadIdx.y;
++  int index_out = xIndex + (yIndex)*height;
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    block[threadIdx.y + i][threadIdx.x] = idata[index_in + i * width];
++  }
++
++  cg::sync(cta);
++
++  for (int i = 0; i < TILE_DIM; i += BLOCK_ROWS) {
++    odata[index_out + i * height] = block[threadIdx.y + i][threadIdx.x];
++  }
++}
++
++// ---------------------
++// host utility routines
++// ---------------------
++
++void computeTransposeGold(float *gold, float *idata, const int size_x,
++                          const int size_y) {
++  for (int y = 0; y < size_y; ++y) {
++    for (int x = 0; x < size_x; ++x) {
++      gold[(x * size_y) + y] = idata[(y * size_x) + x];
++    }
++  }
++}
++
++void getParams(int argc, char **argv, hipDeviceProp_t &deviceProp, int &size_x,
++               int &size_y, int max_tile_dim) {
++  // set matrix size (if (x,y) dim of matrix is not square, then this will have
++  // to be modified
++  if (checkCmdLineFlag(argc, (const char **)argv, "dimX")) {
++    size_x = getCmdLineArgumentInt(argc, (const char **)argv, "dimX");
++
++    if (size_x > max_tile_dim) {
++      printf("> MatrixSize X = %d is greater than the recommended size = %d\n",
++             size_x, max_tile_dim);
++    } else {
++      printf("> MatrixSize X = %d\n", size_x);
++    }
++  } else {
++    size_x = max_tile_dim;
++    size_x = FLOOR(size_x, 512);
++  }
++
++  if (checkCmdLineFlag(argc, (const char **)argv, "dimY")) {
++    size_y = getCmdLineArgumentInt(argc, (const char **)argv, "dimY");
++
++    if (size_y > max_tile_dim) {
++      printf("> MatrixSize Y = %d is greater than the recommended size = %d\n",
++             size_y, max_tile_dim);
++    } else {
++      printf("> MatrixSize Y = %d\n", size_y);
++    }
++  } else {
++    size_y = max_tile_dim;
++    size_y = FLOOR(size_y, 512);
++  }
++}
++
++void showHelp() {
++  printf("\n%s : Command line options\n", sSDKsample);
++  printf("\t-device=n          (where n=0,1,2.... for the GPU device)\n\n");
++  printf("> The default matrix size can be overridden with these parameters\n");
++  printf("\t-dimX=row_dim_size (matrix row    dimensions)\n");
++  printf("\t-dimY=col_dim_size (matrix column dimensions)\n");
++}
++
++// ----
++// main
++// ----
++
++int main(int argc, char **argv) {
++  // Start logs
++  printf("%s Starting...\n\n", sSDKsample);
++
++  if (checkCmdLineFlag(argc, (const char **)argv, "help")) {
++    showHelp();
++    return 0;
++  }
++
++  int devID = findCudaDevice(argc, (const char **)argv);
++  hipDeviceProp_t deviceProp;
++
++  // get number of SMs on this GPU
++  checkCudaErrors(hipGetDevice(&devID));
++  checkCudaErrors(hipGetDeviceProperties(&deviceProp, devID));
++
++  // compute the scaling factor (for GPUs with fewer MPs)
++  float scale_factor, total_tiles;
++  scale_factor =
++      max((192.0f / (_ConvertSMVer2Cores(deviceProp.major, deviceProp.minor) *
++                     (float)deviceProp.multiProcessorCount)),
++          1.0f);
++
++  printf("> Device %d: \"%s\"\n", devID, deviceProp.name);
++  printf("> SM Capability %d.%d detected:\n", deviceProp.major,
++         deviceProp.minor);
++
++  // Calculate number of tiles we will run for the Matrix Transpose performance
++  // tests
++  int size_x, size_y, max_matrix_dim, matrix_size_test;
++
++  matrix_size_test = 512;  // we round down max_matrix_dim for this perf test
++  total_tiles = (float)MAX_TILES / scale_factor;
++
++  max_matrix_dim =
++      FLOOR((int)(floor(sqrt(total_tiles)) * TILE_DIM), matrix_size_test);
++
++  // This is the minimum size allowed
++  if (max_matrix_dim == 0) {
++    max_matrix_dim = matrix_size_test;
++  }
++
++  printf("> [%s] has %d MP(s) x %d (Cores/MP) = %d (Cores)\n", deviceProp.name,
++         deviceProp.multiProcessorCount,
++         _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor),
++         _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor) *
++             deviceProp.multiProcessorCount);
++
++  printf("> Compute performance scaling factor = %4.2f\n", scale_factor);
++
++  // Extract parameters if there are any, command line -dimx and -dimy can
++  // override any of these settings
++  getParams(argc, argv, deviceProp, size_x, size_y, max_matrix_dim);
++
++  if (size_x != size_y) {
++    printf(
++        "\n[%s] does not support non-square matrices (row_dim_size(%d) != "
++        "col_dim_size(%d))\nExiting...\n\n",
++        sSDKsample, size_x, size_y);
++    exit(EXIT_FAILURE);
++  }
++
++  if (size_x % TILE_DIM != 0 || size_y % TILE_DIM != 0) {
++    printf(
++        "[%s] Matrix size must be integral multiple of tile "
++        "size\nExiting...\n\n",
++        sSDKsample);
++    exit(EXIT_FAILURE);
++  }
++
++  // kernel pointer and descriptor
++  void (*kernel)(float *, float *, int, int);
++  const char *kernelName;
++
++  // execution configuration parameters
++  dim3 grid(size_x / TILE_DIM, size_y / TILE_DIM),
++      threads(TILE_DIM, BLOCK_ROWS);
++
++  if (grid.x < 1 || grid.y < 1) {
++    printf("[%s] grid size computation incorrect in test \nExiting...\n\n",
++           sSDKsample);
++    exit(EXIT_FAILURE);
++  }
++
++  // CUDA events
++  hipEvent_t start, stop;
++
++  // size of memory required to store the matrix
++  size_t mem_size = static_cast<size_t>(sizeof(float) * size_x * size_y);
++
++  if (2 * mem_size > deviceProp.totalGlobalMem) {
++    printf("Input matrix size is larger than the available device memory!\n");
++    printf("Please choose a smaller size matrix\n");
++    exit(EXIT_FAILURE);
++  }
++
++  // allocate host memory
++  float *h_idata = (float *)malloc(mem_size);
++  float *h_odata = (float *)malloc(mem_size);
++  float *transposeGold = (float *)malloc(mem_size);
++  float *gold;
++
++  // allocate device memory
++  float *d_idata, *d_odata;
++  checkCudaErrors(hipMalloc((void **)&d_idata, mem_size));
++  checkCudaErrors(hipMalloc((void **)&d_odata, mem_size));
++
++  // initialize host data
++  for (int i = 0; i < (size_x * size_y); ++i) {
++    h_idata[i] = (float)i;
++  }
++
++  // copy host data to device
++  checkCudaErrors(
++      hipMemcpy(d_idata, h_idata, mem_size, hipMemcpyHostToDevice));
++
++  // Compute reference transpose solution
++  computeTransposeGold(transposeGold, h_idata, size_x, size_y);
++
++  // print out common data for all kernels
++  printf(
++      "\nMatrix size: %dx%d (%dx%d tiles), tile size: %dx%d, block size: "
++      "%dx%d\n\n",
++      size_x, size_y, size_x / TILE_DIM, size_y / TILE_DIM, TILE_DIM, TILE_DIM,
++      TILE_DIM, BLOCK_ROWS);
++
++  // initialize events
++  checkCudaErrors(hipEventCreate(&start));
++  checkCudaErrors(hipEventCreate(&stop));
++
++  //
++  // loop over different kernels
++  //
++
++  bool success = true;
++
++  for (int k = 0; k < 8; k++) {
++    // set kernel pointer
++    switch (k) {
++      case 0:
++        kernel = &copy;
++        kernelName = "simple copy       ";
++        break;
++
++      case 1:
++        kernel = &copySharedMem;
++        kernelName = "shared memory copy";
++        break;
++
++      case 2:
++        kernel = &transposeNaive;
++        kernelName = "naive             ";
++        break;
++
++      case 3:
++        kernel = &transposeCoalesced;
++        kernelName = "coalesced         ";
++        break;
++
++      case 4:
++        kernel = &transposeNoBankConflicts;
++        kernelName = "optimized         ";
++        break;
++
++      case 5:
++        kernel = &transposeCoarseGrained;
++        kernelName = "coarse-grained    ";
++        break;
++
++      case 6:
++        kernel = &transposeFineGrained;
++        kernelName = "fine-grained      ";
++        break;
++
++      case 7:
++        kernel = &transposeDiagonal;
++        kernelName = "diagonal          ";
++        break;
++    }
++
++    // set reference solution
++    if (kernel == &copy || kernel == &copySharedMem) {
++      gold = h_idata;
++    } else if (kernel == &transposeCoarseGrained ||
++               kernel == &transposeFineGrained) {
++      gold = h_odata;  // fine- and coarse-grained kernels are not full
++                       // transposes, so bypass check
++    } else {
++      gold = transposeGold;
++    }
++
++    // Clear error status
++    checkCudaErrors(hipGetLastError());
++
++    // warmup to avoid timing startup
++    kernel<<<grid, threads>>>(d_odata, d_idata, size_x, size_y);
++
++    // take measurements for loop over kernel launches
++    checkCudaErrors(hipEventRecord(start, 0));
++
++    for (int i = 0; i < NUM_REPS; i++) {
++      kernel<<<grid, threads>>>(d_odata, d_idata, size_x, size_y);
++      // Ensure no launch failure
++      checkCudaErrors(hipGetLastError());
++    }
++
++    checkCudaErrors(hipEventRecord(stop, 0));
++    checkCudaErrors(hipEventSynchronize(stop));
++    float kernelTime;
++    checkCudaErrors(hipEventElapsedTime(&kernelTime, start, stop));
++
++    checkCudaErrors(
++        hipMemcpy(h_odata, d_odata, mem_size, hipMemcpyDeviceToHost));
++    bool res = compareData(gold, h_odata, size_x * size_y, 0.01f, 0.0f);
++
++    if (res == false) {
++      printf("*** %s kernel FAILED ***\n", kernelName);
++      success = false;
++    }
++
++    // take measurements for loop inside kernel
++    checkCudaErrors(
++        hipMemcpy(h_odata, d_odata, mem_size, hipMemcpyDeviceToHost));
++    res = compareData(gold, h_odata, size_x * size_y, 0.01f, 0.0f);
++
++    if (res == false) {
++      printf("*** %s kernel FAILED ***\n", kernelName);
++      success = false;
++    }
++
++    // report effective bandwidths
++    float kernelBandwidth = 2.0f * 1000.0f * mem_size / (1024 * 1024 * 1024) /
++                            (kernelTime / NUM_REPS);
++    printf(
++        "transpose %s, Throughput = %.4f GB/s, Time = %.5f ms, Size = %u fp32 "
++        "elements, NumDevsUsed = %u, Workgroup = %u\n",
++        kernelName, kernelBandwidth, kernelTime / NUM_REPS, (size_x * size_y),
++        1, TILE_DIM * BLOCK_ROWS);
++  }
++
++  // cleanup
++  free(h_idata);
++  free(h_odata);
++  free(transposeGold);
++  hipFree(d_idata);
++  hipFree(d_odata);
++
++  checkCudaErrors(hipEventDestroy(start));
++  checkCudaErrors(hipEventDestroy(stop));
++
++  if (!success) {
++    printf("Test failed!\n");
++    exit(EXIT_FAILURE);
++  }
++
++  printf("Test passed\n");
++  exit(EXIT_SUCCESS);
++}

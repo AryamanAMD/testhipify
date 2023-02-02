@@ -1,0 +1,69 @@
+diff --git a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip
+index 6489de2..d90d21a 100644
+--- a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip
+@@ -236,6 +236,3 @@ int main(int argc, char **argv) {
+ 
+   exit((diff < 1e-5) ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
+-ice(i));
+-    checkCudaErrors(hipHostFree(plan[i].h_Data));
+-  }
+diff --git a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip
+index 51f49e7..86c8e04 100644
+--- a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip
+@@ -240,5 +240,3 @@ int main() {
+ 
+   return 0;
+ }
+-rn -1;
+-  }
+diff --git a/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.cu.hip b/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.cu.hip
+index 2c7f68f..0beb176 100644
+--- a/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.cu.hip
+@@ -260,17 +260,3 @@ int main(int argc, char **argv) {
+     exit(EXIT_SUCCESS);
+   }
+ }
+-(g1));
+-  checkCudaErrors(hipHostFree(h0));
+-
+-  for (int i = 0; i < gpu_n; i++) {
+-    checkCudaErrors(hipSetDevice(i));
+-  }
+-
+-  if (error_count != 0) {
+-    printf("Test failed!\n");
+-    exit(EXIT_FAILURE);
+-  } else {
+-    printf("Test passed\n");
+-    exit(EXIT_SUCCESS);
+-  }
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.cu.hip
+index 5a34cb1..bbef8e6 100644
+--- a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.cu.hip
+@@ -252,8 +252,3 @@ int main(int argc, char **argv) {
+   int ret = memPoolP2PCopy();
+   return ret;
+ }
+-CudaErrors(hipStreamDestroy(stream2));
+-  printf("PASSED\n");
+-
+-  return EXIT_SUCCESS;
+-}
+diff --git a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip
+index 4350f7e..7730928 100644
+--- a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip
+@@ -391,8 +391,3 @@ bool getLevels(unsigned int len, unsigned int *levels) {
+ 
+   return retval;
+ }
+- = i;
+-      retval = true;
+-      break;
+-    }
+-  }
