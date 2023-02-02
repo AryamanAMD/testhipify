@@ -94,7 +94,7 @@ def setup():
 	print("Enter 'samples' to install latest version of CUDA Samples")
 	user_input=input()
 	if user_input.lower() == 'samples':
-		os.system('cp -r src-original/ src/')
+		os.system('cp -r src-original/* src/*')
 		os.system('rm -rf src/samples/*')
 		os.chdir('src/')
 		os.system('git clone https://github.com/NVIDIA/cuda-samples.git')
