@@ -87,6 +87,17 @@ def setup():
 	user_input=input()
 	if user_input.lower() == 'gcc':
 		os.system('sudo apt install gcc')
+	print("Enter 'requirements' to install python packages dependencies")
+	user_input=input()
+	if user_input.lower() == 'requirements':
+		os.system('pip install -r requirements.txt')
+	print("Enter 'samples' to install latest version of CUDA Samples")
+	user_input=input()
+	if user_input.lower() == 'samples':
+		os.system('cp -r src-original/patches src/patches')
+		os.system('rm -rf src/samples/*')
+		os.chdir('src/samples')
+		os.system('git clone https://github.com/NVIDIA/cuda-samples.git')		
 	print("Enter 'omp' to install OpenMP in your system, or any other button to continue.")
 	user_input=input()
 	if user_input.lower() == 'omp':
