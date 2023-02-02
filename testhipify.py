@@ -331,11 +331,20 @@ def generate(x):
 	parenthesis_check(x+".hip")
 
 def apply_patches():
+	"""
 	#command='git apply --reject --whitespace=fix src/patches/*.patch'
 	command='git am src/patches/*.patch'
 	print(command)
 	os.system(command)
 	os.system('rm -rf *.rej')
+	"""
+	y="src/patches"
+	listOfFiles=getListOfFiles(y)
+	for elem in listOfFiles:
+		if elem.endswith('.patch'):  
+			command='git apply '+elem
+			print(command)
+			os.system(command)
 
 	
 def compilation_1(x):
