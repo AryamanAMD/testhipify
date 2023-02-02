@@ -356,11 +356,11 @@ def compilation_1(x):
 		print(command)
 		os.system(command)
 	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu':
-		command='hipcc -I src/samples/Common -fgpu-rdc simpleDeviceLibrary.cu.hip simpleSeparateCompilation.cu.hip -o simpleSeparateCompilation.out'
+		command='hipcc -I src/samples/Common -fgpu-rdc src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu.hip src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip -o src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out'
 		print(command)
 		os.system(command)	
 	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu':
-		command=' hipcc -I../../../Common -fopenmp cudaOpenMP.cu.hip -o cudaOpenMP.out'
+		command='hipcc -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)	
 	else:
@@ -389,12 +389,12 @@ def compilation_2(x):
 		command='hipcc -use-staticlib -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
 		print(command)
 		os.system(command)
-	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu':
-		command='hipcc -use-staticlib -I src/samples/Common -fgpu-rdc simpleDeviceLibrary.cu.hip simpleSeparateCompilation.cu.hip -o simpleSeparateCompilation.out'
+	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu':
+		command='hipcc -use-staticlib -I src/samples/Common -fgpu-rdc src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu.hip src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip -o src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out'
 		print(command)
 		os.system(command)
 	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu':
-		command='hipcc -use-staticlib -I../../../Common -fopenmp cudaOpenMP.cu.hip -o cudaOpenMP.out'
+		command='hipcc -use-staticlib -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)	
 	else:
