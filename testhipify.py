@@ -210,9 +210,9 @@ def check(myStr):
   
 def ftale(x):
 	generate(x)
+	#apply_patches()
 	compilation_1(x)
 	compilation_2(x)
-	#apply_patches()
 	runsample(x)
 	
 def generate_all(y):
@@ -429,6 +429,7 @@ def runsample(x):
     
 
 def fall(y):
+	"""
 	y=y.replace('"', '')
 	listOfFiles=getListOfFiles(y)
 	for elem in listOfFiles:
@@ -438,6 +439,12 @@ def fall(y):
 					print("Ignoring this sample "+elem)
 				else:
 					ftale(elem)
+	"""
+	generate_all(y)
+	compilation_1_all(y)
+	compilation_2_all(y)
+	runsample_all(y)
+
 
 def rem(z):
 	print("This script automates sample exclusion.Please backup any paths provided by you to avoid loss or overwriting.")
