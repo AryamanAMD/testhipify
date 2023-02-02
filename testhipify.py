@@ -345,6 +345,7 @@ def apply_patches():
 			command='git apply --reject --whitespace=fix '+elem
 			print(command)
 			os.system(command)
+			os.system('find . -name "*.rej" -type f -delete')
 
 	
 def compilation_1(x):
