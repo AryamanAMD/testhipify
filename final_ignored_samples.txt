@@ -10,7 +10,6 @@ src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics
 src/samples/Samples/0_Introduction/simpleAttributes/simpleAttributes.cu
 src/samples/Samples/0_Introduction/simpleCUDA2GL/simpleCUDA2GL.cu
 src/samples/Samples/0_Introduction/simpleDrvRuntime/vectorAdd_kernel.cu
-src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.cu
 src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu
 src/samples/Samples/0_Introduction/simpleTemplates_nvrtc/simpleTemplates_kernel.cu
 src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu
