@@ -45,4 +45,4 @@ def replace_words(x,search_text,replace_text):
     with open(p+'/'+r+"_hipified.h", 'w') as file:
         file.write(data)
 					    
-generate_all('src/samples/Samples')                        
+#generate_all('src/samples/Samples')                        

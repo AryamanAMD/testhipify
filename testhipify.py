@@ -3,6 +3,9 @@ import argparse
 import fileinput
 import os.path
 from sys import platform
+import patch_gen
+import patch_gen2
+import patch_gen3
 cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
 def getListOfFiles(dirName):
     listOfFile=os.listdir(dirName)
@@ -99,7 +102,10 @@ def setup():
 		os.system('rm -rf src/samples')
 		os.chdir('src/')
 		os.system('git clone https://github.com/NVIDIA/cuda-samples.git')
-		os.system('mv cuda-samples samples')		
+		os.system('mv cuda-samples samples')
+		patch_gen.generate_all('src/samples/Samples')
+		patch_gen2.generate_all('src/samples/Samples')
+		patch_gen3.generate_all('src/samples/Samples')	
 	print("Enter 'omp' to install OpenMP in your system, or any other button to continue.")
 	user_input=input()
 	if user_input.lower() == 'omp':
