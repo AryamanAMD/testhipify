@@ -342,7 +342,7 @@ def apply_patches():
 	listOfFiles=getListOfFiles(y)
 	for elem in listOfFiles:
 		if elem.endswith('.patch'):  
-			command='git apply '+elem
+			command='git apply --reject --whitespace=fix '+elem
 			print(command)
 			os.system(command)
 
