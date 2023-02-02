@@ -331,6 +331,7 @@ def apply_patches():
 	command='git apply --reject --whitespace=fix src/patches/*.patch'
 	print(command)
 	os.system(command)
+	os.system('rm -rf *.rej')
 
 	
 def compilation_1(x):
