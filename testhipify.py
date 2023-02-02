@@ -331,7 +331,8 @@ def generate(x):
 	parenthesis_check(x+".hip")
 
 def apply_patches():
-	command='git apply --reject --whitespace=fix src/patches/*.patch'
+	#command='git apply --reject --whitespace=fix src/patches/*.patch'
+	command='git am src/patches/*.patch'
 	print(command)
 	os.system(command)
 	os.system('rm -rf *.rej')
