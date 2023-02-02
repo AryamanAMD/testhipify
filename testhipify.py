@@ -103,6 +103,7 @@ def setup():
 		os.chdir('src/')
 		os.system('git clone https://github.com/NVIDIA/cuda-samples.git')
 		os.system('mv cuda-samples samples')
+		os.chdir('../')
 		patch_gen.generate_all('src/samples/Samples')
 		patch_gen2.generate_all('src/samples/Samples')
 		patch_gen3.generate_all('src/samples/Samples')	
