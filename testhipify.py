@@ -108,6 +108,7 @@ def setup():
 		#os.system('rm .gitignore')
 		os.system('rm README.md')
 		os.system('rm -rf .git')	
+		os.system('rm LICENSE')
 	print("Enter 'generate' to hipify additional files.")
 	user_input=input()
 	if user_input.lower() == 'generate':
