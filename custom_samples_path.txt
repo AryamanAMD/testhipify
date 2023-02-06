@@ -58,7 +58,7 @@ src/samples/Samples/5_Domain_Specific/quasirandomGenerator_nvrtc/quasirandomGene
 src/samples/Samples/5_Domain_Specific/binomialOptions_nvrtc/binomialOptions_kernel.cu
 src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu
 src/samples/Samples/3_CUDA_Features/immaTensorCoreGemm/immaTensorCoreGemm.cu
-src/samples/Samples/3_CUDA_Features/cdpBezierTessellation/cdpBezierTessellation.cu
+src/samples/Samples/3_CUDA_Features/cdpBezierTessellation/BezierLineCDP.cu.hip
 src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu
 src/samples/Samples/3_CUDA_Features/warpAggregatedAtomicsCG/warpAggregatedAtomicsCG.cu
 src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu
@@ -76,3 +76,5 @@ src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_callback/simpleCUFFT_callback.c
 src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_MGPU/simpleCUFFT_MGPU.cu
 src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu
 src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu
+ src/samples/Samples/3_CUDA_Features/ptxjit/ptxjit_kernel.cu
+ 
