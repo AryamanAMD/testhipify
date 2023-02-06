@@ -105,9 +105,9 @@ def setup():
 		os.system('mv cuda-samples samples')
 		os.chdir('../')
 		os.system('cp -r src-original/samples/Common/ src/samples/')
-		os.system('rm .gitignore')
+		#os.system('rm .gitignore')
 		os.system('rm README.md')
-		os.system('rm .git')	
+		os.system('rm -rf .git')	
 	print("Enter 'generate' to hipify additional files.")
 	user_input=input()
 	if user_input.lower() == 'generate':
