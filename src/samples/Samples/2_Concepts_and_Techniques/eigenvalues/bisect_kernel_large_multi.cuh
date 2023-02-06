@@ -32,7 +32,7 @@
 #ifndef _BISECT_KERNEL_LARGE_MULTI_H_
 #define _BISECT_KERNEL_LARGE_MULTI_H_
 
-#include <hip/hip_cooperative_groups.h>
+#include <cooperative_groups.h>
 
 namespace cg = cooperative_groups;
 // includes, project

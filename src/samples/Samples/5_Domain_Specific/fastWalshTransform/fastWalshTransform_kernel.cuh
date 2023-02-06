@@ -30,8 +30,8 @@
 #ifndef fwt_kernel_cuh
 #define fwt_kernel_cuh
 
-//#include <cooperative_groups.h>
-#include <hip/hip_cooperative_groups.h>
+#include <cooperative_groups.h>
+
 namespace cg = cooperative_groups;
 
 ///////////////////////////////////////////////////////////////////////////////

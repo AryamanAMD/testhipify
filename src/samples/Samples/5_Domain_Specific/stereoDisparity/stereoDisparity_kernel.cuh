@@ -39,7 +39,7 @@
 // area (see convolution CUDA Sample for example)
 #define STEPS 3
 
-#include <hip/hip_cooperative_groups.h>
+#include <cooperative_groups.h>
 
 namespace cg = cooperative_groups;
 
@@ -92,8 +92,8 @@ __global__ void stereoDisparityKernel(unsigned int *g_img0,
                                       unsigned int *g_img1,
                                       unsigned int *g_odata, int w, int h,
                                       int minDisparity, int maxDisparity,
-                                      hipTextureObject_t tex2Dleft,
-                                      hipTextureObject_t tex2Dright) {
+                                      cudaTextureObject_t tex2Dleft,
+                                      cudaTextureObject_t tex2Dright) {
   // Handle to thread block group
   cg::thread_block cta = cg::this_thread_block();
   // access thread id

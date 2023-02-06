@@ -30,7 +30,7 @@
 
 #ifndef _BISECT_KERNEL_LARGE_H_
 #define _BISECT_KERNEL_LARGE_H_
-#include <hip/hip_cooperative_groups.h>
+#include <cooperative_groups.h>
 
 namespace cg = cooperative_groups;
 // includes, project
@@ -38,7 +38,7 @@ namespace cg = cooperative_groups;
 #include "util.h"
 
 // additional kernel
-#include "bisect_util.cu.hip"
+#include "bisect_util.cu"
 
 // declaration, forward
 

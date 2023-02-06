@@ -345,9 +345,9 @@ int main(int argc, char **argv) {
   printf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y,
          dimsB.x, dimsB.y);
 
-  //checkCudaErrors(cudaProfilerStart());
+  checkCudaErrors(cudaProfilerStart());
   int matrix_result = MatrixMultiply(argc, argv, block_size, dimsA, dimsB);
-  //checkCudaErrors(cudaProfilerStop());
+  checkCudaErrors(cudaProfilerStop());
 
   exit(matrix_result);
 }
