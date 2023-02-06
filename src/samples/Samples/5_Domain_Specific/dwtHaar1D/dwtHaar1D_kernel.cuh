@@ -82,8 +82,8 @@ decomposition.
 #ifndef _DWTHAAR1D_KERNEL_H_
 #define _DWTHAAR1D_KERNEL_H_
 
-#include <cooperative_groups.h>
-
+//#include <cooperative_groups.h>
+#include <hip/hip_cooperative_groups.h>
 namespace cg = cooperative_groups;
 
 ////////////////////////////////////////////////////////////////////////////////

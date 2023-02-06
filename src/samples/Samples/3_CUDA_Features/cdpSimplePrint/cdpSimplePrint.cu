@@ -25,8 +25,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include <helper_cuda.h>
-#include <helper_string.h>
+//#include <helper_cuda.h>
+//#include <helper_string.h>
 
 #include <cstdio>
 #include <cstdlib>
