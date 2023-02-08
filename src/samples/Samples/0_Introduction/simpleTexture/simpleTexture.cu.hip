@@ -50,11 +50,11 @@
 #include <hip/hip_runtime.h>
 
 // Utilities and timing functions
-#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
 
 // CUDA helper functions
-#include <helper_cuda.h>  // helper functions for CUDA error check
-
+#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+#include "HIPCHECK.h"
 #define MAX_EPSILON_ERROR 5e-3f
 
 // Define the files that are to be save and the reference images for validation
@@ -247,10 +247,6 @@ void runTest(int argc, char **argv) {
   HIPCHECK(hipDestroyTextureObject(tex));
   HIPCHECK(hipFree(dData));
   HIPCHECK(hipFreeArray(cuArray));
-  free(imagePath);
-  free(refPath);
-}
-aErrors(hipFreeArray(cuArray));
   free(imagePath);
   free(refPath);
 }

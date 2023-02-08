@@ -1,19 +1,43 @@
+diff --git a/src/patches/patch_for_simpleTexture.patch b/src/patches/patch_for_simpleTexture.patch
+index 6bba049..e69de29 100755
+--- a/src/patches/patch_for_simpleTexture.patch
++++ b/src/patches/patch_for_simpleTexture.patch
+@@ -1,30 +0,0 @@
+-diff --git a/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu.hip b/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu.hip
+-index 1d01608..8790aa0 100644
+---- a/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu.hip
+-+++ b/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu.hip
+-@@ -1,9 +1,4 @@
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+-+
+- #include "hip/hip_runtime.h"
+- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+-  *
+-@@ -56,11 +51,11 @@
+- #include <hip/hip_runtime.h>
+- 
+- // Utilities and timing functions
+--#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+-+#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+- 
+- // CUDA helper functions
+--#include <helper_cuda.h>  // helper functions for CUDA error check
+--
+-+#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+-+#include "HIPCHECK.h"
+- #define MAX_EPSILON_ERROR 5e-3f
+- 
+- // Define the files that are to be save and the reference images for validation
 diff --git a/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu.hip b/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu.hip
-index 1d01608..8790aa0 100644
+index 8ecaad0..fa18c91 100755
 --- a/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu.hip
 +++ b/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu.hip
-@@ -1,9 +1,4 @@
--#include "rocprofiler.h"
--#include "HIPCHECK.h"
--#include "rocprofiler.h"
--#include "HIPCHECK.h"
--#include "rocprofiler.h"
--#include "HIPCHECK.h"
-+
- #include "hip/hip_runtime.h"
- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
-  *
-@@ -56,11 +51,11 @@
+@@ -50,11 +50,11 @@
  #include <hip/hip_runtime.h>
  
  // Utilities and timing functions
@@ -28,3 +52,11 @@ index 1d01608..8790aa0 100644
  #define MAX_EPSILON_ERROR 5e-3f
  
  // Define the files that are to be save and the reference images for validation
+@@ -250,7 +250,3 @@ void runTest(int argc, char **argv) {
+   free(imagePath);
+   free(refPath);
+ }
+-aErrors(hipFreeArray(cuArray));
+-  free(imagePath);
+-  free(refPath);
+-}
