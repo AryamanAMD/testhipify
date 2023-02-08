@@ -481,16 +481,28 @@ def rem(z):
 	b.close()
 	z=z.replace('"','')
 	#ignore_list = ['<GL/', '<screen', '<drm.h>','FDTD3dGPU.h','#include <d312.h>\n',' #include <GLES3/gl31.h>\n','#include <windows.h>\n','#include <omp.h>\n','#include "nvmedia_image_nvscibuf.h"\n','#include "graphics_interface.c"\n','#include <DirectXMath.h>\n']
+	'''
 	ignore_list = ['<GL/','<screen/screen.h>', '<drm.h>','"FDTD3dGPU.h"','<d3d12.h>',
 	' <GLES3/gl31.h>','<EGL/egl.h>','<GLFW/glfw3.h>','"cudla.h"','#include <d312.h>\n',
 	' #include <GLES3/gl31.h>\n','#include <windows.h>\n','#include "nvmedia_image_nvscibuf.h"\n',
 	'#include "graphics_interface.c"\n','#include <DirectXMath.h>\n','#include "cuda_gl_interop.h"',
-	'#include "cudaEGL.h"','#include "cudaEGL.h\n"','"cuda_gl_interop.h"','#include "cuda_runtime.h"\n',
+	'#include "cudaEGL.h"','#include "cudaEGL.h"\n','"cuda_gl_interop.h"','#include "cuda_runtime.h"\n',
 	'#include "cudla.h"\n','#include "nvscisync.h"\n','#include "FDTD3d.h"\n','#include "windows.h"\n',
 	'#include "builtin_types.h"\n','#include "hipfft.h"\n','#include "screen/screen.h"\n','#include "Windows.h"\n',
 	'#include "cuda_d3d9_interop.h"\n','#include "drm.h"\n','#include "cuda_runtime_api.h"\n','#include "GLFW/glfw3.h"\n',
 	'#include "cuda/barrier"\n','#include "cuda_runtime.h"\n','#include "cooperative_groups/reduce.h"\n',
 	'#include "cuda_bf16.h"\n','#include "mma.h"\n','#include "cuda/pipeline"\n','"builtin_types.h"']
+	'''
+	ignore_list = ['<GL/','<screen/screen.h>', '<drm.h>','"FDTD3dGPU.h"','<d3d12.h>',
+	' <GLES3/gl31.h>','<EGL/egl.h>','<GLFW/glfw3.h>','"cudla.h"','#include <d312.h>',
+	' #include <GLES3/gl31.h>','#include <windows.h>','#include "nvmedia_image_nvscibuf.h"',
+	'#include "graphics_interface.c"','#include <DirectXMath.h>','#include "cuda_gl_interop.h"',
+	'#include "cudaEGL.h"','#include "cudaEGL.h"','"cuda_gl_interop.h"','#include "cuda_runtime.h"',
+	'#include "cudla.h"','#include "nvscisync.h"','#include "FDTD3d.h"','#include "windows.h"',
+	'#include "builtin_types.h"','#include "hipfft.h"','#include "screen/screen.h"','#include "Windows.h"',
+	'#include "cuda_d3d9_interop.h"','#include "drm.h"','#include "cuda_runtime_api.h"','#include "GLFW/glfw3.h"',
+	'#include "cuda/barrier"','#include "cuda_runtime.h"','#include "cooperative_groups/reduce.h"',
+	'#include "cuda_bf16.h"','#include "mma.h"','#include "cuda/pipeline"','"builtin_types.h"']
 	listofFiles=getListOfFiles(z)
 	for elem in listofFiles:
 		if elem.endswith('.cu'):
