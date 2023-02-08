@@ -1,0 +1,19 @@
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/radixSortThrust/radixSortThrust.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/radixSortThrust/radixSortThrust.cu.hip
+index 9da52d3..417fcf4 100755
+--- a/src/samples/Samples/2_Concepts_and_Techniques/radixSortThrust/radixSortThrust.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/radixSortThrust/radixSortThrust.cu.hip
+@@ -24,7 +24,7 @@
+  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+-
++#include "HIPCHECK.h"
+ #include <thrust/host_vector.h>
+ #include <thrust/device_vector.h>
+ #include <thrust/sort.h>
+@@ -213,5 +213,3 @@ int main(int argc, char **argv) {
+ 
+   printf(bTestResult ? "Test passed\n" : "Test failed!\n");
+ }
+-tf(bTestResult ? "Test passed\n" : "Test failed!\n");
+-}

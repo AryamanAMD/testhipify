@@ -88,7 +88,6 @@ src/samples/Samples/3_CUDA_Features/cdpBezierTessellation/BezierLineCDP.cu.hip
 src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu
 src/samples/Samples/3_CUDA_Features/cdpSimplePrint/cdpSimplePrint.cu
 src/samples/Samples/3_CUDA_Features/cdpSimpleQuicksort/cdpSimpleQuicksort.cu
-src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu
 src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu
 src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu
 src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu
