@@ -43,10 +43,13 @@
 #include <stdlib.h>
 
 // cuBLAS
-#include <hipblas.h>
+#include <hipblas/hipblas.h>
 
 // utilities
 #include "helper_cuda_hipified.h"
+#include "hip/hip_runtime.h"
+#include "hip/hip_runtime_api.h"
+#include "HIPCHECK.h"
 
 #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 // SRAND48 and DRAND48 don't exist on windows, but these are the equivalent
@@ -210,7 +213,7 @@ void execute(Task<T> &t, hipblasHandle_t *handle, hipStream_t *stream,
     double zero = 0.0;
 
     // attach managed memory to my stream
-    HIPCHECK(hipblasSetStream(handle[tid + 1], stream[tid + 1]));
+    //HIPCHECK(hipblasSetStream(handle[tid + 1], stream[tid + 1]));
     HIPCHECK(hipStreamAttachMemAsync(stream[tid + 1], t.data, 0,
                                              hipMemAttachSingle));
     HIPCHECK(hipStreamAttachMemAsync(stream[tid + 1], t.vector, 0,
@@ -218,10 +221,11 @@ void execute(Task<T> &t, hipblasHandle_t *handle, hipStream_t *stream,
     HIPCHECK(hipStreamAttachMemAsync(stream[tid + 1], t.result, 0,
                                              hipMemAttachSingle));
     // call the device operation
-    HIPCHECK(hipblasDgemv(handle[tid + 1], HIPBLAS_OP_N, t.size, t.size,
+    /*HIPCHECK(hipblasDgemv(handle[tid + 1], HIPBLAS_OP_N, t.size, t.size,
                                 &one, t.data, t.size, t.vector, 1, &zero,
-                                t.result, 1));
+                                t.result, 1));*/
   }
+
 }
 #endif
 
@@ -271,7 +275,7 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < nthreads + 1; i++) {
     HIPCHECK(hipStreamCreate(&streams[i]));
-    HIPCHECK(hipblasCreate(&handles[i]));
+    //HIPCHECK(hipblasCreate(&handles[i]));
   }
 
   // create list of N tasks
@@ -330,7 +334,7 @@ int main(int argc, char **argv) {
   // Destroy CUDA Streams, cuBlas handles
   for (int i = 0; i < nthreads + 1; i++) {
     hipStreamDestroy(streams[i]);
-    hipblasDestroy(handles[i]);
+    //hipblasDestroy(handles[i]);
   }
 
   // Free TaskList

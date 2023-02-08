@@ -1,4 +1,4 @@
-#include "hip/hip_runtime.h"
+
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,8 +29,6 @@
 // System includes
 #include <assert.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 // CUDA runtime
 #include <hip/hip_runtime.h>
@@ -112,15 +110,15 @@ int main(int argc, char **argv) {
   if (bPinGenericMemory) {
     printf("> Using Generic System Paged Memory (malloc)\n");
   } else {
-    printf("> Using CUDA Host Allocated (hipHostAlloc)\n");
+    printf("> Using CUDA Host Allocated (hipHostMalloc)\n");
   }
 
-  HIPCHECK(hipSetDevice(idev));
+  checkCudaErrors(hipSetDevice(idev));
 
   /* Verify the selected device supports mapped memory and set the device
      flags for mapping host memory. */
 
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, idev));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, idev));
 
 #if CUDART_VERSION >= 2020
 
@@ -131,12 +129,9 @@ int main(int argc, char **argv) {
     exit(EXIT_SUCCESS);
   }
 
-  HIPCHECK(hipSetDeviceFlags(hipDeviceMapHost));
+  checkCudaErrors(hipSetDeviceFlags(hipDeviceMapHost));
 #else
-  fprintf(stderr,
-          "CUDART version %d.%d does not support "
-          "<hipDeviceProp_t.canMapHostMemory> field\n",
-          , CUDART_VERSION / 1000, (CUDART_VERSION % 100) / 10);
+  fprintf(stderr, "CUDART version %d.%d does not support <hipDeviceProp_t.canMapHostMemory> field\n" , CUDART_VERSION / 1000, (CUDART_VERSION % 100) / 10);
 
   exit(EXIT_SUCCESS);
 #endif
@@ -171,16 +166,16 @@ int main(int argc, char **argv) {
     b = (float *)ALIGN_UP(b_UA, MEMORY_ALIGNMENT);
     c = (float *)ALIGN_UP(c_UA, MEMORY_ALIGNMENT);
 
-    HIPCHECK(hipHostRegister(a, bytes, hipHostRegisterMapped));
-    HIPCHECK(hipHostRegister(b, bytes, hipHostRegisterMapped));
-    HIPCHECK(hipHostRegister(c, bytes, hipHostRegisterMapped));
+    checkCudaErrors(hipHostRegister(a, bytes, hipHostRegisterMapped));
+    checkCudaErrors(hipHostRegister(b, bytes, hipHostRegisterMapped));
+    checkCudaErrors(hipHostRegister(c, bytes, hipHostRegisterMapped));
 #endif
   } else {
 #if CUDART_VERSION >= 2020
     flags = hipHostMallocMapped;
-    HIPCHECK(hipHostAlloc((void **)&a, bytes, flags));
-    HIPCHECK(hipHostAlloc((void **)&b, bytes, flags));
-    HIPCHECK(hipHostAlloc((void **)&c, bytes, flags));
+    checkCudaErrors(hipHostMalloc((void **)&a, bytes, flags));
+    checkCudaErrors(hipHostMalloc((void **)&b, bytes, flags));
+    checkCudaErrors(hipHostMalloc((void **)&c, bytes, flags));
 #endif
   }
 
@@ -195,9 +190,9 @@ int main(int argc, char **argv) {
        memory space. */
 
 #if CUDART_VERSION >= 2020
-  HIPCHECK(hipHostGetDevicePointer((void **)&d_a, (void *)a, 0));
-  HIPCHECK(hipHostGetDevicePointer((void **)&d_b, (void *)b, 0));
-  HIPCHECK(hipHostGetDevicePointer((void **)&d_c, (void *)c, 0));
+  checkCudaErrors(hipHostGetDevicePointer((void **)&d_a, (void *)a, 0));
+  checkCudaErrors(hipHostGetDevicePointer((void **)&d_b, (void *)b, 0));
+  checkCudaErrors(hipHostGetDevicePointer((void **)&d_c, (void *)c, 0));
 #endif
 
   /* Call the GPU kernel using the CPU pointers residing in CPU mapped memory.
@@ -206,7 +201,7 @@ int main(int argc, char **argv) {
   dim3 block(256);
   dim3 grid((unsigned int)ceil(nelem / (float)block.x));
   vectorAddGPU<<<grid, block>>>(d_a, d_b, d_c, nelem);
-  HIPCHECK(hipDeviceSynchronize());
+  checkCudaErrors(hipDeviceSynchronize());
   getLastCudaError("vectorAddGPU() execution failed");
 
   /* Compare the results */
@@ -231,18 +226,18 @@ int main(int argc, char **argv) {
 
   if (bPinGenericMemory) {
 #if CUDART_VERSION >= 4000
-    HIPCHECK(hipHostUnregister(a));
-    HIPCHECK(hipHostUnregister(b));
-    HIPCHECK(hipHostUnregister(c));
+    checkCudaErrors(hipHostUnregister(a));
+    checkCudaErrors(hipHostUnregister(b));
+    checkCudaErrors(hipHostUnregister(c));
     free(a_UA);
     free(b_UA);
     free(c_UA);
 #endif
   } else {
 #if CUDART_VERSION >= 2020
-    HIPCHECK(hipHostFree(a));
-    HIPCHECK(hipHostFree(b));
-    HIPCHECK(hipHostFree(c));
+    checkCudaErrors(hipHostFree(a));
+    checkCudaErrors(hipHostFree(b));
+    checkCudaErrors(hipHostFree(c));
 #endif
   }
 

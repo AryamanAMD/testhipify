@@ -36,8 +36,6 @@
 
 #include <hip/hip_cooperative_groups.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 namespace cg = cooperative_groups;
 #include "helper_cuda_hipified.h"
@@ -128,8 +126,8 @@ int main(int argc, char **argv) {
 
   // Get device properties
   hipDeviceProp_t deviceProp;
-  HIPCHECK(hipGetDevice(&cuda_device));
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, cuda_device));
+  checkCudaErrors(hipGetDevice(&cuda_device));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, cuda_device));
 
   // HyperQ is available in devices of Compute Capability 3.5 and higher
   if (deviceProp.major < 3 || (deviceProp.major == 3 && deviceProp.minor < 5)) {
@@ -149,24 +147,24 @@ int main(int argc, char **argv) {
 
   // Allocate host memory for the output (reduced to a single value)
   clock_t *a = 0;
-  HIPCHECK(hipHostMalloc((void **)&a, sizeof(clock_t)));
+  checkCudaErrors(hipHostMalloc((void **)&a, sizeof(clock_t)));
 
   // Allocate device memory for the output (one value for each kernel)
   clock_t *d_a = 0;
-  HIPCHECK(hipMalloc((void **)&d_a, 2 * nstreams * sizeof(clock_t)));
+  checkCudaErrors(hipMalloc((void **)&d_a, 2 * nstreams * sizeof(clock_t)));
 
   // Allocate and initialize an array of stream handles
   hipStream_t *streams =
       (hipStream_t *)malloc(nstreams * sizeof(hipStream_t));
 
   for (int i = 0; i < nstreams; i++) {
-    HIPCHECK(hipStreamCreate(&(streams[i])));
+    checkCudaErrors(hipStreamCreate(&(streams[i])));
   }
 
   // Create CUDA event handles
   hipEvent_t start_event, stop_event;
-  HIPCHECK(hipEventCreate(&start_event));
-  HIPCHECK(hipEventCreate(&stop_event));
+  checkCudaErrors(hipEventCreate(&start_event));
+  checkCudaErrors(hipEventCreate(&stop_event));
 
   // Target time per kernel is kernel_time ms, clockRate is in KHz
   // Target number of clocks = target time * clock frequency
@@ -180,7 +178,7 @@ int main(int argc, char **argv) {
   clock_t total_clocks = 0;
 
   // Start the clock
-  HIPCHECK(hipEventRecord(start_event, 0));
+  checkCudaErrors(hipEventRecord(start_event, 0));
 
   // Queue pairs of {kernel_A, kernel_B} in separate streams
   for (int i = 0; i < nstreams; ++i) {
@@ -191,7 +189,7 @@ int main(int argc, char **argv) {
   }
 
   // Stop the clock in stream 0 (i.e. all previous kernels will be complete)
-  HIPCHECK(hipEventRecord(stop_event, 0));
+  checkCudaErrors(hipEventRecord(stop_event, 0));
 
   // At this point the CPU has dispatched all work for the GPU and can
   // continue processing other tasks in parallel. In this sample we just want
@@ -199,12 +197,12 @@ int main(int argc, char **argv) {
 
   // Run the sum kernel and copy the result back to host
   sum<<<1, 32>>>(d_a, 2 * nstreams);
-  HIPCHECK(hipMemcpy(a, d_a, sizeof(clock_t), hipMemcpyDeviceToHost));
+  checkCudaErrors(hipMemcpy(a, d_a, sizeof(clock_t), hipMemcpyDeviceToHost));
 
   // stop_event will have been recorded but including the synchronize here to
   // prevent copy/paste errors!
-  HIPCHECK(hipEventSynchronize(stop_event));
-  HIPCHECK(hipEventElapsedTime(&elapsed_time, start_event, stop_event));
+  checkCudaErrors(hipEventSynchronize(stop_event));
+  checkCudaErrors(hipEventElapsedTime(&elapsed_time, start_event, stop_event));
 
   printf(
       "Expected time for serial execution of %d sets of kernels is between "

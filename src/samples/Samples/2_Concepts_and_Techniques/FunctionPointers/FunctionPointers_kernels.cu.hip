@@ -27,15 +27,13 @@
  */
 
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <hip/hip_cooperative_groups.h>
 
 namespace cg = cooperative_groups;
 
 #include "helper_cuda_hipified.h"
-
+#include "HIPCHECK.h"
 #include "FunctionPointers_kernels.h"
 
 // Texture object for reading image

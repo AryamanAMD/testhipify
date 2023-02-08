@@ -1,4 +1,4 @@
-#include "hip/hip_runtime.h"
+
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,16 +45,14 @@ const char *sSDKname = "simpleMultiCopy";
 
 // includes, system
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 // include CUDA
-#include <hip/hip_runtime.h>
+#include "hip/hip_runtime.h"
 
 // includes, project
 #include "helper_cuda_hipified.h"
 #include "helper_functions.h"  // helper for shared that are common to CUDA Samples
-#include "HIPCHECK.h"
+
 // includes, kernels
 // Declare the CUDA kernels here and main() code that is needed to launch
 // Compute workload on the system
@@ -130,12 +128,12 @@ int main(int argc, char *argv[]) {
   } else {
     // Otherwise pick the device with the highest Gflops/s
     cuda_device = gpuGetMaxGflopsDeviceId();
-    HIPCHECK(hipSetDevice(cuda_device));
-    HIPCHECK(hipGetDeviceProperties(&deviceProp, cuda_device));
+    checkCudaErrors(hipSetDevice(cuda_device));
+    checkCudaErrors(hipGetDeviceProperties(&deviceProp, cuda_device));
     printf("> Using CUDA device [%d]: %s\n", cuda_device, deviceProp.name);
   }
 
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, cuda_device));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, cuda_device));
   printf("[%s] has %d MP(s) x %d (Cores/MP) = %d (Cores)\n", deviceProp.name,
          deviceProp.multiProcessorCount,
          _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor),
@@ -168,17 +166,17 @@ int main(int argc, char *argv[]) {
   h_data_sink = (int *)malloc(memsize);
 
   for (int i = 0; i < STREAM_COUNT; ++i) {
-    HIPCHECK(
-        hipHostMalloc((void **)&h_data_in[i], memsize, hipHostMallocDefault));
-    HIPCHECK(hipMalloc(&d_data_in[i], memsize));
-    HIPCHECK(hipMemset(d_data_in[i], 0, memsize));
+    checkCudaErrors(
+        hipHostAlloc(&h_data_in[i], memsize, hipHostMallocDefault));
+    checkCudaErrors(hipMalloc(&d_data_in[i], memsize));
+    checkCudaErrors(hipMemset(d_data_in[i], 0, memsize));
 
-    HIPCHECK(
-        hipHostMalloc((void **)&h_data_out[i], memsize, hipHostMallocDefault));
-    HIPCHECK(hipMalloc(&d_data_out[i], memsize));
+    checkCudaErrors(
+        hipHostAlloc(&h_data_out[i], memsize, hipHostMallocDefault));
+    checkCudaErrors(hipMalloc(&d_data_out[i], memsize));
 
-    HIPCHECK(hipStreamCreate(&stream[i]));
-    HIPCHECK(hipEventCreate(&cycleDone[i]));
+    checkCudaErrors(hipStreamCreate(&stream[i]));
+    checkCudaErrors(hipEventCreate(&cycleDone[i]));
 
     hipEventRecord(cycleDone[i], stream[i]);
   }
@@ -193,7 +191,7 @@ int main(int argc, char *argv[]) {
 
   // Time copies and kernel
   hipEventRecord(start, 0);
-  HIPCHECK(hipMemcpyAsync(d_data_in[0], h_data_in[0], memsize,
+  checkCudaErrors(hipMemcpyAsync(d_data_in[0], h_data_in[0], memsize,
                                   hipMemcpyHostToDevice, 0));
   hipEventRecord(stop, 0);
   hipEventSynchronize(stop);
@@ -202,7 +200,7 @@ int main(int argc, char *argv[]) {
   hipEventElapsedTime(&memcpy_h2d_time, start, stop);
 
   hipEventRecord(start, 0);
-  HIPCHECK(hipMemcpyAsync(h_data_out[0], d_data_out[0], memsize,
+  checkCudaErrors(hipMemcpyAsync(h_data_out[0], d_data_out[0], memsize,
                                   hipMemcpyDeviceToHost, 0));
   hipEventRecord(stop, 0);
   hipEventSynchronize(stop);
@@ -220,20 +218,18 @@ int main(int argc, char *argv[]) {
 
   printf("\n");
   printf("Relevant properties of this CUDA device\n");
-  /*
   printf(
       "(%s) Can overlap one CPU<>GPU data transfer with GPU kernel execution "
       "(device property \"deviceOverlap\")\n",
       deviceProp.deviceOverlap ? "X" : " ");
-*/
   // printf("(%s) Can execute several GPU kernels simultaneously (compute
   // capability >= 2.0)\n", deviceProp.major >= 2 ? "X": " ");
- /* printf(
+  printf(
       "(%s) Can overlap two CPU<>GPU data transfers with GPU kernel execution\n"
       "    (Compute Capability >= 2.0 AND (Tesla product OR Quadro "
       "4000/5000/6000/K5000)\n",
       (deviceProp.major >= 2 && deviceProp.asyncEngineCount > 1) ? "X" : " ");
-*/
+
   printf("\n");
   printf("Measured timings (throughput):\n");
   printf(" Memcpy host to device\t: %f ms (%f GB/s)\n", memcpy_h2d_time,
@@ -331,16 +327,16 @@ float processWithStreams(int streams_used) {
         d_data_out[current_stream], d_data_in[current_stream], N, inner_reps);
 
     // Upload next frame
-    HIPCHECK(
+    checkCudaErrors(
         hipMemcpyAsync(d_data_in[next_stream], h_data_in[next_stream], memsize,
                         hipMemcpyHostToDevice, stream[next_stream]));
 
     // Download current frame
-    HIPCHECK(hipMemcpyAsync(
+    checkCudaErrors(hipMemcpyAsync(
         h_data_out[current_stream], d_data_out[current_stream], memsize,
         hipMemcpyDeviceToHost, stream[current_stream]));
 
-    HIPCHECK(
+    checkCudaErrors(
         hipEventRecord(cycleDone[current_stream], stream[current_stream]));
 
     current_stream = next_stream;

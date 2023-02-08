@@ -1,4 +1,4 @@
-#include "hip/hip_runtime.h"
+
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -38,15 +38,17 @@
 // includes, system
 #include <math.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <string.h>
 
 // includes, project
 #include "helper_cuda_hipified.h"  // helper functions for CUDA error checking and initialization
 #include "helper_functions.h"  // helper utility functions
-
+#include "hip/hip_runtime.h"
+#include "HIPCHECK.h"
+#include "hip/hip_runtime_api.h"
+#include <hip/hip_cooperative_groups.h>
+#include <hip/nvidia_detail/nvidia_hip_runtime_api.h>
 ////////////////////////////////////////////////////////////////////////////////
 // Misaligned types
 ////////////////////////////////////////////////////////////////////////////////
@@ -182,9 +184,9 @@ int runTest(int packedElementSize, int memory_size) {
   const int numElements = iDivDown(memory_size, sizeof(TData));
 
   // Clean output buffer before current test
-  HIPCHECK(hipMemset(d_odata, 0, memory_size));
+  checkCudaErrors(hipMemset(d_odata, 0, memory_size));
   // Run test
-  HIPCHECK(hipDeviceSynchronize());
+  checkCudaErrors(hipDeviceSynchronize());
   sdkResetTimer(&hTimer);
   sdkStartTimer(&hTimer);
 
@@ -194,14 +196,14 @@ int runTest(int packedElementSize, int memory_size) {
     getLastCudaError("testKernel() execution failed\n");
   }
 
-  HIPCHECK(hipDeviceSynchronize());
+  checkCudaErrors(hipDeviceSynchronize());
   sdkStopTimer(&hTimer);
   double gpuTime = sdkGetTimerValue(&hTimer) / NUM_ITERATIONS;
   printf("Avg. time: %f ms / Copy throughput: %f GB/s.\n", gpuTime,
          (double)totalMemSizeAligned / (gpuTime * 0.001 * 1073741824.0));
 
   // Read back GPU results and run validation
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(h_odataGPU, d_odata, memory_size, hipMemcpyDeviceToHost));
   int flag = testCPU((TData *)h_odataGPU, (TData *)h_idataCPU, numElements,
                      packedElementSize);
@@ -222,7 +224,7 @@ int main(int argc, char **argv) {
   devID = findCudaDevice(argc, (const char **)argv);
 
   // get number of SMs on this GPU
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, devID));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, devID));
   printf("[%s] has %d MP(s) x %d (Cores/MP) = %d (Cores)\n", deviceProp.name,
          deviceProp.multiProcessorCount,
          _ConvertSMVer2Cores(deviceProp.major, deviceProp.minor),
@@ -246,8 +248,8 @@ int main(int argc, char **argv) {
   printf("Allocating memory...\n");
   h_idataCPU = (unsigned char *)malloc(MemorySize);
   h_odataGPU = (unsigned char *)malloc(MemorySize);
-  HIPCHECK(hipMalloc((void **)&d_idata, MemorySize));
-  HIPCHECK(hipMalloc((void **)&d_odata, MemorySize));
+  checkCudaErrors(hipMalloc((void **)&d_idata, MemorySize));
+  checkCudaErrors(hipMalloc((void **)&d_odata, MemorySize));
 
   printf("Generating host input data array...\n");
 
@@ -256,7 +258,7 @@ int main(int argc, char **argv) {
   }
 
   printf("Uploading input data to GPU memory...\n");
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(d_idata, h_idataCPU, MemorySize, hipMemcpyHostToDevice));
 
   printf("Testing misaligned types...\n");
@@ -300,8 +302,8 @@ int main(int argc, char **argv) {
   printf("\n[alignedTypes] -> Test Results: %d Failures\n", nTotalFailures);
 
   printf("Shutting down...\n");
-  HIPCHECK(hipFree(d_idata));
-  HIPCHECK(hipFree(d_odata));
+  checkCudaErrors(hipFree(d_idata));
+  checkCudaErrors(hipFree(d_odata));
   free(h_odataGPU);
   free(h_idataCPU);
 

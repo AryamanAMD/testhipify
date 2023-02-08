@@ -27,11 +27,9 @@
  */
 
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 // includes, project
-#include "helper_cuda_hipified.h"
-#include "helper_functions.h"
+#include <helper_cuda.h>
+#include <helper_functions.h>
 
 #include <hip/hip_runtime.h>
 
@@ -199,7 +197,7 @@ int calculateMaxInBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
 
   memset(cpuBucketsMax, 0, sizeof(int) * numOfBuckets);
 
-  // Here we create values which is assumed to correspond to each 
+  // Here we create values which is assumed to correspond to each
   // buckets of srcArr at same array index.
   for (int i=0; i < NUM_ELEMS; i++)
   {
@@ -240,7 +238,7 @@ int calculateMaxInBuckets(int *h_srcArr, int *d_srcArr, int numOfBuckets)
   }
   if (allMatch)
   {
-    printf("CPU max matches GPU max\n"); 
+    printf("CPU max matches GPU max\n");
   }
 
   delete[] h_valueInBuckets;
@@ -318,12 +316,12 @@ int main(int argc, char **argv) {
   }
 
   printf("\nWarp Aggregated Atomics %s \n",
-         (host_flt_count == nres) && (mapIndicesToBucketsStatus == EXIT_SUCCESS) && 
+         (host_flt_count == nres) && (mapIndicesToBucketsStatus == EXIT_SUCCESS) &&
          (calculateMaxInBucketsStatus == EXIT_SUCCESS) ? "PASSED" : "FAILED");
 
-  HIPCHECK(hipFree(d_data_to_filter));
-  HIPCHECK(hipFree(d_filtered_data));
-  HIPCHECK(hipFree(d_nres));
+  checkCudaErrors(hipFree(d_data_to_filter));
+  checkCudaErrors(hipFree(d_filtered_data));
+  checkCudaErrors(hipFree(d_nres));
   free(data_to_filter);
   free(filtered_data);
   free(host_filtered_data);
