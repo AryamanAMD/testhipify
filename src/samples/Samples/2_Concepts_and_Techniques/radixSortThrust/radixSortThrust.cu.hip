@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
+#include "HIPCHECK.h"
 #include <thrust/host_vector.h>
 #include <thrust/device_vector.h>
 #include <thrust/sort.h>
@@ -212,6 +212,4 @@ int main(int argc, char **argv) {
     bTestResult = testSort<unsigned int, false>(argc, argv);
 
   printf(bTestResult ? "Test passed\n" : "Test failed!\n");
-}
-tf(bTestResult ? "Test passed\n" : "Test failed!\n");
 }
