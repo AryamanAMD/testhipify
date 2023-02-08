@@ -41,7 +41,7 @@
 
 #define MAXTHREADS 256
 #define NUM_INTS 32
-
+#include "HIPCHECK.h"
 #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 // Windows threads use different data structures
 #include <windows.h>
@@ -146,7 +146,7 @@ static hipError_t InitCUDAContext(HIPContext *pContext, hipDevice_t hcuDevice,
   }
 
   // Create module from binary file (FATBIN)
-  checkCudaErrors(hipModuleLoadData(&hcuModule, fatbin.str().c_str()));
+  HIPCHECK(hipModuleLoadData(&hcuModule, fatbin.str().c_str()));
 
   status = hipModuleGetFunction(&hcuFunction, hcuModule, "kernelFunction");
 
@@ -191,7 +191,7 @@ void *ThreadProc(HIPContext *pParams)
   if (hipSuccess != status) {
     THREAD_QUIT;
   }
-  checkCudaErrors(hipMalloc(&pParams->dptr, NUM_INTS * sizeof(int)));
+  HIPCHECK(hipMalloc(&pParams->dptr, NUM_INTS * sizeof(int)));
 
   // There are two ways to launch CUDA kernels via the Driver API.
   // In this CUDA Sample, we illustrate both ways to pass parameters
@@ -259,10 +259,10 @@ void *ThreadProc(HIPContext *pParams)
 
   free(pInt);
   fflush(stdout);
-  checkCudaErrors(hipFree(pParams->dptr));
+  HIPCHECK(hipFree(pParams->dptr));
 
   // hipCtxPopCurrent: Detach the current CUDA context from the calling thread.
-  checkCudaErrors(hipCtxPopCurrent(NULL));
+  HIPCHECK(hipCtxPopCurrent(NULL));
 
   printf("<CUDA Device=%d, Context=%p, Thread=%d> - ThreadProc() Finished!\n\n",
          pParams->deviceID, pParams->hcuContext, pParams->threadNum);
@@ -360,24 +360,24 @@ bool runTest(int argc, char **argv) {
 
     {
       int major = 0, minor = 0;
-      checkCudaErrors(hipDeviceGetAttribute(
+      HIPCHECK(hipDeviceGetAttribute(
           &major, hipDeviceAttributeComputeCapabilityMajor, hcuDevice));
-      checkCudaErrors(hipDeviceGetAttribute(
+      HIPCHECK(hipDeviceGetAttribute(
           &minor, hipDeviceAttributeComputeCapabilityMinor, hcuDevice));
       int sharedMemPerBlock;
-      checkCudaErrors(hipDeviceGetAttribute(
+      HIPCHECK(hipDeviceGetAttribute(
           &sharedMemPerBlock, hipDeviceAttributeMaxSharedMemoryPerBlock,
           hcuDevice));
       int totalConstantMemory;
-      checkCudaErrors(hipDeviceGetAttribute(
+      HIPCHECK(hipDeviceGetAttribute(
           &totalConstantMemory, hipDeviceAttributeTotalConstantMemory,
           hcuDevice));
       int regsPerBlock;
-      checkCudaErrors(hipDeviceGetAttribute(
+      HIPCHECK(hipDeviceGetAttribute(
           &regsPerBlock, hipDeviceAttributeMaxRegistersPerBlock,
           hcuDevice));
       int clockRate;
-      checkCudaErrors(hipDeviceGetAttribute(
+      HIPCHECK(hipDeviceGetAttribute(
           &clockRate, hipDeviceAttributeClockRate, hcuDevice));
       printf("Device %d: \"%s\" (Compute %d.%d)\n", iDevice, szName, major,
              minor);
