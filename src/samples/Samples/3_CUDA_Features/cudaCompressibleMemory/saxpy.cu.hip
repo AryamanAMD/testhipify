@@ -1,4 +1,4 @@
-#include "hip/hip_runtime.h"
+
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -35,8 +35,9 @@
 #include <stdio.h>
 #include <hip/hip_runtime.h>
 #define CUDA_DRIVER_API
-#include "helper_cuda.h"
-#include "compMalloc.h"
+#include "helper_cuda_hipified.h"
+#include "HIPCHECK.h"
+#include "compMalloc_hipified.h"
 
 __global__ void saxpy(const float a, const float4 *x, const float4 *y, float4 *z, const size_t n)
 {
@@ -123,18 +124,18 @@ int main(int argc, char **argv)
 
     // Check that the selected device supports virtual memory management
     int vmm_supported = -1;
-    HIPCHECK(hipDeviceGetAttribute(&vmm_supported,
-                          CU_DEVICE_ATTRIBUTE_VIRTUAL_ADDRESS_MANAGEMENT_SUPPORTED,
-                          currentDevice));
+   // HIPCHECK(hipDeviceGetAttribute(&vmm_supported,
+   //                       CU_DEVICE_ATTRIBUTE_VIRTUAL_ADDRESS_MANAGEMENT_SUPPORTED,
+   //                       currentDevice));
     if (vmm_supported == 0) {
         printf("Device %d doesn't support Virtual Memory Management, waiving the execution.\n", currentDevice);
         exit(EXIT_WAIVED);
     }
 
     int isCompressionAvailable;
-    HIPCHECK(hipDeviceGetAttribute(&isCompressionAvailable,
-                             CU_DEVICE_ATTRIBUTE_GENERIC_COMPRESSION_SUPPORTED,
-                             currentDevice));
+   // HIPCHECK(hipDeviceGetAttribute(&isCompressionAvailable,
+   //                          CU_DEVICE_ATTRIBUTE_GENERIC_COMPRESSION_SUPPORTED,
+   //                          currentDevice));
     if (isCompressionAvailable == 0)
     {
         printf("Device %d doesn't support Generic memory compression, waiving the execution.\n", currentDevice);
@@ -192,11 +193,6 @@ int main(int argc, char **argv)
     HIPCHECK(freeCompressible(x, size, false));
     HIPCHECK(freeCompressible(y, size, false));
     HIPCHECK(freeCompressible(z, size, false));
-
-    printf("\nNOTE: The CUDA Samples are not meant for performance measurements. "
-      "Results may vary when GPU Boost is enabled.\n");
-    return EXIT_SUCCESS;
-}ompressible(z, size, false));
 
     printf("\nNOTE: The CUDA Samples are not meant for performance measurements. "
       "Results may vary when GPU Boost is enabled.\n");
