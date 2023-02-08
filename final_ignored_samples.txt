@@ -78,7 +78,6 @@ src/samples/Samples/2_Concepts_and_Techniques/inlinePTX/inlinePTX.cu
 src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu
 src/samples/Samples/2_Concepts_and_Techniques/particles/particleSystem_cuda.cu
 src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu
-src/samples/Samples/2_Concepts_and_Techniques/segmentationTreeThrust/segmentationTreeThrust.cu
 src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu
 src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu
 src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu
