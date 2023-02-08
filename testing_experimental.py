@@ -69,7 +69,7 @@ def compilation_1(x):
 			
 		
 
-		cpp = [p+'/'+x for x in cpp]
+		cpp = [p+'/'+y for y in cpp]
 		command='hipcc -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 		print(command)
 
