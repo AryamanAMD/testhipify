@@ -1,5 +1,4 @@
 src/samples/Samples/0_Introduction/simpleAssert_nvrtc/simpleAssert_kernel.cu
-src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu
 src/samples/Samples/0_Introduction/simpleCUDA2GL/simpleCUDA2GL.cu
 src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu
 src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu
