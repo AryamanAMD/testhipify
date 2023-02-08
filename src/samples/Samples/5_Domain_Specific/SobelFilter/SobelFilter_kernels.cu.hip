@@ -27,8 +27,6 @@
  */
 
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <hip/hip_runtime.h>
 #include <hip/hip_cooperative_groups.h>
@@ -296,3 +294,4 @@ extern "C" void sobelFilter(Pixel *odata, int iw, int ih,
          iw, ih, fScale, texObject);
     } break;
   }
+}
