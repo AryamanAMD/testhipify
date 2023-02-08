@@ -1,50 +1,72 @@
-diff --git a/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu.hip b/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu.hip
-index d610e89..57c4631 100644
---- a/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu.hip
-+++ b/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu.hip
-@@ -1,9 +1,5 @@
- #include "rocprofiler.h"
- #include "HIPCHECK.h"
--#include "rocprofiler.h"
--#include "HIPCHECK.h"
--#include "rocprofiler.h"
--#include "HIPCHECK.h"
- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
-  *
-  * Redistribution and use in source and binary forms, with or without
-@@ -52,7 +48,7 @@
- #include <hipblas.h>
- 
- // utilities
--#include <helper_cuda.h>
-+#include "helper_cuda_hipified.h"
- 
- #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
- // SRAND48 and DRAND48 don't exist on windows, but these are the equivalent
-@@ -345,8 +341,3 @@ int main(int argc, char **argv) {
-   printf("All Done!\n");
-   exit(EXIT_SUCCESS);
- }
--cuBlas handles
--  for (int i = 0; i < nthreads + 1; i++) {
--    hipStreamDestroy(streams[i]);
--    hipblasDestroy(handles[i]);
--  }
+diff --git a/src/patches/patch_for_simpleAtomicIntrinsics.patch b/src/patches/patch_for_simpleAtomicIntrinsics.patch
+index 64a1fca..e69de29 100755
+--- a/src/patches/patch_for_simpleAtomicIntrinsics.patch
++++ b/src/patches/patch_for_simpleAtomicIntrinsics.patch
+@@ -1,59 +0,0 @@
+-diff --git a/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu.hip b/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu.hip
+-index d610e89..57c4631 100644
+---- a/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu.hip
+-+++ b/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu.hip
+-@@ -1,9 +1,5 @@
+- #include "rocprofiler.h"
+- #include "HIPCHECK.h"
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+-  *
+-  * Redistribution and use in source and binary forms, with or without
+-@@ -52,7 +48,7 @@
+- #include <hipblas.h>
+- 
+- // utilities
+--#include <helper_cuda.h>
+-+#include "helper_cuda_hipified.h"
+- 
+- #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+- // SRAND48 and DRAND48 don't exist on windows, but these are the equivalent
+-@@ -345,8 +341,3 @@ int main(int argc, char **argv) {
+-   printf("All Done!\n");
+-   exit(EXIT_SUCCESS);
+- }
+--cuBlas handles
+--  for (int i = 0; i < nthreads + 1; i++) {
+--    hipStreamDestroy(streams[i]);
+--    hipblasDestroy(handles[i]);
+--  }
+-diff --git a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip b/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip
+-index 5035654..858284d 100644
+---- a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip
+-+++ b/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip
+-@@ -1,9 +1,5 @@
+- #include "rocprofiler.h"
+- #include "HIPCHECK.h"
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+-  *
+-  * Redistribution and use in source and binary forms, with or without
+-@@ -51,10 +47,10 @@
+- #include <hip/hip_runtime.h>
+- 
+- // Utilities and timing functions
+--#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+-+#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+- 
+- // CUDA helper functions
+--#include <helper_cuda.h>  // helper functions for CUDA error check
+-+#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+- 
+- // Includes, kernels
+- #include "simpleAtomicIntrinsics_kernel.cuh"
 diff --git a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip b/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip
-index 5035654..858284d 100644
+index 24cfa48..9cf13d9 100755
 --- a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip
 +++ b/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip
-@@ -1,9 +1,5 @@
- #include "rocprofiler.h"
- #include "HIPCHECK.h"
--#include "rocprofiler.h"
--#include "HIPCHECK.h"
--#include "rocprofiler.h"
--#include "HIPCHECK.h"
- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
-  *
-  * Redistribution and use in source and binary forms, with or without
-@@ -51,10 +47,10 @@
+@@ -45,11 +45,11 @@
  #include <hip/hip_runtime.h>
  
  // Utilities and timing functions
@@ -53,7 +75,16 @@ index 5035654..858284d 100644
  
  // CUDA helper functions
 -#include <helper_cuda.h>  // helper functions for CUDA error check
+-
 +#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
- 
++#include "HIPCHECK.h"
  // Includes, kernels
  #include "simpleAtomicIntrinsics_kernel.cuh"
+ 
+@@ -132,6 +132,3 @@ void runTest(int argc, char **argv) {
+   HIPCHECK(hipHostFree(hOData));
+   HIPCHECK(hipFree(dOData));
+ }
+-ostFree(hOData));
+-  checkCudaErrors(hipFree(dOData));
+-}
