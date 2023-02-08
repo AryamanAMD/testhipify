@@ -1,410 +1,453 @@
-diff --git a/src/samples/Common/helper_cuda_hipified.h b/src/samples/Common/helper_cuda_hipified.h
-index 7005af2..c2a8cd1 100644
---- a/src/samples/Common/helper_cuda_hipified.h
-+++ b/src/samples/Common/helper_cuda_hipified.h
-@@ -63,7 +63,7 @@ static const char *_cudaGetErrorEnum(hipError_t error) {
- static const char *_cudaGetErrorEnum(hipError_t error) {
-   static char unknown[] = "<unknown>";
-   const char *ret = NULL;
--  cuGetErrorName(error, &ret);
-+  hipGetErrorName(error, &ret);
-   return ret ? ret : unknown;
- }
- #endif
-diff --git a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out
-index 1ee2ee5..8367f09 100755
-Binary files a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out and b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out differ
-diff --git a/src/samples/Samples/0_Introduction/clock/clock.out b/src/samples/Samples/0_Introduction/clock/clock.out
-index 3e9e583..90a94d4 100755
-Binary files a/src/samples/Samples/0_Introduction/clock/clock.out and b/src/samples/Samples/0_Introduction/clock/clock.out differ
-diff --git a/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.out b/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.out
-deleted file mode 100755
-index c02b065..0000000
-Binary files a/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.out and /dev/null differ
-diff --git a/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out b/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out
-index 723aa1e..3f6eac2 100755
-Binary files a/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out and b/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out differ
-diff --git a/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out b/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out
-index d7041c9..098d675 100755
-Binary files a/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out and b/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out differ
-diff --git a/src/samples/Samples/0_Introduction/mergeSort/mergeSort.out b/src/samples/Samples/0_Introduction/mergeSort/mergeSort.out
-deleted file mode 100755
-index d11c974..0000000
-Binary files a/src/samples/Samples/0_Introduction/mergeSort/mergeSort.out and /dev/null differ
-diff --git a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out
-index afbb874..c36dcf6 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out and b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out differ
-diff --git a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.out b/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.out
-deleted file mode 100755
-index 989f8c8..0000000
-Binary files a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.out and /dev/null differ
-diff --git a/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out b/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out
-deleted file mode 100644
-index 7562f4d..0000000
-Binary files a/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out and /dev/null differ
-diff --git a/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out b/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out
-index 3fdd75a..7673e67 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out and b/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out differ
-diff --git a/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out b/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out
-index f9ba435..b3d0210 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out and b/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out differ
-diff --git a/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out b/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out
-index a7fce0e..c0a7f26 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out and b/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out differ
-diff --git a/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out b/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out
-index 5df122a..52967d1 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out and b/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out differ
-diff --git a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out
-index 15a04eb..0e1a3e9 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out and b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out differ
-diff --git a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out
-index 7b576e7..227dd97 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out and b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out differ
-diff --git a/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out b/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out
-index c425b3d..7bd5fc9 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out and b/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out differ
-diff --git a/src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.out b/src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.out
-old mode 100644
-new mode 100755
-index 03c7358..8f3e98f
-Binary files a/src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.out and b/src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.out differ
-diff --git a/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out b/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out
-index d286ef2..aba55ac 100755
-Binary files a/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out and b/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out differ
-diff --git a/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out b/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out
-index 97cfba9..ba8a9e7 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out and b/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out differ
+diff --git a/src/patches/patch_for_simpleSurfaceWrite.patch b/src/patches/patch_for_simpleSurfaceWrite.patch
+index b293bf2..e69de29 100755
+--- a/src/patches/patch_for_simpleSurfaceWrite.patch
++++ b/src/patches/patch_for_simpleSurfaceWrite.patch
+@@ -1,410 +0,0 @@
+-diff --git a/src/samples/Common/helper_cuda_hipified.h b/src/samples/Common/helper_cuda_hipified.h
+-index 7005af2..c2a8cd1 100644
+---- a/src/samples/Common/helper_cuda_hipified.h
+-+++ b/src/samples/Common/helper_cuda_hipified.h
+-@@ -63,7 +63,7 @@ static const char *_cudaGetErrorEnum(hipError_t error) {
+- static const char *_cudaGetErrorEnum(hipError_t error) {
+-   static char unknown[] = "<unknown>";
+-   const char *ret = NULL;
+--  cuGetErrorName(error, &ret);
+-+  hipGetErrorName(error, &ret);
+-   return ret ? ret : unknown;
+- }
+- #endif
+-diff --git a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out
+-index 1ee2ee5..8367f09 100755
+-Binary files a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out and b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out differ
+-diff --git a/src/samples/Samples/0_Introduction/clock/clock.out b/src/samples/Samples/0_Introduction/clock/clock.out
+-index 3e9e583..90a94d4 100755
+-Binary files a/src/samples/Samples/0_Introduction/clock/clock.out and b/src/samples/Samples/0_Introduction/clock/clock.out differ
+-diff --git a/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.out b/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.out
+-deleted file mode 100755
+-index c02b065..0000000
+-Binary files a/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.out and /dev/null differ
+-diff --git a/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out b/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out
+-index 723aa1e..3f6eac2 100755
+-Binary files a/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out and b/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out differ
+-diff --git a/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out b/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out
+-index d7041c9..098d675 100755
+-Binary files a/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out and b/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out differ
+-diff --git a/src/samples/Samples/0_Introduction/mergeSort/mergeSort.out b/src/samples/Samples/0_Introduction/mergeSort/mergeSort.out
+-deleted file mode 100755
+-index d11c974..0000000
+-Binary files a/src/samples/Samples/0_Introduction/mergeSort/mergeSort.out and /dev/null differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out
+-index afbb874..c36dcf6 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out and b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.out b/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.out
+-deleted file mode 100755
+-index 989f8c8..0000000
+-Binary files a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.out and /dev/null differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out b/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out
+-deleted file mode 100644
+-index 7562f4d..0000000
+-Binary files a/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out and /dev/null differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out b/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out
+-index 3fdd75a..7673e67 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out and b/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out b/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out
+-index f9ba435..b3d0210 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out and b/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out b/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out
+-index a7fce0e..c0a7f26 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out and b/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out b/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out
+-index 5df122a..52967d1 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out and b/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out
+-index 15a04eb..0e1a3e9 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out and b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out
+-index 7b576e7..227dd97 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out and b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out b/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out
+-index c425b3d..7bd5fc9 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out and b/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.out b/src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.out
+-old mode 100644
+-new mode 100755
+-index 03c7358..8f3e98f
+-Binary files a/src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.out and b/src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out b/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out
+-index d286ef2..aba55ac 100755
+-Binary files a/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out and b/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out b/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out
+-index 97cfba9..ba8a9e7 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out and b/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip b/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip
+-index 2232324..e48560b 100644
+---- a/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip
+-+++ b/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip
+-@@ -1,9 +1,3 @@
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+--#include "rocprofiler.h"
+--#include "HIPCHECK.h"
+- #include "hip/hip_runtime.h"
+- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+-  *
+-@@ -59,8 +53,8 @@
+- #include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+- 
+- // CUDA helper functions
+--#include <helper_cuda.h>  // helper functions for CUDA error check
+--
+-+#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+-+#include "HIPCHECK.h"
+- #define MIN_EPSILON_ERROR 5e-3f
+- 
+- ////////////////////////////////////////////////////////////////////////////////
+-@@ -87,8 +81,9 @@ __global__ void surfaceWriteKernel(float *gIData, int width, int height,
+-   unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+- 
+-   // read from global memory and write to cuarray (via surface reference)
+--  surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y,
+--              hipBoundaryModeTrap);
+-+  //surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y,
+-+             // hipBoundaryModeTrap);
+-+  surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y);
+- }
+- 
+- ////////////////////////////////////////////////////////////////////////////////
+-diff --git a/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out b/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out
+-index e3d4d1e..7ae54a5 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out and b/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.out b/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.out
+-old mode 100644
+-new mode 100755
+-index ec3dc99..ef1daeb
+-Binary files a/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.out and b/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.out differ
+-diff --git a/src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTextureDrv_hipified.cpp b/src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTextureDrv_hipified.cpp
+-index 8c65114..10595ab 100644
+---- a/src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTextureDrv_hipified.cpp
+-+++ b/src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTextureDrv_hipified.cpp
+-@@ -45,7 +45,7 @@
+- #include <math.h>
+- #include <iostream>
+- #include <cstring>
+--
+-+#include "HIPCHECK.h"
+- // includes, CUDA
+- #include <hip/hip_runtime.h>
+- #include <builtin_types.h>
+-@@ -142,7 +142,7 @@ void runTest(int argc, char **argv) {
+- 
+-   // allocate device memory for result
+-   hipDeviceptr_t d_data = (hipDeviceptr_t)NULL;
+--  checkCudaErrors(hipMalloc(&d_data, size));
+-+  HIPCHECK(hipMalloc(&d_data, size));
+- 
+-   // allocate array and copy image data
+-   hipArray_t cu_array;
+-@@ -151,7 +151,7 @@ void runTest(int argc, char **argv) {
+-   desc.NumChannels = 1;
+-   desc.Width = width;
+-   desc.Height = height;
+--  checkCudaErrors(hipArrayCreate(&cu_array, &desc));
+-+  HIPCHECK(hipArrayCreate(&cu_array, &desc));
+-   hip_Memcpy2D copyParam;
+-   memset(&copyParam, 0, sizeof(copyParam));
+-   copyParam.dstMemoryType = hipMemoryTypeArray;
+-@@ -161,7 +161,7 @@ void runTest(int argc, char **argv) {
+-   copyParam.srcPitch = width * sizeof(float);
+-   copyParam.WidthInBytes = copyParam.srcPitch;
+-   copyParam.Height = height;
+--  checkCudaErrors(hipMemcpyParam2D(&copyParam));
+-+  HIPCHECK(hipMemcpyParam2D(&copyParam));
+- 
+-   // set texture parameters
+-   hipTextureObject_t TexObject;
+-@@ -178,7 +178,7 @@ void runTest(int argc, char **argv) {
+-   TexDesc.filterMode = HIP_TR_FILTER_MODE_LINEAR;
+-   TexDesc.flags = HIP_TRSF_NORMALIZED_COORDINATES;
+- 
+--  checkCudaErrors(hipTexObjectCreate(&TexObject, &ResDesc, &TexDesc, NULL));
+-+  HIPCHECK(hipTexObjectCreate(&TexObject, &ResDesc, &TexDesc, NULL));
+- 
+-   // There are two ways to launch CUDA kernels via the Driver API.
+-   // In this CUDA Sample, we illustrate both ways to pass parameters
+-@@ -191,15 +191,15 @@ void runTest(int argc, char **argv) {
+-     // Launching (simpler method)
+-     void *args[5] = {&d_data, &width, &height, &angle, &TexObject};
+- 
+--    checkCudaErrors(hipModuleLaunchKernel(transform, (width / block_size),
+-+    HIPCHECK(hipModuleLaunchKernel(transform, (width / block_size),
+-                                    (height / block_size), 1, block_size,
+-                                    block_size, 1, 0, NULL, args, NULL));
+--    checkCudaErrors(hipCtxSynchronize());
+-+    HIPCHECK(hipCtxSynchronize());
+-     sdkCreateTimer(&timer);
+-     sdkStartTimer(&timer);
+- 
+-     // launch kernel again for performance measurement
+--    checkCudaErrors(hipModuleLaunchKernel(transform, (width / block_size),
+-+    HIPCHECK(hipModuleLaunchKernel(transform, (width / block_size),
+-                                    (height / block_size), 1, block_size,
+-                                    block_size, 1, 0, NULL, args, NULL));
+-   } else {
+-@@ -227,20 +227,20 @@ void runTest(int argc, char **argv) {
+-                                      HIP_LAUNCH_PARAM_END};
+- 
+-     // new CUDA 4.0 Driver API Kernel launch call (warmup)
+--    checkCudaErrors(hipModuleLaunchKernel(
+-+    HIPCHECK(hipModuleLaunchKernel(
+-         transform, (width / block_size), (height / block_size), 1, block_size,
+-         block_size, 1, 0, NULL, NULL, (void **)&kernel_launch_config));
+--    checkCudaErrors(hipCtxSynchronize());
+-+    HIPCHECK(hipCtxSynchronize());
+-     sdkCreateTimer(&timer);
+-     sdkStartTimer(&timer);
+- 
+-     // launch kernel again for performance measurement
+--    checkCudaErrors(hipModuleLaunchKernel(
+-+    HIPCHECK(hipModuleLaunchKernel(
+-         transform, (width / block_size), (height / block_size), 1, block_size,
+-         block_size, 1, 0, 0, NULL, (void **)&kernel_launch_config));
+-   }
+- 
+--  checkCudaErrors(hipCtxSynchronize());
+-+  HIPCHECK(hipCtxSynchronize());
+-   sdkStopTimer(&timer);
+-   printf("Processing time: %f (ms)\n", sdkGetTimerValue(&timer));
+-   printf("%.2f Mpixels/sec\n",
+-@@ -250,7 +250,7 @@ void runTest(int argc, char **argv) {
+-   // allocate mem for the result on host side
+-   float *h_odata = (float *)malloc(size);
+-   // copy result from device to host
+--  checkCudaErrors(hipMemcpyDtoH(h_odata, d_data, size));
+-+  HIPCHECK(hipMemcpyDtoH(h_odata, d_data, size));
+- 
+-   // write result to file
+-   char output_filename[1024];
+-@@ -276,14 +276,14 @@ void runTest(int argc, char **argv) {
+-   }
+- 
+-   // cleanup memory
+--  checkCudaErrors(hipTexObjectDestroy(TexObject));
+--  checkCudaErrors(hipFree(d_data));
+--  checkCudaErrors(hipArrayDestroy(cu_array));
+-+  HIPCHECK(hipTexObjectDestroy(TexObject));
+-+  HIPCHECK(hipFree(d_data));
+-+  HIPCHECK(hipArrayDestroy(cu_array));
+- 
+-   free(image_path);
+-   free(ref_path);
+- 
+--  checkCudaErrors(hipCtxDestroy(cuContext));
+-+  HIPCHECK(hipCtxDestroy(cuContext));
+- 
+-   exit(bTestResults ? EXIT_SUCCESS : EXIT_FAILURE);
+- }
+-@@ -302,14 +302,14 @@ static hipError_t initCUDA(int argc, char **argv, hipFunction_t *transform) {
+-   cuDevice = findCudaDeviceDRV(argc, (const char **)argv);
+- 
+-   // get compute capabilities and the devicename
+--  checkCudaErrors(hipDeviceGetAttribute(
+-+  HIPCHECK(hipDeviceGetAttribute(
+-       &major, hipDeviceAttributeComputeCapabilityMajor, cuDevice));
+--  checkCudaErrors(hipDeviceGetAttribute(
+-+  HIPCHECK(hipDeviceGetAttribute(
+-       &minor, hipDeviceAttributeComputeCapabilityMinor, cuDevice));
+--  checkCudaErrors(hipDeviceGetName(deviceName, sizeof(deviceName), cuDevice));
+-+  HIPCHECK(hipDeviceGetName(deviceName, sizeof(deviceName), cuDevice));
+-   printf("> GPU Device has SM %d.%d compute capability\n", major, minor);
+- 
+--  checkCudaErrors(hipCtxCreate(&cuContext, 0, cuDevice));
+-+  HIPCHECK(hipCtxCreate(&cuContext, 0, cuDevice));
+- 
+-   // first search for the module_path before we try to load the results
+-   std::ostringstream fatbin;
+-@@ -326,9 +326,9 @@ static hipError_t initCUDA(int argc, char **argv, hipFunction_t *transform) {
+-   }
+- 
+-   // Create module from binary file (FATBIN)
+--  checkCudaErrors(hipModuleLoadData(&cuModule, fatbin.str().c_str()));
+-+  HIPCHECK(hipModuleLoadData(&cuModule, fatbin.str().c_str()));
+- 
+--  checkCudaErrors(
+-+  HIPCHECK(
+-       hipModuleGetFunction(&cuFunction, cuModule, "transformKernel"));
+- 
+-   *transform = cuFunction;
+-diff --git a/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out b/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out
+-index a9c9dee..4bcca25 100755
+-Binary files a/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out and b/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out differ
+-diff --git a/src/samples/Samples/0_Introduction/template/template.out b/src/samples/Samples/0_Introduction/template/template.out
+-deleted file mode 100755
+-index c1e28f5..0000000
+-Binary files a/src/samples/Samples/0_Introduction/template/template.out and /dev/null differ
+-diff --git a/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out b/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out
+-index 6383866..eadfdd3 100755
+-Binary files a/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out and b/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out differ
+-diff --git a/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out b/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out
+-index 7dbf025..754c93a 100755
+-Binary files a/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out and b/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out differ
+-diff --git a/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out b/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out
+-index 932ad31..09b4a53 100755
+-Binary files a/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out and b/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out differ
+-diff --git a/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip
+-index b39cf72..2daaaf6 100644
+---- a/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip
+-+++ b/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip
+-@@ -43,7 +43,8 @@
+- #include <stdlib.h>
+- #include <string.h>
+- #include "helper_cuda_hipified.h"
+--#include "imageDenoising.h"
+-+#include "imageDenoising_hipified.h"
+-+#include <hip/hip_cooperative_groups.h>
+- 
+- ////////////////////////////////////////////////////////////////////////////////
+- // Helper functions
+-@@ -79,10 +80,10 @@ hipArray *a_Src;
+- ////////////////////////////////////////////////////////////////////////////////
+- // Filtering kernels
+- ////////////////////////////////////////////////////////////////////////////////
+--#include "imageDenoising_copy_kernel.cuh"
+--#include "imageDenoising_knn_kernel.cuh"
+--#include "imageDenoising_nlm_kernel.cuh"
+--#include "imageDenoising_nlm2_kernel.cuh"
+-+#include "imageDenoising_copy_kernel_hipified.cuh"
+-+#include "imageDenoising_knn_kernel_hipified.cuh"
+-+#include "imageDenoising_nlm_kernel_hipified.cuh"
+-+#include "imageDenoising_nlm2_kernel_hipified.cuh"
+- 
+- extern "C" hipError_t CUDA_MallocArray(uchar4 **h_Src, int imageW,
+-                                         int imageH) {
+-diff --git a/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.out b/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.out
+-deleted file mode 100755
+-index a5b4ce2..0000000
+-Binary files a/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.out and /dev/null differ
+-diff --git a/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.out b/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.out
+-deleted file mode 100755
+-index 478586f..0000000
+-Binary files a/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.out and /dev/null differ
+-diff --git a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out
+-index fc94c13..f512270 100755
+-Binary files a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out and b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out differ
+-diff --git a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out
+-index 193cdf8..36cb448 100755
+-Binary files a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out and b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out differ
+-diff --git a/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out b/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out
+-index 74f52e9..1cb9588 100755
+-Binary files a/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out and b/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out differ
+-diff --git a/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip b/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
+-index f3b3399..ebb39fd 100644
+---- a/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
+-+++ b/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
+-@@ -36,8 +36,8 @@
+- #include "HIPCHECK.h"
+- #include <hip/hip_runtime.h>
+- #define CUDA_DRIVER_API
+--#include "helper_cuda.h"
+--#include "compMalloc.h"
+-+#include "helper_cuda_hipified.h"
+-+#include "compMalloc_hipified.h"
+- 
+- __global__ void saxpy(const float a, const float4 *x, const float4 *y, float4 *z, const size_t n)
+- {
+-@@ -171,3 +171,4 @@ int main(int argc, char **argv)
+-         HIPCHECK(allocateCompressible((void **)&z, size, true));
+-         compressibleZbuf = 1;
+-     }
+-+}
+-diff --git a/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out b/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out
+-index 24c5363..91aa3da 100755
+-Binary files a/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out and b/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out differ
+-diff --git a/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out b/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out
+-index e684685..e1e62e8 100755
+-Binary files a/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out and b/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out differ
+-diff --git a/src/samples/Samples/5_Domain_Specific/BlackScholes/BlackScholes.out b/src/samples/Samples/5_Domain_Specific/BlackScholes/BlackScholes.out
+-deleted file mode 100755
+-index c1d1104..0000000
+-Binary files a/src/samples/Samples/5_Domain_Specific/BlackScholes/BlackScholes.out and /dev/null differ
+-diff --git a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_kernel.out b/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_kernel.out
+-deleted file mode 100755
+-index a1d61dc..0000000
+-Binary files a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_kernel.out and /dev/null differ
+-diff --git a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out
+-index 6bf438e..2e8ebeb 100755
+-Binary files a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out and b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out differ
+-diff --git a/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.out b/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.out
+-deleted file mode 100755
+-index 6bf3700..0000000
+-Binary files a/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.out and /dev/null differ
+-diff --git a/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out b/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out
+-index 1f0ce89..4c68020 100755
+-Binary files a/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out and b/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out differ
+-diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+-index 14e7624..0a750f2 100644
+---- a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+-+++ b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+-@@ -27,13 +27,12 @@
+- 
+- 
+- #include <hip/hip_runtime.h>
+--#include <helper_cuda.h>
+-+#include "helper_cuda_hipified.h"
+- #include <helper_timer.h>
+- #include "commonDefs.hpp"
+- #include "commonKernels.hpp"
+- #include "HIPCHECK.h"
+- #define VERIFY_GPU_CORRECTNESS 0
+--
+- size_t maxSampleSizeInMb = 64;
+- int numKernelRuns = 20;
+- int verboseResults = 0;
+-@@ -697,11 +696,3 @@ int main(int argc, char **argv) {
+-       "Results may vary when GPU Boost is enabled.\n");
+-   exit(EXIT_SUCCESS);
+- }
+--{
+--    numKernelRuns =
+--        getCmdLineArgumentInt(argc, (const char **)argv, "kernel-iterations");
+--  }
+--
+--  if (checkCmdLineFlag(argc, (const char **)argv, "verbose")) {
+--    verboseResults = 1;
+--  }
 diff --git a/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip b/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip
-index 2232324..e48560b 100644
+index c00946a..d9f53b7 100755
 --- a/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip
 +++ b/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip
-@@ -1,9 +1,3 @@
--#include "rocprofiler.h"
--#include "HIPCHECK.h"
--#include "rocprofiler.h"
--#include "HIPCHECK.h"
--#include "rocprofiler.h"
--#include "HIPCHECK.h"
- #include "hip/hip_runtime.h"
- /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
-  *
-@@ -59,8 +53,8 @@
- #include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+@@ -50,10 +50,10 @@
+ #include <hip/hip_runtime.h>
  
+ // Utilities and timing functions
+-#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+-
++#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
++#include "HIPCHECK.h"
  // CUDA helper functions
 -#include <helper_cuda.h>  // helper functions for CUDA error check
--
 +#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
-+#include "HIPCHECK.h"
+ 
  #define MIN_EPSILON_ERROR 5e-3f
  
- ////////////////////////////////////////////////////////////////////////////////
-@@ -87,8 +81,9 @@ __global__ void surfaceWriteKernel(float *gIData, int width, int height,
+@@ -81,8 +81,8 @@ __global__ void surfaceWriteKernel(float *gIData, int width, int height,
    unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
  
    // read from global memory and write to cuarray (via surface reference)
 -  surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y,
 -              hipBoundaryModeTrap);
-+  //surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y,
-+             // hipBoundaryModeTrap);
 +  surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y);
++             // hipBoundaryModeTrap);
  }
  
  ////////////////////////////////////////////////////////////////////////////////
-diff --git a/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out b/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out
-index e3d4d1e..7ae54a5 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out and b/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out differ
-diff --git a/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.out b/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.out
-old mode 100644
-new mode 100755
-index ec3dc99..ef1daeb
-Binary files a/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.out and b/src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.out differ
-diff --git a/src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTextureDrv_hipified.cpp b/src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTextureDrv_hipified.cpp
-index 8c65114..10595ab 100644
---- a/src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTextureDrv_hipified.cpp
-+++ b/src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTextureDrv_hipified.cpp
-@@ -45,7 +45,7 @@
- #include <math.h>
- #include <iostream>
- #include <cstring>
--
-+#include "HIPCHECK.h"
- // includes, CUDA
- #include <hip/hip_runtime.h>
- #include <builtin_types.h>
-@@ -142,7 +142,7 @@ void runTest(int argc, char **argv) {
- 
-   // allocate device memory for result
-   hipDeviceptr_t d_data = (hipDeviceptr_t)NULL;
--  checkCudaErrors(hipMalloc(&d_data, size));
-+  HIPCHECK(hipMalloc(&d_data, size));
- 
-   // allocate array and copy image data
-   hipArray_t cu_array;
-@@ -151,7 +151,7 @@ void runTest(int argc, char **argv) {
-   desc.NumChannels = 1;
-   desc.Width = width;
-   desc.Height = height;
--  checkCudaErrors(hipArrayCreate(&cu_array, &desc));
-+  HIPCHECK(hipArrayCreate(&cu_array, &desc));
-   hip_Memcpy2D copyParam;
-   memset(&copyParam, 0, sizeof(copyParam));
-   copyParam.dstMemoryType = hipMemoryTypeArray;
-@@ -161,7 +161,7 @@ void runTest(int argc, char **argv) {
-   copyParam.srcPitch = width * sizeof(float);
-   copyParam.WidthInBytes = copyParam.srcPitch;
-   copyParam.Height = height;
--  checkCudaErrors(hipMemcpyParam2D(&copyParam));
-+  HIPCHECK(hipMemcpyParam2D(&copyParam));
- 
-   // set texture parameters
-   hipTextureObject_t TexObject;
-@@ -178,7 +178,7 @@ void runTest(int argc, char **argv) {
-   TexDesc.filterMode = HIP_TR_FILTER_MODE_LINEAR;
-   TexDesc.flags = HIP_TRSF_NORMALIZED_COORDINATES;
- 
--  checkCudaErrors(hipTexObjectCreate(&TexObject, &ResDesc, &TexDesc, NULL));
-+  HIPCHECK(hipTexObjectCreate(&TexObject, &ResDesc, &TexDesc, NULL));
- 
-   // There are two ways to launch CUDA kernels via the Driver API.
-   // In this CUDA Sample, we illustrate both ways to pass parameters
-@@ -191,15 +191,15 @@ void runTest(int argc, char **argv) {
-     // Launching (simpler method)
-     void *args[5] = {&d_data, &width, &height, &angle, &TexObject};
- 
--    checkCudaErrors(hipModuleLaunchKernel(transform, (width / block_size),
-+    HIPCHECK(hipModuleLaunchKernel(transform, (width / block_size),
-                                    (height / block_size), 1, block_size,
-                                    block_size, 1, 0, NULL, args, NULL));
--    checkCudaErrors(hipCtxSynchronize());
-+    HIPCHECK(hipCtxSynchronize());
-     sdkCreateTimer(&timer);
-     sdkStartTimer(&timer);
- 
-     // launch kernel again for performance measurement
--    checkCudaErrors(hipModuleLaunchKernel(transform, (width / block_size),
-+    HIPCHECK(hipModuleLaunchKernel(transform, (width / block_size),
-                                    (height / block_size), 1, block_size,
-                                    block_size, 1, 0, NULL, args, NULL));
-   } else {
-@@ -227,20 +227,20 @@ void runTest(int argc, char **argv) {
-                                      HIP_LAUNCH_PARAM_END};
- 
-     // new CUDA 4.0 Driver API Kernel launch call (warmup)
--    checkCudaErrors(hipModuleLaunchKernel(
-+    HIPCHECK(hipModuleLaunchKernel(
-         transform, (width / block_size), (height / block_size), 1, block_size,
-         block_size, 1, 0, NULL, NULL, (void **)&kernel_launch_config));
--    checkCudaErrors(hipCtxSynchronize());
-+    HIPCHECK(hipCtxSynchronize());
-     sdkCreateTimer(&timer);
-     sdkStartTimer(&timer);
- 
-     // launch kernel again for performance measurement
--    checkCudaErrors(hipModuleLaunchKernel(
-+    HIPCHECK(hipModuleLaunchKernel(
-         transform, (width / block_size), (height / block_size), 1, block_size,
-         block_size, 1, 0, 0, NULL, (void **)&kernel_launch_config));
-   }
- 
--  checkCudaErrors(hipCtxSynchronize());
-+  HIPCHECK(hipCtxSynchronize());
-   sdkStopTimer(&timer);
-   printf("Processing time: %f (ms)\n", sdkGetTimerValue(&timer));
-   printf("%.2f Mpixels/sec\n",
-@@ -250,7 +250,7 @@ void runTest(int argc, char **argv) {
-   // allocate mem for the result on host side
-   float *h_odata = (float *)malloc(size);
-   // copy result from device to host
--  checkCudaErrors(hipMemcpyDtoH(h_odata, d_data, size));
-+  HIPCHECK(hipMemcpyDtoH(h_odata, d_data, size));
- 
-   // write result to file
-   char output_filename[1024];
-@@ -276,14 +276,14 @@ void runTest(int argc, char **argv) {
-   }
- 
-   // cleanup memory
--  checkCudaErrors(hipTexObjectDestroy(TexObject));
--  checkCudaErrors(hipFree(d_data));
--  checkCudaErrors(hipArrayDestroy(cu_array));
-+  HIPCHECK(hipTexObjectDestroy(TexObject));
-+  HIPCHECK(hipFree(d_data));
-+  HIPCHECK(hipArrayDestroy(cu_array));
- 
-   free(image_path);
-   free(ref_path);
- 
--  checkCudaErrors(hipCtxDestroy(cuContext));
-+  HIPCHECK(hipCtxDestroy(cuContext));
- 
-   exit(bTestResults ? EXIT_SUCCESS : EXIT_FAILURE);
+@@ -294,8 +294,3 @@ void runTest(int argc, char **argv) {
+   free(imagePath);
+   free(refPath);
  }
-@@ -302,14 +302,14 @@ static hipError_t initCUDA(int argc, char **argv, hipFunction_t *transform) {
-   cuDevice = findCudaDeviceDRV(argc, (const char **)argv);
- 
-   // get compute capabilities and the devicename
--  checkCudaErrors(hipDeviceGetAttribute(
-+  HIPCHECK(hipDeviceGetAttribute(
-       &major, hipDeviceAttributeComputeCapabilityMajor, cuDevice));
--  checkCudaErrors(hipDeviceGetAttribute(
-+  HIPCHECK(hipDeviceGetAttribute(
-       &minor, hipDeviceAttributeComputeCapabilityMinor, cuDevice));
--  checkCudaErrors(hipDeviceGetName(deviceName, sizeof(deviceName), cuDevice));
-+  HIPCHECK(hipDeviceGetName(deviceName, sizeof(deviceName), cuDevice));
-   printf("> GPU Device has SM %d.%d compute capability\n", major, minor);
- 
--  checkCudaErrors(hipCtxCreate(&cuContext, 0, cuDevice));
-+  HIPCHECK(hipCtxCreate(&cuContext, 0, cuDevice));
- 
-   // first search for the module_path before we try to load the results
-   std::ostringstream fatbin;
-@@ -326,9 +326,9 @@ static hipError_t initCUDA(int argc, char **argv, hipFunction_t *transform) {
-   }
- 
-   // Create module from binary file (FATBIN)
--  checkCudaErrors(hipModuleLoadData(&cuModule, fatbin.str().c_str()));
-+  HIPCHECK(hipModuleLoadData(&cuModule, fatbin.str().c_str()));
- 
--  checkCudaErrors(
-+  HIPCHECK(
-       hipModuleGetFunction(&cuFunction, cuModule, "transformKernel"));
- 
-   *transform = cuFunction;
-diff --git a/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out b/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out
-index a9c9dee..4bcca25 100755
-Binary files a/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out and b/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out differ
-diff --git a/src/samples/Samples/0_Introduction/template/template.out b/src/samples/Samples/0_Introduction/template/template.out
-deleted file mode 100755
-index c1e28f5..0000000
-Binary files a/src/samples/Samples/0_Introduction/template/template.out and /dev/null differ
-diff --git a/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out b/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out
-index 6383866..eadfdd3 100755
-Binary files a/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out and b/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out differ
-diff --git a/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out b/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out
-index 7dbf025..754c93a 100755
-Binary files a/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out and b/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out differ
-diff --git a/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out b/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out
-index 932ad31..09b4a53 100755
-Binary files a/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out and b/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out differ
-diff --git a/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip
-index b39cf72..2daaaf6 100644
---- a/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip
-+++ b/src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu.hip
-@@ -43,7 +43,8 @@
- #include <stdlib.h>
- #include <string.h>
- #include "helper_cuda_hipified.h"
--#include "imageDenoising.h"
-+#include "imageDenoising_hipified.h"
-+#include <hip/hip_cooperative_groups.h>
- 
- ////////////////////////////////////////////////////////////////////////////////
- // Helper functions
-@@ -79,10 +80,10 @@ hipArray *a_Src;
- ////////////////////////////////////////////////////////////////////////////////
- // Filtering kernels
- ////////////////////////////////////////////////////////////////////////////////
--#include "imageDenoising_copy_kernel.cuh"
--#include "imageDenoising_knn_kernel.cuh"
--#include "imageDenoising_nlm_kernel.cuh"
--#include "imageDenoising_nlm2_kernel.cuh"
-+#include "imageDenoising_copy_kernel_hipified.cuh"
-+#include "imageDenoising_knn_kernel_hipified.cuh"
-+#include "imageDenoising_nlm_kernel_hipified.cuh"
-+#include "imageDenoising_nlm2_kernel_hipified.cuh"
- 
- extern "C" hipError_t CUDA_MallocArray(uchar4 **h_Src, int imageW,
-                                         int imageH) {
-diff --git a/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.out b/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.out
-deleted file mode 100755
-index a5b4ce2..0000000
-Binary files a/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.out and /dev/null differ
-diff --git a/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.out b/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.out
-deleted file mode 100755
-index 478586f..0000000
-Binary files a/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.out and /dev/null differ
-diff --git a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out
-index fc94c13..f512270 100755
-Binary files a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out and b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out differ
-diff --git a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out
-index 193cdf8..36cb448 100755
-Binary files a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out and b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out differ
-diff --git a/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out b/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out
-index 74f52e9..1cb9588 100755
-Binary files a/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out and b/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out differ
-diff --git a/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip b/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
-index f3b3399..ebb39fd 100644
---- a/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
-+++ b/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
-@@ -36,8 +36,8 @@
- #include "HIPCHECK.h"
- #include <hip/hip_runtime.h>
- #define CUDA_DRIVER_API
--#include "helper_cuda.h"
--#include "compMalloc.h"
-+#include "helper_cuda_hipified.h"
-+#include "compMalloc_hipified.h"
- 
- __global__ void saxpy(const float a, const float4 *x, const float4 *y, float4 *z, const size_t n)
- {
-@@ -171,3 +171,4 @@ int main(int argc, char **argv)
-         HIPCHECK(allocateCompressible((void **)&z, size, true));
-         compressibleZbuf = 1;
-     }
-+}
-diff --git a/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out b/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out
-index 24c5363..91aa3da 100755
-Binary files a/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out and b/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out differ
-diff --git a/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out b/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out
-index e684685..e1e62e8 100755
-Binary files a/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out and b/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out differ
-diff --git a/src/samples/Samples/5_Domain_Specific/BlackScholes/BlackScholes.out b/src/samples/Samples/5_Domain_Specific/BlackScholes/BlackScholes.out
-deleted file mode 100755
-index c1d1104..0000000
-Binary files a/src/samples/Samples/5_Domain_Specific/BlackScholes/BlackScholes.out and /dev/null differ
-diff --git a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_kernel.out b/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_kernel.out
-deleted file mode 100755
-index a1d61dc..0000000
-Binary files a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions_kernel.out and /dev/null differ
-diff --git a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out
-index 6bf438e..2e8ebeb 100755
-Binary files a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out and b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out differ
-diff --git a/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.out b/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.out
-deleted file mode 100755
-index 6bf3700..0000000
-Binary files a/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.out and /dev/null differ
-diff --git a/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out b/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out
-index 1f0ce89..4c68020 100755
-Binary files a/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out and b/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out differ
-diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
-index 14e7624..0a750f2 100644
---- a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
-+++ b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
-@@ -27,13 +27,12 @@
- 
- 
- #include <hip/hip_runtime.h>
--#include <helper_cuda.h>
-+#include "helper_cuda_hipified.h"
- #include <helper_timer.h>
- #include "commonDefs.hpp"
- #include "commonKernels.hpp"
- #include "HIPCHECK.h"
- #define VERIFY_GPU_CORRECTNESS 0
--
- size_t maxSampleSizeInMb = 64;
- int numKernelRuns = 20;
- int verboseResults = 0;
-@@ -697,11 +696,3 @@ int main(int argc, char **argv) {
-       "Results may vary when GPU Boost is enabled.\n");
-   exit(EXIT_SUCCESS);
- }
--{
--    numKernelRuns =
--        getCmdLineArgumentInt(argc, (const char **)argv, "kernel-iterations");
--  }
--
--  if (checkCmdLineFlag(argc, (const char **)argv, "verbose")) {
--    verboseResults = 1;
--  }
+-e(dData));
+-  checkCudaErrors(hipFreeArray(cuArray));
+-  free(imagePath);
+-  free(refPath);
+-}
