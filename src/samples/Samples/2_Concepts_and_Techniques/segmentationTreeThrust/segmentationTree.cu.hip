@@ -71,9 +71,9 @@
 #include <thrust/device_free.h>
 
 // Sample framework includes.
-#include <helper_functions.h>
-#include <helper_cuda.h>
-
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
+#include "HIPCHECK.h"
 // Project includes.
 #include "common.cuh"
 
@@ -265,13 +265,13 @@ class Pyramid
                     thrust::device_ptr<uint> superVerticesOffsets,
                     thrust::device_ptr<uint> verticesIDs)
                 {
-                    checkCudaErrors(
+                    HIPCHECK(
                         hipMemcpy(&(superNodesOffsets_[0]),
                                    superVerticesOffsets.get(),
                                    sizeof(uint) * superNodesOffsets_.size(),
                                    hipMemcpyDeviceToHost));
 
-                    checkCudaErrors(
+                    HIPCHECK(
                         hipMemcpy(&(nodes_[0]),
                                    verticesIDs.get(),
                                    sizeof(uint) * nodes_.size(),
@@ -515,15 +515,15 @@ class SegmentationTreeBuilder
             dOutputEdgesFlags_ = pools.uintEdges.get();
 
             // Copy graph to the device memory
-            checkCudaErrors(hipMemcpy(dVertices_.get(),
+            HIPCHECK(hipMemcpy(dVertices_.get(),
                                        &(graph.vertices[0]),
                                        sizeof(uint) * verticesCount_,
                                        hipMemcpyHostToDevice));
-            checkCudaErrors(hipMemcpy(dEdges_.get(),
+            HIPCHECK(hipMemcpy(dEdges_.get(),
                                        &(graph.edges[0]),
                                        sizeof(uint) * edgesCount_,
                                        hipMemcpyHostToDevice));
-            checkCudaErrors(hipMemcpy(dWeights_.get(),
+            HIPCHECK(hipMemcpy(dWeights_.get(),
                                        &(graph.weights[0]),
                                        sizeof(float) * edgesCount_,
                                        hipMemcpyHostToDevice));
