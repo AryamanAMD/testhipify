@@ -66,8 +66,8 @@
 #include <cuda/pipeline>
 
 // helper functions and utilities to work with CUDA
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
 
 // Externally configurable parameters.
 
@@ -171,12 +171,12 @@
 
 enum kernels
 {
-    bf16mma_shmem_gemm_async_copy  = 0, // __nv_bfloat16 MMA shmem using kernel with async_copy
+    bf16mma_shmem_gemm_async_copy  = 0, // __nv_bfloat16 MMA shmem using kernel with async_copy 
     bf16mma_shmem_gemm             = 1, // __nv_bfloat16 MMA shmem using kernel normal copy (without async_copy).
     simple_bf16mma_gemm            = 2  // __nv_bfloat16 MMA non-shmem using simple kernel.
 };
 
-const char* kernelNames[] = {"compute_bf16gemm_async_copy", "compute_bf16gemm",
+const char* kernelNames[] = {"compute_bf16gemm_async_copy", "compute_bf16gemm", 
                             "simple_wmma_bf16gemm"};
 
 using namespace nvcuda;
@@ -242,7 +242,7 @@ __global__ void compute_bf16gemm(const __nv_bfloat16 *A, const __nv_bfloat16 *B,
         // Stream multiple C tiles to shared memory.
 #pragma unroll
         for (int i = 0; i < N; i++) {
-            *((int4*)(shmem_warp_stream_ptr + SHMEM_STRIDE * i) + laneId) =
+            *((int4*)(shmem_warp_stream_ptr + SHMEM_STRIDE * i) + laneId) = 
                 *((int4*)(src_gmem_warp_stream_ptr + GLOBAL_MEM_STRIDE * i) + laneId);
         }
 
@@ -287,7 +287,7 @@ __global__ void compute_bf16gemm(const __nv_bfloat16 *A, const __nv_bfloat16 *B,
         for (int tile_k = 0; tile_k < K_TILES; tile_k += CHUNK_K) {
             // Copy slices of the A and B matrices to shared memory.
             // The first half of the warps in the CTA copy the A matrix, the rest copy the B matrix.
-            size_t shmem_idx = warpId < (WARPS_PER_BLOCK/2) ? (M * (warpId % (WARPS_PER_BLOCK/2)) * 2) :
+            size_t shmem_idx = warpId < (WARPS_PER_BLOCK/2) ? (M * (warpId % (WARPS_PER_BLOCK/2)) * 2) : 
                                                               (N * (warpId % (WARPS_PER_BLOCK/2)) * 2 + shmem_idx_b_off);
 
             // First half of the warp copies the first row / column of the matrix,
@@ -563,7 +563,7 @@ __global__ void compute_bf16gemm_async_copy(const __nv_bfloat16 *A, const __nv_b
 
 // Performs an MxNxK bf16 GEMM (C=alpha*A*B + beta*C) assuming:
 //  1) Matrices are packed in memory.
-//  2) M, N and K are multiples of 16, 16 and 16 respectively.
+//  2) M, N and K are multiples of 16, 16 and 16 respectively. 
 //  3) A is row major, B is column major matrix.
 // Note: This is a less performant version of the compute_bf16gemm kernel. It is designed for
 //       demonstration purposes only to show the CUDA WMMA API use without relying on
@@ -579,7 +579,7 @@ __global__ void simple_wmma_bf16gemm(__nv_bfloat16 *a, __nv_bfloat16 *b, float *
    // Tile using a 2D grid
    int warpM = (blockIdx.x * blockDim.x + threadIdx.x) / warpSize;
    int warpN = (blockIdx.y * blockDim.y + threadIdx.y);
-
+ 
    // Declare the fragments
    wmma::fragment<wmma::matrix_a, M, N, K, __nv_bfloat16, wmma::row_major> a_frag;
    wmma::fragment<wmma::matrix_b, M, N, K, __nv_bfloat16, wmma::col_major> b_frag;
@@ -590,7 +590,7 @@ __global__ void simple_wmma_bf16gemm(__nv_bfloat16 *a, __nv_bfloat16 *b, float *
 
    // Loop over k
    for (int i = 0; i < k_ld; i += K) {
-      int aCol = i;
+      int aCol = i; 
       int aRow = warpM * M;
 
       int bCol = i;
@@ -601,7 +601,7 @@ __global__ void simple_wmma_bf16gemm(__nv_bfloat16 *a, __nv_bfloat16 *b, float *
          // Load the inputs
          wmma::load_matrix_sync(a_frag, a + aCol + aRow * lda, lda);
          wmma::load_matrix_sync(b_frag, b + bRow + bCol * ldb, ldb);
-
+ 
          // Perform the matrix multiplication
          wmma::mma_sync(acc_frag, a_frag, b_frag, acc_frag);
 
@@ -651,7 +651,7 @@ int main(int argc, char **argv)
     int dev = findCudaDevice(argc, (const char **)argv);
 
     hipDeviceProp_t deviceProp;
-    checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
+    HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
 
     // Tensor cores require a GPU of Volta (SM8X) architecture or higher.
     if (deviceProp.major < 8) {
@@ -684,10 +684,10 @@ int main(int argc, char **argv)
     float *C = NULL;
     float *D = NULL;
 
-    checkCudaErrors(hipMalloc((void**)&A, sizeof(__nv_bfloat16) * M_GLOBAL * K_GLOBAL));
-    checkCudaErrors(hipMalloc((void**)&B, sizeof(__nv_bfloat16) * N_GLOBAL * K_GLOBAL));
-    checkCudaErrors(hipMalloc((void**)&C, sizeof(float) * M_GLOBAL * N_GLOBAL));
-    checkCudaErrors(hipMalloc((void**)&D, sizeof(float) * M_GLOBAL * N_GLOBAL));
+    HIPCHECK(hipMalloc((void**)&A, sizeof(__nv_bfloat16) * M_GLOBAL * K_GLOBAL));
+    HIPCHECK(hipMalloc((void**)&B, sizeof(__nv_bfloat16) * N_GLOBAL * K_GLOBAL));
+    HIPCHECK(hipMalloc((void**)&C, sizeof(float) * M_GLOBAL * N_GLOBAL));
+    HIPCHECK(hipMalloc((void**)&D, sizeof(float) * M_GLOBAL * N_GLOBAL));
 
     assert(((unsigned long long)A) % 128 == 0);
     assert(((unsigned long long)B) % 128 == 0);
@@ -698,10 +698,10 @@ int main(int argc, char **argv)
 
     printf("Preparing data for GPU...\n");
 
-    checkCudaErrors(hipMemcpy(A, A_h, sizeof(__nv_bfloat16) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
-    checkCudaErrors(hipMemcpy(B, B_h, sizeof(__nv_bfloat16) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
-    checkCudaErrors(hipMemcpy(C, C_h, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
-    checkCudaErrors(hipMemset(D, 0, sizeof(float) * M_GLOBAL * N_GLOBAL));
+    HIPCHECK(hipMemcpy(A, A_h, sizeof(__nv_bfloat16) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+    HIPCHECK(hipMemcpy(B, B_h, sizeof(__nv_bfloat16) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+    HIPCHECK(hipMemcpy(C, C_h, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
+    HIPCHECK(hipMemset(D, 0, sizeof(float) * M_GLOBAL * N_GLOBAL));
 
     enum {
         // Compute the right amount of shared memory to request.
@@ -719,9 +719,9 @@ int main(int argc, char **argv)
 
     hipEvent_t start, stop;
 
-    checkCudaErrors(hipEventCreate(&start));
-    checkCudaErrors(hipEventCreate(&stop));
-    checkCudaErrors(hipEventRecord(start));
+    HIPCHECK(hipEventCreate(&start));    
+    HIPCHECK(hipEventCreate(&stop));
+    HIPCHECK(hipEventRecord(start));
 
     // kernel to run - default (b16mma_shmem_gemm_async_copy == 0)
     kernels selected_kernel = bf16mma_shmem_gemm_async_copy;
@@ -745,22 +745,22 @@ int main(int argc, char **argv)
         {
             case bf16mma_shmem_gemm_async_copy :
             default:
-                checkCudaErrors(hipFuncSetAttribute(compute_bf16gemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                HIPCHECK(hipFuncSetAttribute(compute_bf16gemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
                 checkKernelErrors((compute_bf16gemm_async_copy<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
                 break;
             case bf16mma_shmem_gemm :
-                checkCudaErrors(hipFuncSetAttribute(compute_bf16gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                HIPCHECK(hipFuncSetAttribute(compute_bf16gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
                 checkKernelErrors((compute_bf16gemm<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
                 break;
         }
 #if CPU_DEBUG
-        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(float)*M_GLOBAL*N_GLOBAL, hipMemcpyDeviceToHost));
+        HIPCHECK(hipMemcpy(result_hD, D, sizeof(float)*M_GLOBAL*N_GLOBAL, hipMemcpyDeviceToHost));
 #endif
     }
     else {
         dim3 gridDim;
         dim3 blockDim;
-
+     
         // blockDim.x must be a multple of warpSize
         // 128x4 means we have 16 warps and a block computes a 64x64 output tile
         blockDim.x = 128;
@@ -772,12 +772,12 @@ int main(int argc, char **argv)
         printf("Computing... using simple_wmma_gemm kernel\n");
         simple_wmma_bf16gemm<<<gridDim, blockDim>>>(A, B, C, D, M_GLOBAL, N_GLOBAL, K_GLOBAL, alpha, beta);
 #if CPU_DEBUG
-        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
+        HIPCHECK(hipMemcpy(result_hD, D, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
 #endif
     }
 
-    checkCudaErrors(hipEventRecord(stop));
-    checkCudaErrors(hipEventSynchronize(stop));
+    HIPCHECK(hipEventRecord(stop));
+    HIPCHECK(hipEventSynchronize(stop));
 
 #if CPU_DEBUG
     printf("Verifying correctness of the computations...\n");
@@ -801,7 +801,7 @@ int main(int argc, char **argv)
 
     float milliseconds = 0;
 
-    checkCudaErrors(hipEventElapsedTime(&milliseconds, start, stop));
+    HIPCHECK(hipEventElapsedTime(&milliseconds, start, stop));
 
     printf("Time: %f ms\n", milliseconds);
     printf("TFLOPS: %.2f\n", (((double)M_GLOBAL * N_GLOBAL * K_GLOBAL * 2)/(milliseconds/1000.)) / 1e12);
@@ -809,7 +809,14 @@ int main(int argc, char **argv)
     free(A_h);
     free(B_h);
     free(C_h);
-    checkCudaErrors(hipFree((void*)A));
+    HIPCHECK(hipFree((void*)A));
+    HIPCHECK(hipFree((void*)B));
+    HIPCHECK(hipFree((void*)C));
+    HIPCHECK(hipFree((void*)D));
+
+    return 0;
+}
+ors(hipFree((void*)A));
     checkCudaErrors(hipFree((void*)B));
     checkCudaErrors(hipFree((void*)C));
     checkCudaErrors(hipFree((void*)D));

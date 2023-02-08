@@ -36,10 +36,10 @@
 #include <vector>
 #include <hip/hip_runtime.h>
 #define CUDA_DRIVER_API 1
-#include "helper_cuda_hipified.h"
+#include "helper_cuda.h"
 #include "helper_cuda_drvapi.h"
 #include "helper_multiprocess.h"
-#include "HIPCHECK.h"
+
 static const char shmName[] = "streamOrderedAllocationIPCshm";
 static const char ipcName[] = "streamOrderedAllocationIPC_pipe";
 // For direct NVLINK and PCI-E peers, at max 8 simultaneous peers are allowed
@@ -428,6 +428,18 @@ static void parentProcess(char *app) {
 int main(int argc, char **argv) {
 #if defined(__arm__) || defined(__aarch64__) || defined(WIN32) || \
     defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+  printf("Not supported on ARM\n");
+  return EXIT_WAIVED;
+#else
+  if (argc == 1) {
+    parentProcess(argv[0]);
+  } else {
+    childProcess(atoi(argv[1]));
+  }
+  return EXIT_SUCCESS;
+#endif
+}
+d(_WIN32) || defined(WIN64) || defined(_WIN64)
   printf("Not supported on ARM\n");
   return EXIT_WAIVED;
 #else

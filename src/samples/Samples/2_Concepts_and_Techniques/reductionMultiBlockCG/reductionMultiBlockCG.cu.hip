@@ -63,7 +63,7 @@
 // includes, project
 #include "helper_functions.h"
 #include "helper_cuda_hipified.h"
-//#include <hipify/__clang_cuda_intrinsics.h>
+
 #include <hip/hip_runtime.h>
 
 const char *sSDKsample = "reductionMultiBlockCG";
@@ -177,7 +177,7 @@ int main(int argc, char **argv) {
   printf("%s Starting...\n\n", sSDKsample);
 
   dev = findCudaDevice(argc, (const char **)argv);
-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
+  HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
   if (!deviceProp.cooperativeLaunch) {
     printf(
         "\nSelected GPU (%d) does not support Cooperative Kernel Launch, "
@@ -235,7 +235,7 @@ void getNumBlocksAndThreads(int n, int maxBlocks, int maxThreads, int &blocks,
     threads = 1;
     blocks = 1;
   } else {
-    checkCudaErrors(hipOccupancyMaxPotentialBlockSize(
+    HIPCHECK(hipOccupancyMaxPotentialBlockSize(
         &blocks, &threads, reduceSinglePassMultiBlockCG));
   }
 
@@ -267,7 +267,7 @@ float benchmarkReduce(int n, int numThreads, int numBlocks, int maxThreads,
   // copy final sum from device to host
   error =
       hipMemcpy(&gpu_result, d_odata, sizeof(float), hipMemcpyDeviceToHost);
-  checkCudaErrors(error);
+  HIPCHECK(error);
 
   return gpu_result;
 }
@@ -287,8 +287,8 @@ bool runTest(int argc, char **argv, int device) {
 
   // Set the device to be used
   hipDeviceProp_t prop = {0};
-  checkCudaErrors(hipSetDevice(device));
-  checkCudaErrors(hipGetDeviceProperties(&prop, device));
+  HIPCHECK(hipSetDevice(device));
+  HIPCHECK(hipGetDeviceProperties(&prop, device));
 
   // create random input data on CPU
   unsigned int bytes = size * sizeof(float);
@@ -324,7 +324,7 @@ bool runTest(int argc, char **argv, int device) {
   // We calculate the occupancy to know how many block can actually fit on the
   // GPU
   int numBlocksPerSm = 0;
-  checkCudaErrors(hipOccupancyMaxActiveBlocksPerMultiprocessor(
+  HIPCHECK(hipOccupancyMaxActiveBlocksPerMultiprocessor(
       &numBlocksPerSm, reduceSinglePassMultiBlockCG, numThreads,
       numThreads * sizeof(double)));
 
@@ -342,12 +342,12 @@ bool runTest(int argc, char **argv, int device) {
   float *d_idata = NULL;
   float *d_odata = NULL;
 
-  checkCudaErrors(hipMalloc((void **)&d_idata, bytes));
-  checkCudaErrors(hipMalloc((void **)&d_odata, numBlocks * sizeof(float)));
+  HIPCHECK(hipMalloc((void **)&d_idata, bytes));
+  HIPCHECK(hipMalloc((void **)&d_odata, numBlocks * sizeof(float)));
 
   // copy data directly to device memory
-  checkCudaErrors(hipMemcpy(d_idata, h_idata, bytes, hipMemcpyHostToDevice));
-  checkCudaErrors(hipMemcpy(d_odata, h_idata, numBlocks * sizeof(float),
+  HIPCHECK(hipMemcpy(d_idata, h_idata, bytes, hipMemcpyHostToDevice));
+  HIPCHECK(hipMemcpy(d_odata, h_idata, numBlocks * sizeof(float),
                              hipMemcpyHostToDevice));
 
   int testIterations = 100;
@@ -380,6 +380,12 @@ bool runTest(int argc, char **argv, int device) {
 
   free(h_idata);
   free(h_odata);
+  hipFree(d_idata);
+  hipFree(d_odata);
+
+  return bTestPassed;
+}
+ta);
   hipFree(d_idata);
   hipFree(d_odata);
 
