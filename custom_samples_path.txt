@@ -47,7 +47,6 @@ src/samples/Samples/4_CUDA_Libraries/conjugateGradientCudaGraphs/conjugateGradie
 src/samples/Samples/4_CUDA_Libraries/simpleCUFFT/simpleCUFFT.cu
 src/samples/Samples/2_Concepts_and_Techniques/segmentationTreeThrust/segmentationTreeThrust.cu
 src/samples/Samples/0_Introduction/simpleDrvRuntime/vectorAdd_kernel.cu
-src/samples/Samples/2_Concepts_and_Techniques/radixSortThrust/radixSortThrust.cu
 src/samples/Samples/3_CUDA_Features/graphMemoryFootprint/graphMemoryFootprint.cu
 src/samples/Samples/0_Introduction/vectorAdd_nvrtc/vectorAdd_nvrtc.cu
 src/samples/Samples/0_Introduction/simpleTemplates_nvrtc/simpleTemplates_kernel.cu
