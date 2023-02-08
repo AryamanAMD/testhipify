@@ -300,3 +300,9 @@ void MonteCarloPiSimulation::cleanupSimulationAllocations() {
     m_pointsInsideCircle = nullptr;
   }
 }
+   checkCudaErrors(
+        hipMemAddressFree((hipDeviceptr_t)m_xyVector, m_totalAllocationSize));
+
+    m_xyVector = nullptr;
+    m_pointsInsideCircle = nullptr;
+  }

@@ -1,4 +1,4 @@
-#include "hip/hip_runtime.h"
+
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -59,8 +59,6 @@ const char *sDeviceSyncMethod[] = {
 
 // System includes
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <assert.h>
 
 // CUDA runtime
@@ -126,7 +124,7 @@ inline void AllocateHostMemory(bool bPinGenericMemory, int **pp_a,
         "system memory\n",
         (float)nbytes / 1048576.0f);
     // pin allocate memory
-    HIPCHECK(
+    checkCudaErrors(
         hipHostRegister(*ppAligned_a, nbytes, hipHostRegisterMapped));
   } else
 #endif
@@ -135,7 +133,7 @@ inline void AllocateHostMemory(bool bPinGenericMemory, int **pp_a,
     printf("> hipHostMalloc() allocating %4.2f Mbytes of system memory\n",
            (float)nbytes / 1048576.0f);
     // allocate host memory (pinned is required for achieve asynchronicity)
-    HIPCHECK(hipHostMalloc((void **)pp_a, nbytes));
+    checkCudaErrors(hipHostMalloc((void **)pp_a, nbytes));
     *ppAligned_a = *pp_a;
   }
 }
@@ -147,7 +145,7 @@ inline void FreeHostMemory(bool bPinGenericMemory, int **pp_a,
   // CUDA 4.0 support pinning of generic host memory
   if (bPinGenericMemory) {
     // unpin and delete host memory
-    HIPCHECK(hipHostUnregister(*ppAligned_a));
+    checkCudaErrors(hipHostUnregister(*ppAligned_a));
 #ifdef WIN32
     VirtualFree(*pp_a, 0, MEM_RELEASE);
 #else
@@ -252,7 +250,7 @@ int main(int argc, char **argv) {
 
   // check the compute capability of the device
   int num_devices = 0;
-  HIPCHECK(hipGetDeviceCount(&num_devices));
+  checkCudaErrors(hipGetDeviceCount(&num_devices));
 
   if (0 == num_devices) {
     printf(
@@ -268,11 +266,11 @@ int main(int argc, char **argv) {
     return EXIT_FAILURE;
   }
 
-  HIPCHECK(hipSetDevice(cuda_device));
+  checkCudaErrors(hipSetDevice(cuda_device));
 
   // Checking for compute capabilities
   hipDeviceProp_t deviceProp;
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, cuda_device));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, cuda_device));
 
   niterations = 5;
 
@@ -311,7 +309,7 @@ int main(int argc, char **argv) {
   // enable use of blocking sync, to reduce CPU usage
   printf("> Using CPU/GPU Device Synchronization method (%s)\n",
          sDeviceSyncMethod[device_sync_method]);
-  HIPCHECK(hipSetDeviceFlags(
+  checkCudaErrors(hipSetDeviceFlags(
       device_sync_method | (bPinGenericMemory ? hipDeviceMapHost : 0)));
 
   // allocate host memory
@@ -327,10 +325,10 @@ int main(int argc, char **argv) {
   // allocate device memory
   int *d_a = 0,
       *d_c = 0;  // pointers to data and init value in the device memory
-  HIPCHECK(hipMalloc((void **)&d_a, nbytes));
-  HIPCHECK(hipMemset(d_a, 0x0, nbytes));
-  HIPCHECK(hipMalloc((void **)&d_c, sizeof(int)));
-  HIPCHECK(hipMemcpy(d_c, &c, sizeof(int), hipMemcpyHostToDevice));
+  checkCudaErrors(hipMalloc((void **)&d_a, nbytes));
+  checkCudaErrors(hipMemset(d_a, 0x0, nbytes));
+  checkCudaErrors(hipMalloc((void **)&d_c, sizeof(int)));
+  checkCudaErrors(hipMemcpy(d_c, &c, sizeof(int), hipMemcpyHostToDevice));
 
   printf("\nStarting Test\n");
 
@@ -339,7 +337,7 @@ int main(int argc, char **argv) {
       (hipStream_t *)malloc(nstreams * sizeof(hipStream_t));
 
   for (int i = 0; i < nstreams; i++) {
-    HIPCHECK(hipStreamCreate(&(streams[i])));
+    checkCudaErrors(hipStreamCreate(&(streams[i])));
   }
 
   // create CUDA event handles
@@ -349,47 +347,47 @@ int main(int argc, char **argv) {
       ((device_sync_method == hipDeviceScheduleBlockingSync) ? hipEventBlockingSync
                                                       : hipEventDefault);
 
-  HIPCHECK(hipEventCreateWithFlags(&start_event, eventflags));
-  HIPCHECK(hipEventCreateWithFlags(&stop_event, eventflags));
+  checkCudaErrors(hipEventCreateWithFlags(&start_event, eventflags));
+  checkCudaErrors(hipEventCreateWithFlags(&stop_event, eventflags));
 
   // time memcopy from device
-  HIPCHECK(hipEventRecord(start_event, 0));  // record in stream-0, to
+  checkCudaErrors(hipEventRecord(start_event, 0));  // record in stream-0, to
                                                      // ensure that all previous
                                                      // CUDA calls have
                                                      // completed
-  HIPCHECK(hipMemcpyAsync(hAligned_a, d_a, nbytes,
+  checkCudaErrors(hipMemcpyAsync(hAligned_a, d_a, nbytes,
                                   hipMemcpyDeviceToHost, streams[0]));
-  HIPCHECK(hipEventRecord(stop_event, 0));
-  HIPCHECK(hipEventSynchronize(
+  checkCudaErrors(hipEventRecord(stop_event, 0));
+  checkCudaErrors(hipEventSynchronize(
       stop_event));  // block until the event is actually recorded
-  HIPCHECK(hipEventElapsedTime(&time_memcpy, start_event, stop_event));
+  checkCudaErrors(hipEventElapsedTime(&time_memcpy, start_event, stop_event));
   printf("memcopy:\t%.2f\n", time_memcpy);
 
   // time kernel
   threads = dim3(512, 1);
   blocks = dim3(n / threads.x, 1);
-  HIPCHECK(hipEventRecord(start_event, 0));
+  checkCudaErrors(hipEventRecord(start_event, 0));
   init_array<<<blocks, threads, 0, streams[0]>>>(d_a, d_c, niterations);
-  HIPCHECK(hipEventRecord(stop_event, 0));
-  HIPCHECK(hipEventSynchronize(stop_event));
-  HIPCHECK(hipEventElapsedTime(&time_kernel, start_event, stop_event));
+  checkCudaErrors(hipEventRecord(stop_event, 0));
+  checkCudaErrors(hipEventSynchronize(stop_event));
+  checkCudaErrors(hipEventElapsedTime(&time_kernel, start_event, stop_event));
   printf("kernel:\t\t%.2f\n", time_kernel);
 
   //////////////////////////////////////////////////////////////////////
   // time non-streamed execution for reference
   threads = dim3(512, 1);
   blocks = dim3(n / threads.x, 1);
-  HIPCHECK(hipEventRecord(start_event, 0));
+  checkCudaErrors(hipEventRecord(start_event, 0));
 
   for (int k = 0; k < nreps; k++) {
     init_array<<<blocks, threads>>>(d_a, d_c, niterations);
-    HIPCHECK(
+    checkCudaErrors(
         hipMemcpy(hAligned_a, d_a, nbytes, hipMemcpyDeviceToHost));
   }
 
-  HIPCHECK(hipEventRecord(stop_event, 0));
-  HIPCHECK(hipEventSynchronize(stop_event));
-  HIPCHECK(hipEventElapsedTime(&elapsed_time, start_event, stop_event));
+  checkCudaErrors(hipEventRecord(stop_event, 0));
+  checkCudaErrors(hipEventSynchronize(stop_event));
+  checkCudaErrors(hipEventElapsedTime(&elapsed_time, start_event, stop_event));
   printf("non-streamed:\t%.2f\n", elapsed_time / nreps);
 
   //////////////////////////////////////////////////////////////////////
@@ -398,9 +396,9 @@ int main(int argc, char **argv) {
   blocks = dim3(n / (nstreams * threads.x), 1);
   memset(hAligned_a, 255,
          nbytes);  // set host memory bits to all 1s, for testing correctness
-  HIPCHECK(hipMemset(
+  checkCudaErrors(hipMemset(
       d_a, 0, nbytes));  // set device memory to all 0s, for testing correctness
-  HIPCHECK(hipEventRecord(start_event, 0));
+  checkCudaErrors(hipEventRecord(start_event, 0));
 
   for (int k = 0; k < nreps; k++) {
     // asynchronously launch nstreams kernels, each operating on its own portion
@@ -415,15 +413,15 @@ int main(int argc, char **argv) {
     //   commence executing when all previous CUDA calls in stream x have
     //   completed
     for (int i = 0; i < nstreams; i++) {
-      HIPCHECK(hipMemcpyAsync(hAligned_a + i * n / nstreams,
+      checkCudaErrors(hipMemcpyAsync(hAligned_a + i * n / nstreams,
                                       d_a + i * n / nstreams, nbytes / nstreams,
                                       hipMemcpyDeviceToHost, streams[i]));
     }
   }
 
-  HIPCHECK(hipEventRecord(stop_event, 0));
-  HIPCHECK(hipEventSynchronize(stop_event));
-  HIPCHECK(hipEventElapsedTime(&elapsed_time, start_event, stop_event));
+  checkCudaErrors(hipEventRecord(stop_event, 0));
+  checkCudaErrors(hipEventSynchronize(stop_event));
+  checkCudaErrors(hipEventElapsedTime(&elapsed_time, start_event, stop_event));
   printf("%d streams:\t%.2f\n", nstreams, elapsed_time / nreps);
 
   // check whether the output is correct
@@ -432,17 +430,17 @@ int main(int argc, char **argv) {
 
   // release resources
   for (int i = 0; i < nstreams; i++) {
-    HIPCHECK(hipStreamDestroy(streams[i]));
+    checkCudaErrors(hipStreamDestroy(streams[i]));
   }
 
-  HIPCHECK(hipEventDestroy(start_event));
-  HIPCHECK(hipEventDestroy(stop_event));
+  checkCudaErrors(hipEventDestroy(start_event));
+  checkCudaErrors(hipEventDestroy(stop_event));
 
   // Free hipHostMalloc or Generic Host allocated memory (from CUDA 4.0)
   FreeHostMemory(bPinGenericMemory, &h_a, &hAligned_a, nbytes);
 
-  HIPCHECK(hipFree(d_a));
-  HIPCHECK(hipFree(d_c));
+  checkCudaErrors(hipFree(d_a));
+  checkCudaErrors(hipFree(d_c));
 
   return bResults ? EXIT_SUCCESS : EXIT_FAILURE;
 }

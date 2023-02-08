@@ -30,8 +30,6 @@
 // Global types and parameters
 ////////////////////////////////////////////////////////////////////////////////
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <hip/hip_cooperative_groups.h>
 
@@ -151,10 +149,10 @@ extern "C" void binomialOptionsGPU(real *callValue, TOptionData *optionData,
     h_OptionData[i].pdByDf = (real)pdByDf;
   }
 
-  HIPCHECK(hipMemcpyToSymbol(HIP_SYMBOL(d_OptionData), h_OptionData,
+  checkCudaErrors(hipMemcpyToSymbol(HIP_SYMBOL(d_OptionData), h_OptionData,
                                      optN * sizeof(__TOptionData)));
   binomialOptionsKernel<<<optN, THREADBLOCK_SIZE>>>();
   getLastCudaError("binomialOptionsKernel() execution failed.\n");
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpyFromSymbol(callValue, HIP_SYMBOL(d_CallValue), optN * sizeof(real)));
 }
