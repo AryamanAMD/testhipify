@@ -1,7 +1,5 @@
 src/samples/Samples/0_Introduction/simpleAssert_nvrtc/simpleAssert_kernel.cu
 src/samples/Samples/0_Introduction/simpleCUDA2GL/simpleCUDA2GL.cu
-src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu
-src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu
 src/samples/Samples/0_Introduction/simpleTexture3D/simpleTexture3D_kernel.cu
 src/samples/Samples/2_Concepts_and_Techniques/EGLStream_CUDA_CrossGPU/kernel.cu
 src/samples/Samples/2_Concepts_and_Techniques/EGLSync_CUDAEvent_Interop/EGLSync_CUDAEvent_Interop.cu
@@ -9,7 +7,6 @@ src/samples/Samples/2_Concepts_and_Techniques/FunctionPointers/FunctionPointers_
 src/samples/Samples/2_Concepts_and_Techniques/boxFilter/boxFilter_kernel.cu
 src/samples/Samples/2_Concepts_and_Techniques/imageDenoising/imageDenoising.cu
 src/samples/Samples/2_Concepts_and_Techniques/particles/particleSystem_cuda.cu
-src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_kernel.cu
 src/samples/Samples/3_CUDA_Features/bindlessTexture/bindlessTexture_kernel.cu
 src/samples/Samples/4_CUDA_Libraries/cuDLAErrorReporting/main.cu
 src/samples/Samples/4_CUDA_Libraries/cuDLAHybridMode/main.cu
