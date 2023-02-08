@@ -281,7 +281,7 @@ def runsample_all(y):
 	os.system('find . -name "*.out" | wc -l')
 	os.system('find . -name "*.o" | wc -l')
 	print("Number of Ignored Samples:")
-	os.system('cat final_ignored_samples.txt | wc -l')	
+	os.system('cat ../final_ignored_samples.txt | wc -l')	
 	os.chdir('../src-original')
 	print("In src-original folder:")
 	print("Number of converted samples:")
