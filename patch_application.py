@@ -92,10 +92,10 @@ def apply_patches(x):
 			'''	
 			f.close()
 	for patch in patch_files:
-		command='git apply --reject --whitespace=fix '+patch
+		command='git apply --reject --whitespace=fix '+patch_path+'/'+patch
 		print(command)
-		os.system(command)
-		os.system('find . -name "*.rej" -type f -delete')		
+		#os.system(command)
+		#os.system('find . -name "*.rej" -type f -delete')		
 							   
 
 file1 = open('run_samples_here.txt', 'r')
