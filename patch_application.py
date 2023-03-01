@@ -75,24 +75,34 @@ def runsample(x):
 	print(command)
 	os.system(command)	
 
-
 def apply_patches(x):
-    patch_path='src/patches'
-    search_path=x+'.hip'
-    dir=os.listdir(patch_path)
-    for fname in dir:
-        if os.path.isfile(patch_path+os.sep+fname):
-            f=open(patch_path+os.sep+fname, 'r')
-            if search_path in f.read():
-                print('found string in file '+fname)
-            else:
-                print('not found')   
-            f.close()     
+	patch_path='src/patches'
+	search_path=x+'.hip'
+	patch_files=[]
+	dir=os.listdir(patch_path)
+	for fname in dir:
+		if os.path.isfile(patch_path+os.sep+fname):
+			f=open(patch_path+os.sep+fname,'r')
+			if search_path in f.read():
+				#print('found path in patch file '+fname)
+				patch_files.append(fname)
+			'''	
+			else:
+				print('Not found')
+			'''	
+			f.close()
+	for patch in patch_files:
+		command='git apply --reject --whitespace=fix '+patch
+		print(command)
+		os.system(command)
+		os.system('find . -name "*.rej" -type f -delete')		
+							   
 
 file1 = open('run_samples_here.txt', 'r')
 Lines = file1.readlines()
 for line in Lines:
 	line = line.strip('\n')
-	generate(line)
-	compilation_1(line)
-	runsample(line)
+	#generate(line)
+	apply_patches(line)
+	#compilation_1(line)
+	#runsample(line)

@@ -73,5 +73,5 @@ src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_callback/simpleCUFFT_callback.c
 src/samples/Samples/4_CUDA_Libraries/simpleCUFFT_MGPU/simpleCUFFT_MGPU.cu
 src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu
 src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu
- src/samples/Samples/3_CUDA_Features/ptxjit/ptxjit_kernel.cu
+src/samples/Samples/3_CUDA_Features/ptxjit/ptxjit_kernel.cu
  
