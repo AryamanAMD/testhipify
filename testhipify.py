@@ -359,7 +359,6 @@ def apply_patches():
 			print(command)
 			os.system(command)
 			os.system('find . -name "*.rej" -type f -delete')
-
 	
 def compilation_1(x):
 	global cuda_path
