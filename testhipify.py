@@ -328,8 +328,8 @@ def generate(x):
 	command="hipify-perl "+x+" > "+x+".hip"
 	print(command)
 	os.system(command)
-	prepend_line(p+"/"+q+".hip",'#include "HIPCHECK.h"\n')
-	prepend_line(p+"/"+q+".hip",'#include "rocprofiler.h"\n')
+	prepend_line(x+".hip",'#include "HIPCHECK.h"\n')
+	prepend_line(x+".hip",'#include "rocprofiler.h"\n')
 	textToSearch="checkCudaErrors"
 	textToReplace="HIPCHECK"
 	fileToSearch=p+"/"+q+".hip"
