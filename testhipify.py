@@ -242,7 +242,7 @@ def generate_all(y):
 	apply_patches()	
 	print("Do you also want to generate files of extension cu.cpp for compilation on Nvidia devices?")
 	user_input=input()
-	if user_input.lower() == 'yes':		
+	if user_input.lower() == 'yes' or user_input.lower() == 'y':		
 		os.system('cp *.cu.hip *.cu.cpp')
 		
 
