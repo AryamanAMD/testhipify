@@ -162,6 +162,18 @@ def setup():
 		os.system('source $HOME/.bashrc')
 		print('mpirun --version')
 		os.system('mpirun --version')
+	print("Do you also want to generate files of extension cu.cpp for compilation on Nvidia devices?")
+	user_input=input()
+	if user_input.lower() == 'yes' or user_input.lower() == 'y':
+		listOfFiles=getListOfFiles(y)
+		for elem in listOfFiles:
+			if elem.endswith('.cu.hip'):
+				elem2=os.path.dirname(elem)+'/'+os.path.basename(os.path.dirname(elem))+'.cu.cpp'
+				print('Writing to '+elem2)
+				open(elem2,'x')
+				with open(elem,'r') as f1, open(elem2,'a') as f2:
+					for line in f1:
+						f2.write(line)		
 
 
 
@@ -247,6 +259,7 @@ def generate_all(y):
 					else:
 						generate(elem)						
 	apply_patches()	
+	'''
 	print("Do you also want to generate files of extension cu.cpp for compilation on Nvidia devices?")
 	user_input=input()
 	if user_input.lower() == 'yes' or user_input.lower() == 'y':
@@ -259,6 +272,7 @@ def generate_all(y):
 				with open(elem,'r') as f1, open(elem2,'a') as f2:
 					for line in f1:
 						f2.write(line)
+	'''					
 		
 
 def compilation_1_all(y):
