@@ -238,7 +238,12 @@ def generate_all(y):
 	listOfFiles=getListOfFiles(y)
 	for elem in listOfFiles:
 		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
-				generate(elem)			
+				#generate(elem)	
+				with open('final_ignored_samples.txt','r') as f:
+					if elem in f.read():
+						print("Ignoring this sample "+elem)
+					else:
+						generate(elem)						
 	apply_patches()	
 	print("Do you also want to generate files of extension cu.cpp for compilation on Nvidia devices?")
 	user_input=input()
