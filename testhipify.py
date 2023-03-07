@@ -238,8 +238,13 @@ def generate_all(y):
 	listOfFiles=getListOfFiles(y)
 	for elem in listOfFiles:
 		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
-				generate(elem)
-	apply_patches()				
+				generate(elem)			
+	apply_patches()	
+	print("Do you also want to generate files of extension cu.cpp for compilation on Nvidia devices?")
+	user_input=input()
+	if user_input.lower() == 'yes':		
+		os.system('cp *.cu.hip *.cu.cpp')
+		
 
 def compilation_1_all(y):
 	y=y.replace('"', '')
