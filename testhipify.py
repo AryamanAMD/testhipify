@@ -53,7 +53,7 @@ def prepend_line(file_name, line):
 		file=open(file_name,'r')
 		lines = file.readlines()
 		for elem in lines:
-			if elem == '#include <stdio.h>\n':
+			if elem == '#include <hip/hip_runtime.h>\n':
 				index=lines.index(elem)
 				lines.insert(index+1,line)
 		with open(p+'/'+'a.cu.hip','w') as fp:
