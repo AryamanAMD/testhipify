@@ -56,6 +56,8 @@ def prepend_line(file_name, line):
 			if elem == '#include <hip/hip_runtime.h>\n':
 				index=lines.index(elem)
 				lines.insert(index+1,line)
+			else:
+				continue	
 		with open(p+'/'+'a.cu.hip','w') as fp:
 			for item in lines:
 				fp.write(item)
