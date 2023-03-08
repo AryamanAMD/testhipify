@@ -11,6 +11,7 @@ user_platform='AMD'
 try:
 	with open('user_platform.txt','r') as f:
 			user_platform=f.read()
+	f.close()		
 except FileNotFoundError:
 	pass	
 def getListOfFiles(dirName):
@@ -727,4 +728,5 @@ if args.parenthesis_check_all:
 if args.setup:
 	setup()	
 with open('user_platform.txt','w'):
-	f.write(str(user_platform))						
+	f.write(str(user_platform))	
+f.close()						
