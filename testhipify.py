@@ -7,6 +7,7 @@ import patch_gen
 import patch_gen2
 import patch_gen3
 cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
+user_platform='AMD'
 def getListOfFiles(dirName):
     listOfFile=os.listdir(dirName)
     allFiles=list()
@@ -79,7 +80,10 @@ def check_for_word(file_name,word):
 
 def setup():
 	global cuda_path
+	global user_platform
 	#cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
+	print("Enter Nvidia if you're working with Nvidia GPU or press any key to continue.")
+	user_platform=input()
 	print ('Confirm the following CUDA Installation path for compilation:')
 	print('CUDA Path:'+cuda_path)
 	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
@@ -254,6 +258,7 @@ def ftale(x):
 	runsample(x)
 	
 def generate_all(y):
+	global user_platform
 	y=y.replace('"', '')
 	listOfFiles=getListOfFiles(y)
 	for elem in listOfFiles:
@@ -266,9 +271,10 @@ def generate_all(y):
 						generate(elem)						
 	apply_patches()
 	#find . -type f -name '*.cu.hip' -print -delete	
-	print("Do you also want to generate files of extension cu.cpp for compilation on Nvidia devices?")
-	user_input=input()
-	if user_input.lower() == 'yes' or user_input.lower() == 'y':
+	#print("Do you also want to generate files of extension cu.cpp for compilation on Nvidia devices?")
+	#user_input=input()
+	#if user_input.lower() == 'yes' or user_input.lower() == 'y':
+	if user_platform.lower()=='nvidia' :
 		for elem in listOfFiles:
 			if elem.endswith('.cu'):
 				with open('final_ignored_samples.txt','r') as f:
@@ -404,8 +410,7 @@ def apply_patches():
 	
 def compilation_1(x):
 	global cuda_path
-	print("Enter Nvidia if you're working with Nvidia GPU or press any key to continue.")
-	user_input=input()
+	global user_platform
 	cpp=[]
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
@@ -422,20 +427,20 @@ def compilation_1(x):
 		command='hipcc -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)
-	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu' and user_input.lower() == 'nvidia':
+	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu' and user_platform.lower() == 'nvidia':
 		command='hipcc -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.cpp src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
 		print(command)
 		os.system(command)
-	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu' and user_input.lower() == 'nvidia':
+	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu' and user_platform.lower() == 'nvidia':
 		command='hipcc -I src/samples/Common -fgpu-rdc src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu.cpp src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.cpp -o src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out'
 		print(command)
 		os.system(command)	
-	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu' and user_input.lower() == 'nvidia':
+	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu' and user_platform.lower() == 'nvidia':
 		command='hipcc -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.cpp -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)		
 	else:
-		if user_input.lower()=='nvidia':
+		if user_platform.lower()=='nvidia':
 			for file in os.listdir(p):
 				if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
 					cpp.append(file)	
@@ -456,9 +461,8 @@ def compilation_1(x):
 
 def compilation_2(x):
 	global cuda_path
+	global user_platform
 	cpp=[]
-	print("Enter Nvidia if you're working with Nvidia GPU or press any key to continue.")
-	user_input=input()
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	p=p.replace("\\","/")
@@ -474,20 +478,20 @@ def compilation_2(x):
 		command='hipcc -use-staticlib -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)
-	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu' and user_input.lower() == 'nvidia':
+	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu' and user_platform.lower() == 'nvidia':
 		command='hipcc -use-staticlib -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.cpp src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
 		print(command)
 		os.system(command)
-	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu' and user_input.lower() == 'nvidia':
+	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu' and user_platform.lower() == 'nvidia':
 		command='hipcc -use-staticlib -I src/samples/Common -fgpu-rdc src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu.cpp src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.cpp -o src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out'
 		print(command)
 		os.system(command)	
-	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu' and user_input.lower() == 'nvidia':
+	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu' and user_platform.lower() == 'nvidia':
 		command='hipcc -use-staticlib -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.cpp -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)		
 	else:
-		if user_input.lower()=='nvidia':
+		if user_platform.lower()=='nvidia':
 			for file in os.listdir(p):
 				if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
 					cpp.append(file)	
