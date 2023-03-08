@@ -89,7 +89,10 @@ def setup():
 	global user_platform
 	#cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
 	print("Enter Nvidia or AMD as per your system specifications.")
-	user_platform=input()	
+	user_platform=input()
+	with open('user_platform.txt','w') as f:
+		f.write(str(user_platform))
+	f.close()	
 	print ('Confirm the following CUDA Installation path for compilation:')
 	print('CUDA Path:'+cuda_path)
 	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
@@ -258,7 +261,7 @@ def check(myStr):
   
 def ftale(x):
 	generate(x)
-	#apply_patches()
+	apply_patches_individually(x)
 	compilation_1(x)
 	compilation_2(x)
 	runsample(x)
@@ -413,6 +416,28 @@ def apply_patches():
 			print(command)
 			os.system(command)
 			os.system('find . -name "*.rej" -type f -delete')
+
+def apply_patches_individually(x):
+	patch_path='src/patches'
+	search_path=x+'.hip'
+	patch_files=[]
+	dir=os.listdir(patch_path)
+	for fname in dir:
+		if os.path.isfile(patch_path+os.sep+fname):
+			f=open(patch_path+os.sep+fname,'r')
+			if search_path in f.read():
+				#print('found path in patch file '+fname)
+				patch_files.append(fname)
+			'''	
+			else:
+				print('Not found')
+			'''	
+			f.close()
+	for patch in patch_files:
+		command='git apply --reject --whitespace=fix '+patch_path+'/'+patch
+		print(command)
+		os.system(command)
+		os.system('find . -name "*.rej" -type f -delete')			
 	
 def compilation_1(x):
 	global cuda_path
@@ -727,6 +752,4 @@ if args.parenthesis_check_all:
 	parenthesis_check_all(f)
 if args.setup:
 	setup()	
-with open('user_platform.txt','w') as f:
-	f.write(str(user_platform))		
-f.close()					
+					
