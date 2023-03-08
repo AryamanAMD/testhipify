@@ -244,7 +244,8 @@ def generate_all(y):
 						print("Ignoring this sample "+elem)
 					else:
 						generate(elem)						
-	apply_patches()	
+	apply_patches()
+	#find . -type f -name '*.cu.hip' -print -delete	
 	print("Do you also want to generate files of extension cu.cpp for compilation on Nvidia devices?")
 	user_input=input()
 	if user_input.lower() == 'yes' or user_input.lower() == 'y':
