@@ -412,6 +412,7 @@ def compilation_1(x):
 	global cuda_path
 	global user_platform
 	cpp=[]
+	print(user_platform)
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	p=p.replace("\\","/")
