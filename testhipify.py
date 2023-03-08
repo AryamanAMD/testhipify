@@ -415,15 +415,15 @@ def compilation_1(x):
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	p=p.replace("\\","/")
-	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu':
+	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu' and user_platform.lower() == 'amd':
 		command='hipcc -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
 		print(command)
 		os.system(command)
-	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu':
+	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu' and user_platform.lower() == 'amd':
 		command='hipcc -I src/samples/Common -fgpu-rdc src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu.hip src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip -o src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out'
 		print(command)
 		os.system(command)	
-	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu':
+	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu' and user_platform.lower() == 'amd':
 		command='hipcc -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)
@@ -444,7 +444,7 @@ def compilation_1(x):
 			for file in os.listdir(p):
 				if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
 					cpp.append(file)	
-		else:	
+		elif user_platform.lower()=='amd':	
 			for file in os.listdir(p):
 				if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
 					cpp.append(file)	
@@ -466,15 +466,15 @@ def compilation_2(x):
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	p=p.replace("\\","/")
-	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu':
+	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu' and user_platform.lower() == 'amd':
 		command='hipcc -use-staticlib -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
 		print(command)
 		os.system(command)
-	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu':
+	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu' and user_platform.lower() == 'amd':
 		command='hipcc -use-staticlib -I src/samples/Common -fgpu-rdc src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu.hip src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip -o src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out'
 		print(command)
 		os.system(command)	
-	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu':
+	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu' and user_platform.lower() == 'amd':
 		command='hipcc -use-staticlib -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.hip -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)
@@ -495,7 +495,7 @@ def compilation_2(x):
 			for file in os.listdir(p):
 				if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
 					cpp.append(file)	
-		else:	
+		elif user_platform.lower()=='amd':	
 			for file in os.listdir(p):
 				if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
 					cpp.append(file)		
