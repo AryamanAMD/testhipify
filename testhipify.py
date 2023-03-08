@@ -439,15 +439,14 @@ def compilation_1(x):
 		command='hipcc -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.cpp -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)		
-	else:
-		if user_platform.lower()=='nvidia':
-			for file in os.listdir(p):
-				if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
-					cpp.append(file)	
-		elif user_platform.lower()=='amd':	
-			for file in os.listdir(p):
-				if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
-					cpp.append(file)	
+	elif user_platform.lower()=='nvidia':
+		for file in os.listdir(p):
+			if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
+				cpp.append(file)	
+	elif user_platform.lower()=='amd':	
+		for file in os.listdir(p):
+			if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
+				cpp.append(file)	
 		
 			
 		
@@ -490,23 +489,21 @@ def compilation_2(x):
 		command='hipcc -use-staticlib -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.cpp -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)		
-	else:
-		if user_platform.lower()=='nvidia':
-			for file in os.listdir(p):
-				if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
-					cpp.append(file)	
-		elif user_platform.lower()=='amd':	
-			for file in os.listdir(p):
-				if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
-					cpp.append(file)		
+	elif user_platform.lower()=='nvidia':
+		for file in os.listdir(p):
+			if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
+				cpp.append(file)	
+	elif user_platform.lower()=='amd':	
+		for file in os.listdir(p):
+			if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
+				cpp.append(file)		
 			
 		
 
-		cpp = [p+'/'+y for y in cpp]
-		command='hipcc -use-staticlib -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
-		print(command)
-
-		os.system(command)
+	cpp = [p+'/'+y for y in cpp]
+	command='hipcc -use-staticlib -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+	print(command)
+	os.system(command)
 
 def runsample(x):	
 	print('Processing Sample:'+x)
