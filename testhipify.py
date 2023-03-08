@@ -162,6 +162,18 @@ def setup():
 		os.system('source $HOME/.bashrc')
 		print('mpirun --version')
 		os.system('mpirun --version')
+	listOfFiles=getListOfFiles('src/samples/Samples')
+	print("Do you also want to generate files of extension cu.cpp for compilation on Nvidia devices?")
+	user_input=input()
+	if user_input.lower() == 'yes' or user_input.lower() == 'y':
+		for elem in listOfFiles:
+			if elem.endswith('.cu'):
+				elem2=elem+'.cpp'
+				if os.path.exists(elem2)==False:
+					print('Writing to '+elem2)
+					with open(elem+'.hip','r') as f1, open(elem2,'a') as f2:
+						for line in f1:
+							f2.write(line)	
 						
 def parenthesis_check(file_name):
 	string=''
