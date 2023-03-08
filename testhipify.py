@@ -55,7 +55,7 @@ def prepend_line(file_name, line):
 		for elem in lines:
 			if elem == '#include <stdio.h>\n':
 				index=lines.index(elem)
-				lines.insert(index+5,line)
+				lines.insert(index+8,line)
 			else:
 				continue	
 		with open(p+'/'+'a.cu.hip','w') as fp:
@@ -162,18 +162,6 @@ def setup():
 		os.system('source $HOME/.bashrc')
 		print('mpirun --version')
 		os.system('mpirun --version')
-	listOfFiles=getListOfFiles('src/samples/Samples')	
-	print("Do you also want to generate files of extension cu.cpp for compilation on Nvidia devices?")
-	user_input=input()
-	if user_input.lower() == 'yes' or user_input.lower() == 'y':
-		for elem in listOfFiles:
-			if elem.endswith('.cu'):
-				elem2=elem+'.cpp'
-				if os.path.exists(elem2)==False:
-					print('Writing to '+elem2)
-					with open(elem+'.hip','r') as f1, open(elem2,'a') as f2:
-						for line in f1:
-							f2.write(line)
 						
 def parenthesis_check(file_name):
 	string=''
