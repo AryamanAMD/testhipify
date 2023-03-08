@@ -7,11 +7,11 @@ import patch_gen
 import patch_gen2
 import patch_gen3
 cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
-user_platform='AMD'
+user_platform=''
 try:
 	with open('user_platform.txt','r') as f:
 			user_platform=f.read()
-	f.close()		
+	f.close()				
 except FileNotFoundError:
 	pass	
 def getListOfFiles(dirName):
@@ -88,7 +88,7 @@ def setup():
 	global cuda_path
 	global user_platform
 	#cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
-	print("Enter Nvidia if you're working with Nvidia GPU or press any key to continue.")
+	print("Enter Nvidia or AMD as per your system specifications.")
 	user_platform=input()	
 	print ('Confirm the following CUDA Installation path for compilation:')
 	print('CUDA Path:'+cuda_path)
@@ -727,6 +727,6 @@ if args.parenthesis_check_all:
 	parenthesis_check_all(f)
 if args.setup:
 	setup()	
-with open('user_platform.txt','w'):
-	f.write(str(user_platform))	
-f.close()						
+with open('user_platform.txt','w') as f:
+	f.write(str(user_platform))		
+f.close()					
