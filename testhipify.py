@@ -169,7 +169,7 @@ def setup():
 		for elem in listOfFiles:
 			if elem.endswith('.cu'):
 				elem2=elem+'.cpp'
-				if os.path.exists(elem2)==True:
+				if os.path.exists(elem2)==False:
 					print('Writing to '+elem2)
 					with open(elem+'.hip','r') as f1, open(elem2,'a') as f2:
 						for line in f1:
