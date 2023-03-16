@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
   printf("\n[simpleCUFFT_MGPU] is starting...\n\n");
 
   int GPU_N;
-  HIPCHECK(hipGetDeviceCount(&GPU_N));
+  checkCudaErrors(hipGetDeviceCount(&GPU_N));
 
   if (GPU_N < GPU_COUNT) {
     printf("No. of GPU on node %d\n", GPU_N);
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < GPU_N; i++) {
     hipDeviceProp_t deviceProp;
-    HIPCHECK(hipGetDeviceProperties(&deviceProp, i));
+    checkCudaErrors(hipGetDeviceProperties(&deviceProp, i));
     major_minor[i * 2] = deviceProp.major;
     major_minor[i * 2 + 1] = deviceProp.minor;
     printf("GPU Device %d: \"%s\" with compute capability %d.%d\n", i,
@@ -171,7 +171,7 @@ int main(int argc, char **argv) {
   printf("\nRunning on GPUs\n");
   for (int i = 0; i < nGPUs; i++) {
     hipDeviceProp_t deviceProp;
-    HIPCHECK(hipGetDeviceProperties(&deviceProp, whichGPUs[i]));
+    checkCudaErrors(hipGetDeviceProperties(&deviceProp, whichGPUs[i]));
     printf("GPU Device %d: \"%s\" with compute capability %d.%d\n",
            whichGPUs[i], deviceProp.name, deviceProp.major, deviceProp.minor);
   }
@@ -243,7 +243,7 @@ int main(int argc, char **argv) {
       (Complex *)malloc(sizeof(Complex) * SIGNAL_SIZE);
 
   // cufftXtMemcpy() - Copy data from multiple GPUs to host
-  HIPCHECK(cufftXtMemcpy(plan_input, h_convolved_signal, d_out_signal,
+  checkCudaErrors(cufftXtMemcpy(plan_input, h_convolved_signal, d_out_signal,
                                 CUFFT_COPY_DEVICE_TO_HOST));
 
   // Convolve on the host
@@ -343,7 +343,7 @@ void multiplyCoefficient(cudaLibXtDesc *d_signal,
     device = d_signal->descriptor->GPUs[i];
 
     // Set device
-    HIPCHECK(hipSetDevice(device));
+    checkCudaErrors(hipSetDevice(device));
 
     // Perform GPU computations
     ComplexPointwiseMulAndScale<<<32, 256>>>(
@@ -355,7 +355,7 @@ void multiplyCoefficient(cudaLibXtDesc *d_signal,
   // Wait for device to finish all operation
   for (int i = 0; i < nGPUs; i++) {
     device = d_signal->descriptor->GPUs[i];
-    HIPCHECK(hipSetDevice(device));
+    checkCudaErrors(hipSetDevice(device));
     hipDeviceSynchronize();
     // Check if kernel execution generated and error
     getLastCudaError("Kernel execution failed [ ComplexPointwiseMulAndScale ]");

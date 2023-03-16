@@ -37,8 +37,8 @@
 #include <hip/hip_runtime.h>
 
 // helper functions and utilities to work with CUDA
-#include "helper_cuda_hipified.h"
-#include "helper_functions.h"
+#include <helper_cuda.h>
+#include <helper_functions.h>
 
 #define THREADS_PER_BLOCK 512
 #define ALLOWABLE_VARIANCE 1.e-6f
@@ -108,13 +108,13 @@ void createFreeGraph(hipGraphExec_t *graphExec, float *dPtr) {
   hipGraph_t graph;
   hipGraphNode_t freeNode;
 
-  HIPCHECK(hipGraphCreate(&graph, 0));
+  checkCudaErrors(hipGraphCreate(&graph, 0));
 
-  HIPCHECK(
+  checkCudaErrors(
       cudaGraphAddMemFreeNode(&freeNode, graph, NULL, 0, (void *)dPtr));
 
-  HIPCHECK(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
-  HIPCHECK(hipGraphDestroy(graph));
+  checkCudaErrors(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
+  checkCudaErrors(hipGraphDestroy(graph));
 }
 
 /**
@@ -176,21 +176,21 @@ void createNegateSquaresGraphExplicitly(hipGraphExec_t *graphExec, int device,
   // Buffer for storing graph node dependencies
   std::vector<hipGraphNode_t> nodeDependencies;
 
-  HIPCHECK(hipGraphCreate(&graph, 0));
+  checkCudaErrors(hipGraphCreate(&graph, 0));
 
-  HIPCHECK(
+  checkCudaErrors(
       cudaGraphAddMemAllocNode(&allocNodeInput, graph, NULL, 0, &allocParams));
   d_input = (float *)allocParams.dptr;
 
   // To keep the graph structure simple (fewer branching dependencies),
   // allocNodeSquare should depend on allocNodeInput
-  HIPCHECK(cudaGraphAddMemAllocNode(&allocNodeSquare, graph,
+  checkCudaErrors(cudaGraphAddMemAllocNode(&allocNodeSquare, graph,
                                            &allocNodeInput, 1, &allocParams));
   d_square = (float *)allocParams.dptr;
 
   // copyNodeInput needs to depend on allocNodeInput because copyNodeInput
   // writes to d_input. It does so here indirectly through allocNodeSquare.
-  HIPCHECK(hipGraphAddMemcpyNode1D(
+  checkCudaErrors(hipGraphAddMemcpyNode1D(
       &copyNodeInput, graph, &allocNodeSquare, 1, d_input, hostArrays->input,
       hostArrays->bytes, hipMemcpyHostToDevice));
 
@@ -201,10 +201,10 @@ void createNegateSquaresGraphExplicitly(hipGraphExec_t *graphExec, int device,
 
   // Square kernel depends on copyNodeInput to ensure all data is on the device
   // before kernel launch.
-  HIPCHECK(hipGraphAddKernelNode(&squareKernelNode, graph,
+  checkCudaErrors(hipGraphAddKernelNode(&squareKernelNode, graph,
                                          &copyNodeInput, 1, &kernelNodeParams));
 
-  HIPCHECK(hipGraphAddMemcpyNode1D(
+  checkCudaErrors(hipGraphAddMemcpyNode1D(
       &copyNodeSquare, graph, &squareKernelNode, 1, hostArrays->square,
       d_square, hostArrays->bytes, hipMemcpyDeviceToHost));
 
@@ -212,11 +212,11 @@ void createNegateSquaresGraphExplicitly(hipGraphExec_t *graphExec, int device,
   // freed while being read by the kernel. It also depends on the alloc of
   // d_input via squareKernelNode > copyNodeInput > allocNodeSquare >
   // allocNodeInput.
-  HIPCHECK(cudaGraphAddMemFreeNode(&freeNodeInput, graph,
+  checkCudaErrors(cudaGraphAddMemFreeNode(&freeNodeInput, graph,
                                           &squareKernelNode, 1, d_input));
 
   // Allocation of C depends on free of A so CUDA can reuse the virtual address.
-  HIPCHECK(cudaGraphAddMemAllocNode(&allocNodeNegSquare, graph,
+  checkCudaErrors(cudaGraphAddMemAllocNode(&allocNodeNegSquare, graph,
                                            &freeNodeInput, 1, &allocParams));
   d_negSquare = (float *)allocParams.dptr;
 
@@ -231,30 +231,30 @@ void createNegateSquaresGraphExplicitly(hipGraphExec_t *graphExec, int device,
   kernelNodeParams.func = (void *)negateArray;
   kernelNodeParams.kernelParams = (void **)negateKernelArgs;
 
-  HIPCHECK(hipGraphAddKernelNode(
+  checkCudaErrors(hipGraphAddKernelNode(
       &negateKernelNode, graph, &allocNodeNegSquare, 1, &kernelNodeParams));
 
   nodeDependencies.push_back(copyNodeSquare);
   nodeDependencies.push_back(negateKernelNode);
-  HIPCHECK(cudaGraphAddMemFreeNode(&freeNodeSquare, graph,
+  checkCudaErrors(cudaGraphAddMemFreeNode(&freeNodeSquare, graph,
                                           nodeDependencies.data(),
                                           nodeDependencies.size(), d_square));
   nodeDependencies.clear();
 
-  HIPCHECK(hipGraphAddMemcpyNode1D(
+  checkCudaErrors(hipGraphAddMemcpyNode1D(
       &copyNodeNegSquare, graph, &negateKernelNode, 1, hostArrays->negSquare,
       d_negSquare, hostArrays->bytes, hipMemcpyDeviceToHost));
 
   if (d_negSquare_out == NULL) {
     hipGraphNode_t freeNodeNegSquare;
-    HIPCHECK(cudaGraphAddMemFreeNode(
+    checkCudaErrors(cudaGraphAddMemFreeNode(
         &freeNodeNegSquare, graph, &copyNodeNegSquare, 1, d_negSquare));
   } else {
     *d_negSquare_out = d_negSquare;
   }
 
-  HIPCHECK(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
-  HIPCHECK(hipGraphDestroy(graph));
+  checkCudaErrors(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
+  checkCudaErrors(hipGraphDestroy(graph));
 }
 
 /**
@@ -301,53 +301,53 @@ void doNegateSquaresInStream(hipStream_t stream1, negSquareArrays *hostArrays,
   hipEvent_t squareKernelCompleteEvent, negateKernelCompleteEvent,
       squareFreeEvent;
 
-  HIPCHECK(hipStreamCreateWithFlags(&stream2, hipStreamNonBlocking));
+  checkCudaErrors(hipStreamCreateWithFlags(&stream2, hipStreamNonBlocking));
 
-  HIPCHECK(hipEventCreate(&squareKernelCompleteEvent));
-  HIPCHECK(hipEventCreate(&negateKernelCompleteEvent));
-  HIPCHECK(hipEventCreate(&squareFreeEvent));
+  checkCudaErrors(hipEventCreate(&squareKernelCompleteEvent));
+  checkCudaErrors(hipEventCreate(&negateKernelCompleteEvent));
+  checkCudaErrors(hipEventCreate(&squareFreeEvent));
 
   // Virtual addresses are assigned synchronously when hipMallocAsync is
   // called, thus there is no performace benefit gained by separating the
   // allocations into two streams.
-  HIPCHECK(hipMallocAsync(&d_input, hostArrays->bytes, stream1));
-  HIPCHECK(hipMallocAsync(&d_square, hostArrays->bytes, stream1));
+  checkCudaErrors(hipMallocAsync(&d_input, hostArrays->bytes, stream1));
+  checkCudaErrors(hipMallocAsync(&d_square, hostArrays->bytes, stream1));
 
-  HIPCHECK(hipMemcpyAsync(d_input, hostArrays->input, hostArrays->bytes,
+  checkCudaErrors(hipMemcpyAsync(d_input, hostArrays->input, hostArrays->bytes,
                                   hipMemcpyHostToDevice, stream1));
   squareArray<<<hostArrays->numBlocks, THREADS_PER_BLOCK, 0, stream1>>>(
       d_input, d_square, hostArrays->numElements);
-  HIPCHECK(hipEventRecord(squareKernelCompleteEvent, stream1));
+  checkCudaErrors(hipEventRecord(squareKernelCompleteEvent, stream1));
 
-  HIPCHECK(hipStreamWaitEvent(stream2, squareKernelCompleteEvent, 0));
-  HIPCHECK(hipMemcpyAsync(hostArrays->square, d_square,
+  checkCudaErrors(hipStreamWaitEvent(stream2, squareKernelCompleteEvent, 0));
+  checkCudaErrors(hipMemcpyAsync(hostArrays->square, d_square,
                                   hostArrays->bytes, hipMemcpyDeviceToHost,
                                   stream2));
 
-  HIPCHECK(hipFreeAsync(d_input, stream1));
-  HIPCHECK(hipMallocAsync(&d_negSquare, hostArrays->bytes, stream1));
+  checkCudaErrors(hipFreeAsync(d_input, stream1));
+  checkCudaErrors(hipMallocAsync(&d_negSquare, hostArrays->bytes, stream1));
   negateArray<<<hostArrays->numBlocks, THREADS_PER_BLOCK, 0, stream1>>>(
       d_square, d_negSquare, hostArrays->numElements);
-  HIPCHECK(hipEventRecord(negateKernelCompleteEvent, stream1));
-  HIPCHECK(hipMemcpyAsync(hostArrays->negSquare, d_negSquare,
+  checkCudaErrors(hipEventRecord(negateKernelCompleteEvent, stream1));
+  checkCudaErrors(hipMemcpyAsync(hostArrays->negSquare, d_negSquare,
                                   hostArrays->bytes, hipMemcpyDeviceToHost,
                                   stream1));
   if (d_negSquare_out == NULL) {
-    HIPCHECK(hipFreeAsync(d_negSquare, stream1));
+    checkCudaErrors(hipFreeAsync(d_negSquare, stream1));
   } else {
     *d_negSquare_out = d_negSquare;
   }
 
-  HIPCHECK(hipStreamWaitEvent(stream2, negateKernelCompleteEvent, 0));
-  HIPCHECK(hipFreeAsync(d_square, stream2));
-  HIPCHECK(hipEventRecord(squareFreeEvent, stream2));
+  checkCudaErrors(hipStreamWaitEvent(stream2, negateKernelCompleteEvent, 0));
+  checkCudaErrors(hipFreeAsync(d_square, stream2));
+  checkCudaErrors(hipEventRecord(squareFreeEvent, stream2));
 
-  HIPCHECK(hipStreamWaitEvent(stream1, squareFreeEvent, 0));
+  checkCudaErrors(hipStreamWaitEvent(stream1, squareFreeEvent, 0));
 
-  HIPCHECK(hipStreamDestroy(stream2));
-  HIPCHECK(hipEventDestroy(squareKernelCompleteEvent));
-  HIPCHECK(hipEventDestroy(negateKernelCompleteEvent));
-  HIPCHECK(hipEventDestroy(squareFreeEvent));
+  checkCudaErrors(hipStreamDestroy(stream2));
+  checkCudaErrors(hipEventDestroy(squareKernelCompleteEvent));
+  checkCudaErrors(hipEventDestroy(negateKernelCompleteEvent));
+  checkCudaErrors(hipEventDestroy(squareFreeEvent));
 }
 
 /**
@@ -361,15 +361,15 @@ void createNegateSquaresGraphWithStreamCapture(hipGraphExec_t *graphExec,
   hipGraph_t graph;
   hipStream_t stream;
 
-  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
-  HIPCHECK(hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal));
+  checkCudaErrors(hipStreamBeginCapture(stream, hipStreamCaptureModeGlobal));
   doNegateSquaresInStream(stream, hostArrays, d_negSquare_out);
-  HIPCHECK(hipStreamEndCapture(stream, &graph));
+  checkCudaErrors(hipStreamEndCapture(stream, &graph));
 
-  HIPCHECK(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
-  HIPCHECK(hipStreamDestroy(stream));
-  HIPCHECK(hipGraphDestroy(graph));
+  checkCudaErrors(hipGraphInstantiate(graphExec, graph, NULL, NULL, 0));
+  checkCudaErrors(hipStreamDestroy(stream));
+  checkCudaErrors(hipGraphDestroy(graph));
 }
 
 void prepareRefArrays(negSquareArrays *hostArrays,
@@ -383,12 +383,12 @@ void prepareRefArrays(negSquareArrays *hostArrays,
     hostArrays->negSquare[i] = hostArrays->square[i] * -1;
   }
 
-  HIPCHECK(
+  checkCudaErrors(
       hipMalloc((void **)&deviceRefArrays->negSquare, deviceRefArrays->bytes));
-  HIPCHECK(hipMemcpy(deviceRefArrays->negSquare, hostArrays->negSquare,
+  checkCudaErrors(hipMemcpy(deviceRefArrays->negSquare, hostArrays->negSquare,
                              hostArrays->bytes, hipMemcpyHostToDevice));
 
-  HIPCHECK(
+  checkCudaErrors(
       hipMallocManaged((void **)foundValidationFailure, sizeof(bool)));
 }
 
@@ -468,12 +468,12 @@ int main(int argc, char **argv) {
 
   prepareHostArrays(&hostArrays);
   prepareRefArrays(&hostArrays, &deviceRefArrays, &foundValidationFailure);
-  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
   printf("Setup complete.\n\n");
 
   printf("Running negateSquares in a stream.\n");
   doNegateSquaresInStream(stream, &hostArrays);
-  HIPCHECK(hipStreamSynchronize(stream));
+  checkCudaErrors(hipStreamSynchronize(stream));
   printf("Validating negateSquares in a stream...\n");
   validateHost(&hostArrays, foundValidationFailure);
   checkValidationFailure(foundValidationFailure);
@@ -481,8 +481,8 @@ int main(int argc, char **argv) {
 
   printf("Running negateSquares in a stream-captured graph.\n");
   createNegateSquaresGraphWithStreamCapture(&graphExec, &hostArrays);
-  HIPCHECK(hipGraphLaunch(graphExec, stream));
-  HIPCHECK(hipStreamSynchronize(stream));
+  checkCudaErrors(hipGraphLaunch(graphExec, stream));
+  checkCudaErrors(hipStreamSynchronize(stream));
   printf("Validating negateSquares in a stream-captured graph...\n");
   validateHost(&hostArrays, foundValidationFailure);
   checkValidationFailure(foundValidationFailure);
@@ -490,8 +490,8 @@ int main(int argc, char **argv) {
 
   printf("Running negateSquares in an explicitly constructed graph.\n");
   createNegateSquaresGraphExplicitly(&graphExec, device, &hostArrays);
-  HIPCHECK(hipGraphLaunch(graphExec, stream));
-  HIPCHECK(hipStreamSynchronize(stream));
+  checkCudaErrors(hipGraphLaunch(graphExec, stream));
+  checkCudaErrors(hipStreamSynchronize(stream));
   printf("Validating negateSquares in an explicitly constructed graph...\n");
   validateHost(&hostArrays, foundValidationFailure);
   checkValidationFailure(foundValidationFailure);
@@ -504,13 +504,13 @@ int main(int argc, char **argv) {
   printf("Running negateSquares with d_negSquare freed outside the stream.\n");
   createNegateSquaresGraphExplicitly(&graphExec, device, &hostArrays,
                                      &d_negSquare);
-  HIPCHECK(hipGraphLaunch(graphExec, stream));
+  checkCudaErrors(hipGraphLaunch(graphExec, stream));
   validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
       d_negSquare, deviceRefArrays, foundValidationFailure);
   // Since hipFree is synchronous, the stream must synchronize before freeing
   // d_negSquare to ensure d_negSquare no longer being accessed.
-  HIPCHECK(hipStreamSynchronize(stream));
-  HIPCHECK(hipFree(d_negSquare));
+  checkCudaErrors(hipStreamSynchronize(stream));
+  checkCudaErrors(hipFree(d_negSquare));
   printf(
       "Validating negateSquares with d_negSquare freed outside the "
       "stream...\n");
@@ -519,11 +519,11 @@ int main(int argc, char **argv) {
   resetOutputArrays(&hostArrays);
 
   printf("Running negateSquares with d_negSquare freed outside the graph.\n");
-  HIPCHECK(hipGraphLaunch(graphExec, stream));
+  checkCudaErrors(hipGraphLaunch(graphExec, stream));
   validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
       d_negSquare, deviceRefArrays, foundValidationFailure);
-  HIPCHECK(hipFreeAsync(d_negSquare, stream));
-  HIPCHECK(hipStreamSynchronize(stream));
+  checkCudaErrors(hipFreeAsync(d_negSquare, stream));
+  checkCudaErrors(hipStreamSynchronize(stream));
   printf(
       "Validating negateSquares with d_negSquare freed outside the graph...\n");
   checkValidationFailure(foundValidationFailure);
@@ -532,27 +532,14 @@ int main(int argc, char **argv) {
   printf(
       "Running negateSquares with d_negSquare freed in a different graph.\n");
   createFreeGraph(&graphExecFreeC, d_negSquare);
-  HIPCHECK(hipGraphLaunch(graphExec, stream));
+  checkCudaErrors(hipGraphLaunch(graphExec, stream));
   validateGPU<<<hostArrays.numBlocks, THREADS_PER_BLOCK, 0, stream>>>(
       d_negSquare, deviceRefArrays, foundValidationFailure);
-  HIPCHECK(hipGraphLaunch(graphExecFreeC, stream));
-  HIPCHECK(hipStreamSynchronize(stream));
+  checkCudaErrors(hipGraphLaunch(graphExecFreeC, stream));
+  checkCudaErrors(hipStreamSynchronize(stream));
   printf(
       "Validating negateSquares with d_negSquare freed in a different "
       "graph...\n");
-  checkValidationFailure(foundValidationFailure);
-
-  printf("Cleaning up sample.\n");
-  HIPCHECK(hipGraphExecDestroy(graphExec));
-  HIPCHECK(hipGraphExecDestroy(graphExecFreeC));
-  HIPCHECK(hipStreamDestroy(stream));
-  HIPCHECK(hipFree(foundValidationFailure));
-  HIPCHECK(hipFree(deviceRefArrays.negSquare));
-  free(hostArrays.input);
-  free(hostArrays.square);
-  free(hostArrays.negSquare);
-  printf("Cleanup complete. Exiting sample.\n");
-}aph...\n");
   checkValidationFailure(foundValidationFailure);
 
   printf("Cleaning up sample.\n");

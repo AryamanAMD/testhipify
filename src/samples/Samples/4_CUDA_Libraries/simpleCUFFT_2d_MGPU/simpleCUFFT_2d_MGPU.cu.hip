@@ -78,7 +78,7 @@ int main(int argc, char **argv) {
       "starting...\n\n");
 
   int GPU_N;
-  HIPCHECK(hipGetDeviceCount(&GPU_N));
+  checkCudaErrors(hipGetDeviceCount(&GPU_N));
 
   if (GPU_N < GPU_COUNT) {
     printf("No. of GPU on node %d\n", GPU_N);
@@ -94,7 +94,7 @@ int main(int argc, char **argv) {
 
   for (int i = 0; i < GPU_N; i++) {
     hipDeviceProp_t deviceProp;
-    HIPCHECK(hipGetDeviceProperties(&deviceProp, i));
+    checkCudaErrors(hipGetDeviceProperties(&deviceProp, i));
     major_minor[i * 2] = deviceProp.major;
     major_minor[i * 2 + 1] = deviceProp.minor;
     printf("GPU Device %d: \"%s\" with compute capability %d.%d\n", i,
@@ -187,7 +187,7 @@ int main(int argc, char **argv) {
   printf("\nRunning on GPUs\n");
   for (int i = 0; i < 2; i++) {
     hipDeviceProp_t deviceProp;
-    HIPCHECK(hipGetDeviceProperties(&deviceProp, whichGPUs[i]));
+    checkCudaErrors(hipGetDeviceProperties(&deviceProp, whichGPUs[i]));
     printf("GPU Device %d: \"%s\" with compute capability %d.%d\n",
            whichGPUs[i], deviceProp.name, deviceProp.major, deviceProp.minor);
   }

@@ -32,7 +32,7 @@
 #include <hip/hip_cooperative_groups.h>
 
 namespace cg = cooperative_groups;
-#include "helper_cuda_hipified.h"
+#include <helper_cuda.h>
 
 ////////////////////////////////////////////////////////////////////////////////
 // A structure of 2D points (structure of arrays).
@@ -654,8 +654,8 @@ bool cdpQuadtree(int warp_size) {
 
   // Allocate memory to store points.
   Points *points;
-  HIPCHECK(hipMalloc((void **)&points, 2 * sizeof(Points)));
-  HIPCHECK(hipMemcpy(points, points_init, 2 * sizeof(Points),
+  checkCudaErrors(hipMalloc((void **)&points, 2 * sizeof(Points)));
+  checkCudaErrors(hipMemcpy(points, points_init, 2 * sizeof(Points),
                              hipMemcpyHostToDevice));
 
   // We could use a close form...
@@ -669,10 +669,13 @@ bool cdpQuadtree(int warp_size) {
   Quadtree_node root;
   root.set_range(0, num_points);
   Quadtree_node *nodes;
-  HIPCHECK(
+  checkCudaErrors(
       hipMalloc((void **)&nodes, max_nodes * sizeof(Quadtree_node)));
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(nodes, &root, sizeof(Quadtree_node), hipMemcpyHostToDevice));
+
+  // We set the recursion limit for CDP to max_depth.
+  hipDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, max_depth);
 
   // Build the quadtree.
   Parameters params(max_depth, min_points_per_node);
@@ -683,7 +686,7 @@ bool cdpQuadtree(int warp_size) {
   build_quadtree_kernel<
       NUM_THREADS_PER_BLOCK><<<1, NUM_THREADS_PER_BLOCK, smem_size>>>(
       nodes, points, params);
-  HIPCHECK(hipGetLastError());
+  checkCudaErrors(hipGetLastError());
 
   // Copy points to CPU.
   thrust::host_vector<float> x_h(x_d0);
@@ -694,7 +697,7 @@ bool cdpQuadtree(int warp_size) {
 
   // Copy nodes to CPU.
   Quadtree_node *host_nodes = new Quadtree_node[max_nodes];
-  HIPCHECK(hipMemcpy(host_nodes, nodes,
+  checkCudaErrors(hipMemcpy(host_nodes, nodes,
                              max_nodes * sizeof(Quadtree_node),
                              hipMemcpyDeviceToHost));
 
@@ -706,8 +709,8 @@ bool cdpQuadtree(int warp_size) {
   delete[] host_nodes;
 
   // Free memory.
-  HIPCHECK(hipFree(nodes));
-  HIPCHECK(hipFree(points));
+  checkCudaErrors(hipFree(nodes));
+  checkCudaErrors(hipFree(points));
 
   return ok;
 }
@@ -720,7 +723,7 @@ int main(int argc, char **argv) {
   // The test requires an architecture SM35 or greater (CDP capable).
   int cuda_device = findCudaDevice(argc, (const char **)argv);
   hipDeviceProp_t deviceProps;
-  HIPCHECK(hipGetDeviceProperties(&deviceProps, cuda_device));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProps, cuda_device));
   int cdpCapable = (deviceProps.major == 3 && deviceProps.minor >= 5) ||
                    deviceProps.major >= 4;
 
@@ -735,6 +738,10 @@ int main(int argc, char **argv) {
   }
 
   bool ok = cdpQuadtree(deviceProps.warpSize);
+
+  return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+ops.warpSize);
 
   return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
 }

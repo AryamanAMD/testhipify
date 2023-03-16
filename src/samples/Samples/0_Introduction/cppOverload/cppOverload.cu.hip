@@ -90,12 +90,12 @@ int main(int argc, const char *argv[]) {
   printf("%s starting...\n", sampleName);
 
   int deviceCount;
-  HIPCHECK(hipGetDeviceCount(&deviceCount));
+  checkCudaErrors(hipGetDeviceCount(&deviceCount));
   printf("Device Count: %d\n", deviceCount);
 
   int deviceID = findCudaDevice(argc, argv);
   hipDeviceProp_t prop;
-  HIPCHECK(hipGetDeviceProperties(&prop, deviceID));
+  checkCudaErrors(hipGetDeviceProperties(&prop, deviceID));
   if (prop.major < 2) {
     printf(
         "ERROR: cppOverload requires GPU devices with compute SM 2.0 or "
@@ -105,22 +105,22 @@ int main(int argc, const char *argv[]) {
     exit(EXIT_WAIVED);
   }
 
-  HIPCHECK(hipSetDevice(deviceID));
+  checkCudaErrors(hipSetDevice(deviceID));
 
   // Allocate device memory
-  HIPCHECK(hipMalloc(&dInput, sizeof(int) * N * 2));
-  HIPCHECK(hipMalloc(&dOutput, sizeof(int) * N));
+  checkCudaErrors(hipMalloc(&dInput, sizeof(int) * N * 2));
+  checkCudaErrors(hipMalloc(&dOutput, sizeof(int) * N));
 
   // Allocate host memory
-  HIPCHECK(hipHostMalloc(&hInput, sizeof(int) * N * 2));
-  HIPCHECK(hipHostMalloc(&hOutput, sizeof(int) * N));
+  checkCudaErrors(hipHostMalloc(&hInput, sizeof(int) * N * 2));
+  checkCudaErrors(hipHostMalloc(&hOutput, sizeof(int) * N));
 
   for (int i = 0; i < N * 2; i++) {
     hInput[i] = i;
   }
 
   // Copy data from host to device
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(dInput, hInput, sizeof(int) * N * 2, hipMemcpyHostToDevice));
 
   // Test C++ overloading
@@ -136,11 +136,11 @@ int main(int argc, const char *argv[]) {
   // overload function 1
   func1 = simple_kernel;
   memset(&attr, 0, sizeof(attr));
-  HIPCHECK(hipFuncSetCacheConfig(*func1, hipFuncCachePreferShared));
-  HIPCHECK(hipFuncGetAttributes(&attr, *func1));
+  checkCudaErrors(hipFuncSetCacheConfig(*func1, hipFuncCachePreferShared));
+  checkCudaErrors(hipFuncGetAttributes(&attr, *func1));
   OUTPUT_ATTR(attr);
   (*func1)<<<DIV_UP(N, THREAD_N), THREAD_N>>>(dInput, dOutput, a);
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(hOutput, dOutput, sizeof(int) * N, hipMemcpyDeviceToHost));
   funcResult = check_func1(hInput, hOutput, a);
   printf("simple_kernel(const int *pIn, int *pOut, int a) %s\n\n",
@@ -150,11 +150,11 @@ int main(int argc, const char *argv[]) {
   // overload function 2
   func2 = simple_kernel;
   memset(&attr, 0, sizeof(attr));
-  HIPCHECK(hipFuncSetCacheConfig(*func2, hipFuncCachePreferShared));
-  HIPCHECK(hipFuncGetAttributes(&attr, *func2));
+  checkCudaErrors(hipFuncSetCacheConfig(*func2, hipFuncCachePreferShared));
+  checkCudaErrors(hipFuncGetAttributes(&attr, *func2));
   OUTPUT_ATTR(attr);
   (*func2)<<<DIV_UP(N, THREAD_N), THREAD_N>>>((int2 *)dInput, dOutput, a);
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(hOutput, dOutput, sizeof(int) * N, hipMemcpyDeviceToHost));
   funcResult = check_func2(reinterpret_cast<int2 *>(hInput), hOutput, a);
   printf("simple_kernel(const int2 *pIn, int *pOut, int a) %s\n\n",
@@ -164,11 +164,11 @@ int main(int argc, const char *argv[]) {
   // overload function 3
   func3 = simple_kernel;
   memset(&attr, 0, sizeof(attr));
-  HIPCHECK(hipFuncSetCacheConfig(*func3, hipFuncCachePreferShared));
-  HIPCHECK(hipFuncGetAttributes(&attr, *func3));
+  checkCudaErrors(hipFuncSetCacheConfig(*func3, hipFuncCachePreferShared));
+  checkCudaErrors(hipFuncGetAttributes(&attr, *func3));
   OUTPUT_ATTR(attr);
   (*func3)<<<DIV_UP(N, THREAD_N), THREAD_N>>>(dInput, dInput + N, dOutput, a);
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(hOutput, dOutput, sizeof(int) * N, hipMemcpyDeviceToHost));
   funcResult = check_func3(&hInput[0], &hInput[N], hOutput, a);
   printf(
@@ -177,12 +177,12 @@ int main(int argc, const char *argv[]) {
       funcResult ? "PASSED" : "FAILED");
   testResult &= funcResult;
 
-  HIPCHECK(hipFree(dInput));
-  HIPCHECK(hipFree(dOutput));
-  HIPCHECK(hipHostFree(hOutput));
-  HIPCHECK(hipHostFree(hInput));
+  checkCudaErrors(hipFree(dInput));
+  checkCudaErrors(hipFree(dOutput));
+  checkCudaErrors(hipHostFree(hOutput));
+  checkCudaErrors(hipHostFree(hInput));
 
-  HIPCHECK(hipDeviceSynchronize());
+  checkCudaErrors(hipDeviceSynchronize());
 
   exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }

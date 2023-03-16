@@ -65,9 +65,9 @@
 #include <cuda/pipeline>
 
 // helper functions and utilities to work with CUDA
-#include "helper_functions.h"
-#include "helper_cuda_hipified.h"
-
+#include <helper_functions.h>
+#include <helper_cuda.h>
+#include "HIPCHECK.h"
 // Externally configurable parameters.
 
 #ifndef CPU_DEBUG

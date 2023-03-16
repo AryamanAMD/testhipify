@@ -64,14 +64,14 @@
 #include <hip/hip_runtime.h>
 #include <mma.h>
 #include <hip/hip_cooperative_groups.h>
-#include <cooperative_groups/memcpy_async.h>
+#include "cooperative_groups/memcpy_async.h"
 #include <cuda/std/type_traits>
 #include <cuda/barrier>
 #include <cuda/pipeline>
 
 // helper functions and utilities to work with CUDA
-#include "helper_functions.h"
-#include "helper_cuda_hipified.h"
+#include <helper_functions.h>
+#include <helper_cuda.h>
 
 // Externally configurable parameters.
 
@@ -837,7 +837,7 @@ int main(int argc, char **argv)
     int dev = findCudaDevice(argc, (const char **)argv);
 
     hipDeviceProp_t deviceProp;
-    HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
+    checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
 
     // Double precision Tensor cores require a GPU of Ampere (SM8X) architecture or higher.
     if (deviceProp.major < 8) {
@@ -870,10 +870,10 @@ int main(int argc, char **argv)
     double *C = NULL;
     double *D = NULL;
 
-    HIPCHECK(hipMalloc((void**)&A, sizeof(double) * M_GLOBAL * K_GLOBAL));
-    HIPCHECK(hipMalloc((void**)&B, sizeof(double) * N_GLOBAL * K_GLOBAL));
-    HIPCHECK(hipMalloc((void**)&C, sizeof(double) * M_GLOBAL * N_GLOBAL));
-    HIPCHECK(hipMalloc((void**)&D, sizeof(double) * M_GLOBAL * N_GLOBAL));
+    checkCudaErrors(hipMalloc((void**)&A, sizeof(double) * M_GLOBAL * K_GLOBAL));
+    checkCudaErrors(hipMalloc((void**)&B, sizeof(double) * N_GLOBAL * K_GLOBAL));
+    checkCudaErrors(hipMalloc((void**)&C, sizeof(double) * M_GLOBAL * N_GLOBAL));
+    checkCudaErrors(hipMalloc((void**)&D, sizeof(double) * M_GLOBAL * N_GLOBAL));
 
     assert(((unsigned long long)A) % 128 == 0);
     assert(((unsigned long long)B) % 128 == 0);
@@ -884,10 +884,10 @@ int main(int argc, char **argv)
 
     printf("Preparing data for GPU...\n");
 
-    HIPCHECK(hipMemcpy(A, A_h, sizeof(double) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
-    HIPCHECK(hipMemcpy(B, B_h, sizeof(double) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
-    HIPCHECK(hipMemcpy(C, C_h, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
-    HIPCHECK(hipMemset(D, 0, sizeof(double) * M_GLOBAL * N_GLOBAL));
+    checkCudaErrors(hipMemcpy(A, A_h, sizeof(double) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+    checkCudaErrors(hipMemcpy(B, B_h, sizeof(double) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+    checkCudaErrors(hipMemcpy(C, C_h, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
+    checkCudaErrors(hipMemset(D, 0, sizeof(double) * M_GLOBAL * N_GLOBAL));
 
     enum {
         // Compute the right amount of shared memory to request.
@@ -905,9 +905,9 @@ int main(int argc, char **argv)
 
     hipEvent_t start, stop;
 
-    HIPCHECK(hipEventCreate(&start));
-    HIPCHECK(hipEventCreate(&stop));
-    HIPCHECK(hipEventRecord(start));
+    checkCudaErrors(hipEventCreate(&start));
+    checkCudaErrors(hipEventCreate(&stop));
+    checkCudaErrors(hipEventRecord(start));
 
     kernels selected_kernel = dmma_shmem_gemm_async_copy;
 
@@ -934,21 +934,21 @@ int main(int argc, char **argv)
         {
             case dmma_shmem_gemm_async_copy :
             default:
-                HIPCHECK(hipFuncSetAttribute(compute_dgemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                checkCudaErrors(hipFuncSetAttribute(compute_dgemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
                 checkKernelErrors((compute_dgemm_async_copy<<<deviceProp.multiProcessorCount*3, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
                 break;
             case dmma_shmem_gemm_cg_async_copy :
-                HIPCHECK(hipFuncSetAttribute(compute_dgemm_cg_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                checkCudaErrors(hipFuncSetAttribute(compute_dgemm_cg_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
                 checkKernelErrors((compute_dgemm_cg_async_copy<<<deviceProp.multiProcessorCount*3, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
                 break;
             case dmma_shmem_gemm :
-                HIPCHECK(hipFuncSetAttribute(compute_dgemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                checkCudaErrors(hipFuncSetAttribute(compute_dgemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
                 checkKernelErrors((compute_dgemm<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
                 break;
         }
 
 #if CPU_DEBUG
-        HIPCHECK(hipMemcpy(result_hD, D, sizeof(double)*M_GLOBAL*N_GLOBAL, hipMemcpyDeviceToHost));
+        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(double)*M_GLOBAL*N_GLOBAL, hipMemcpyDeviceToHost));
 #endif
     }
     else
@@ -967,12 +967,12 @@ int main(int argc, char **argv)
         printf("Computing... using simple_wmma_gemm kernel\n");
         simple_wmma_gemm<<<gridDim, blockDim>>>(A, B, C, D, M_GLOBAL, N_GLOBAL, K_GLOBAL, alpha, beta);
 #if CPU_DEBUG
-        HIPCHECK(hipMemcpy(result_hD, D, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
+        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(double) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
 #endif
     }
 
-    HIPCHECK(hipEventRecord(stop));
-    HIPCHECK(hipEventSynchronize(stop));
+    checkCudaErrors(hipEventRecord(stop));
+    checkCudaErrors(hipEventSynchronize(stop));
 
 #if CPU_DEBUG
     printf("Verifying correctness of the computations...\n");
@@ -1004,7 +1004,7 @@ int main(int argc, char **argv)
 
     float milliseconds = 0;
 
-    HIPCHECK(hipEventElapsedTime(&milliseconds, start, stop));
+    checkCudaErrors(hipEventElapsedTime(&milliseconds, start, stop));
 
     printf("Time: %f ms\n", milliseconds);
     printf("FP64 TFLOPS: %.2f\n", (((double)M_GLOBAL * N_GLOBAL * K_GLOBAL * 2)/(milliseconds/1000.)) / 1e12);
@@ -1012,14 +1012,7 @@ int main(int argc, char **argv)
     free(A_h);
     free(B_h);
     free(C_h);
-    HIPCHECK(hipFree((void*)A));
-    HIPCHECK(hipFree((void*)B));
-    HIPCHECK(hipFree((void*)C));
-    HIPCHECK(hipFree((void*)D));
-
-    return 0;
-}
-CudaErrors(hipFree((void*)A));
+    checkCudaErrors(hipFree((void*)A));
     checkCudaErrors(hipFree((void*)B));
     checkCudaErrors(hipFree((void*)C));
     checkCudaErrors(hipFree((void*)D));

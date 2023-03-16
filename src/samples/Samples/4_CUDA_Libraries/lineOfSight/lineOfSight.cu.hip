@@ -152,11 +152,11 @@ int runTest(int argc, char **argv) {
   hipChannelFormatDesc channelDesc =
       hipCreateChannelDesc(32, 0, 0, 0, hipChannelFormatKindFloat);
   hipArray *heightFieldArray;
-  HIPCHECK(
+  checkCudaErrors(
       hipMallocArray(&heightFieldArray, &channelDesc, dim.x, dim.y));
 
   // Initialize device memory
-  HIPCHECK(hipMemcpy2DToArray(
+  checkCudaErrors(hipMemcpy2DToArray(
       heightFieldArray, 0, 0, heightField.height, dim.x * sizeof(float),
       dim.x * sizeof(float), dim.y, hipMemcpyHostToDevice));
 
@@ -175,7 +175,7 @@ int runTest(int argc, char **argv) {
   texDescr.addressMode[1] = hipAddressModeClamp;
   texDescr.readMode = hipReadModeElementType;
 
-  HIPCHECK(
+  checkCudaErrors(
       hipCreateTextureObject(&heightFieldTex, &texRes, &texDescr, NULL));
 
   //////////////////////////////////////////////////////////////////////////////
@@ -256,7 +256,7 @@ int runTest(int argc, char **argv) {
   sdkResetTimer(&timer);
 
   // Cleanup memory
-  HIPCHECK(hipFreeArray(heightFieldArray));
+  checkCudaErrors(hipFreeArray(heightFieldArray));
   return res;
 }
 
