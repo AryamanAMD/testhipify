@@ -55,7 +55,7 @@ def prepend_line(file_name, line):
 
 def prepend_line(file_name, line):
 	result=check_for_word(file_name,line)
-	if result!=-1:
+	if result==-1:
 		p=os.path.dirname(file_name)
 		file=open(file_name,'r')
 		lines = file.readlines()
@@ -377,10 +377,10 @@ def generate(x):
 	textToReplace="HIPCHECK"
 	fileToSearch=p+"/"+q+".hip"
 	
-	textToSearch1="#include <helper_cuda.h>"
-	textToReplace1='#include "helper_cuda_hipified.h"'
-	textToSearch2="#include <helper_functions.h>"
-	textToReplace2='#include "helper_functions.h"'
+	textToSearch1="#include <helper_cuda.h>\n"
+	textToReplace1='#include "helper_cuda_hipified.h"\n'
+	textToSearch2="#include <helper_functions.h>\n"
+	textToReplace2='#include "helper_functions.h"\n'
 	
 	tempFile=open(fileToSearch,'r+')
 	for line in fileinput.input(fileToSearch):
