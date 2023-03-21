@@ -425,7 +425,7 @@ def apply_patches_individually(x):
 	for fname in dir:
 		if os.path.isfile(patch_path+os.sep+fname):
 			#f=open(patch_path+os.sep+fname,'r')
-			with open(patch_path+os.sep+fname,'rb',encoding="utf8", errors='ignore') as f:
+			with open(patch_path+os.sep+fname,encoding="utf8", errors='ignore') as f:
 				contents = f.read()
 				if search_path in contents:
 					#print('found path in patch file '+fname)
