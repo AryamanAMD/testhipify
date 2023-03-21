@@ -31,6 +31,8 @@
 // CUDA 4.0.
 
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 #include <hip/hip_cooperative_groups.h>
 
@@ -38,8 +40,6 @@ namespace cg = cooperative_groups;
 #include "helper_cuda_hipified.h"
 
 #include <stdlib.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 #include <vector>
 #include <algorithm>

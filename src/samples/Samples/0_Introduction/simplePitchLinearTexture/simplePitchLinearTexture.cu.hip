@@ -40,6 +40,8 @@
 
 // includes, system
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 #ifdef _WIN32
 #define WINDOWS_LEAN_AND_MEAN
@@ -47,16 +49,14 @@
 #include <windows.h>
 #endif
 
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 // Includes CUDA
 #include <hip/hip_runtime.h>
 
 // Utilities and timing functions
-#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
 
 // CUDA helper functions
-#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+#include <helper_cuda.h>  // helper functions for CUDA error check
 
 #define NUM_REPS 100  // number of repetitions performed
 #define TILE_DIM 16   // tile/block size

@@ -43,11 +43,9 @@
 #include <string.h>
 #include "helper_functions.h"
 #include "helper_cuda_hipified.h"
-
+#include "HIPCHECK.h"
 ////////////////////////////////////////////////////////////////////////////////
 // Reference CPU FWT
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 ////////////////////////////////////////////////////////////////////////////////
 extern "C" void fwtCPU(float *h_Output, float *h_Input, int log2N);
 extern "C" void slowWTcpu(float *h_Output, float *h_Input, int log2N);

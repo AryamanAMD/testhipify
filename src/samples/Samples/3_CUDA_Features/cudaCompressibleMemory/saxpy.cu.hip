@@ -33,16 +33,15 @@
 // compression.
 
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <hip/hip_runtime.h>
 #define CUDA_DRIVER_API
-#include "helper_cuda_hipified.h"
-#include "HIPCHECK.h"
-#include "compMalloc_hipified.h"
+#include "helper_cuda.h"
+#include "compMalloc.h"
 
 __global__ void saxpy(const float a, const float4 *x, const float4 *y, float4 *z, const size_t n)
 {
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
     for (size_t i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += gridDim.x * blockDim.x)
     {
         const float4 x4 = x[i];

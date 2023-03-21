@@ -31,6 +31,8 @@
  * using one process per GPU for computation.
  */
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <vector>
 #include "helper_cuda.h"
@@ -38,8 +40,6 @@
 static const char shmName[] = "simpleIPCshm";
 // For direct NVLINK and PCI-E peers, at max 8 simultaneous peers are allowed
 // For NVSWITCH connected peers like DGX-2, simultaneous peers are not limited
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 // in the same way.
 #define MAX_DEVICES (32)
 #define DATA_SIZE (64ULL << 20ULL)  // 64MB

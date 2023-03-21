@@ -37,6 +37,8 @@
 
 // includes, system
 #include <stdio.h>
+//#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 // includes CUDA Runtime
 #include <hip/hip_runtime.h>
@@ -44,9 +46,7 @@
 
 // includes, project
 #include "helper_cuda_hipified.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
-#include "helper_functions.h"  // helper utility functions
+#include <helper_functions.h>  // helper utility functions
 
 __global__ void increment_kernel(int *g_data, int inc_value) {
   int idx = blockIdx.x * blockDim.x + threadIdx.x;

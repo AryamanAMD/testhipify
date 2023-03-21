@@ -55,8 +55,8 @@
 namespace cg = cooperative_groups;
 
 // Helper functions and utilities to work with CUDA
-#include <helper_functions.h>
-#include <helper_cuda.h>
+#include "helper_functions.h"
+#include "helper_cuda_hipified.h"
 
 enum kernels {
   AsyncCopyMultiStageLargeChunk = 0,
@@ -762,11 +762,11 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
   unsigned int size_A = dimsA.x * dimsA.y;
   unsigned int mem_size_A = sizeof(float) * size_A;
   float *h_A;
-  checkCudaErrors(hipHostMalloc(&h_A, mem_size_A));
+  HIPCHECK(hipHostMalloc(&h_A, mem_size_A));
   unsigned int size_B = dimsB.x * dimsB.y;
   unsigned int mem_size_B = sizeof(float) * size_B;
   float *h_B;
-  checkCudaErrors(hipHostMalloc(&h_B, mem_size_B));
+  HIPCHECK(hipHostMalloc(&h_B, mem_size_B));
   hipStream_t stream;
 
   // Initialize host memory
@@ -781,29 +781,29 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
   dim3 dimsC(dimsB.x, dimsA.y, 1);
   unsigned int mem_size_C = dimsC.x * dimsC.y * sizeof(float);
   float *h_C;
-  checkCudaErrors(hipHostMalloc(&h_C, mem_size_C));
+  HIPCHECK(hipHostMalloc(&h_C, mem_size_C));
 
   if (h_C == NULL) {
     fprintf(stderr, "Failed to allocate host matrix C!\n");
     exit(EXIT_FAILURE);
   }
 
-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_A), mem_size_A));
-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_B), mem_size_B));
-  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_C), mem_size_C));
+  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_A), mem_size_A));
+  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_B), mem_size_B));
+  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_C), mem_size_C));
   // Allocate CUDA events that we'll use for timing
   hipEvent_t start, stop;
-  checkCudaErrors(hipEventCreate(&start));
-  checkCudaErrors(hipEventCreate(&stop));
+  HIPCHECK(hipEventCreate(&start));
+  HIPCHECK(hipEventCreate(&stop));
 
-  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
   // copy host memory to device
-  checkCudaErrors(
+  HIPCHECK(
       hipMemcpyAsync(d_A, h_A, mem_size_A, hipMemcpyHostToDevice, stream));
-  checkCudaErrors(
+  HIPCHECK(
       hipMemcpyAsync(d_B, h_B, mem_size_B, hipMemcpyHostToDevice, stream));
-  checkCudaErrors(hipMemsetAsync(d_C, 0, mem_size_C, stream));
+  HIPCHECK(hipMemsetAsync(d_C, 0, mem_size_C, stream));
 
   // Setup execution parameters
   dim3 threads(blockSize, blockSize);
@@ -861,13 +861,13 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
   }
 
   printf("done\n");
-  checkCudaErrors(hipStreamSynchronize(stream));
+  HIPCHECK(hipStreamSynchronize(stream));
 
   // Execute the kernel
   int nIter = 100;
 
   // Record the start event
-  checkCudaErrors(hipEventRecord(start, stream));
+  HIPCHECK(hipEventRecord(start, stream));
 
   for (int j = 0; j < nIter; j++) {
     switch (kernel_number) {
@@ -911,13 +911,13 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
   }
 
   // Record the stop event
-  checkCudaErrors(hipEventRecord(stop, stream));
+  HIPCHECK(hipEventRecord(stop, stream));
 
   // Wait for the stop event to complete
-  checkCudaErrors(hipEventSynchronize(stop));
+  HIPCHECK(hipEventSynchronize(stop));
 
   float msecTotal = 0.0f;
-  checkCudaErrors(hipEventElapsedTime(&msecTotal, start, stop));
+  HIPCHECK(hipEventElapsedTime(&msecTotal, start, stop));
 
   // Compute and print the performance
   float msecPerMatrixMul = msecTotal / nIter;
@@ -932,9 +932,9 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
       gigaFlops, msecPerMatrixMul, flopsPerMatrixMul, threads.x * threads.y);
 
   // Copy result from device to host
-  checkCudaErrors(
+  HIPCHECK(
       hipMemcpyAsync(h_C, d_C, mem_size_C, hipMemcpyDeviceToHost, stream));
-  checkCudaErrors(hipStreamSynchronize(stream));
+  HIPCHECK(hipStreamSynchronize(stream));
 
   printf("Checking computed result for correctness: ");
   bool correct = true;
@@ -959,14 +959,14 @@ int MatrixMultiply(int argc, char **argv, const dim3 &dimsA, const dim3 &dimsB,
   printf("%s\n", correct ? "Result = PASS" : "Result = FAIL");
 
   // Clean up memory
-  checkCudaErrors(hipHostFree(h_A));
-  checkCudaErrors(hipHostFree(h_B));
-  checkCudaErrors(hipHostFree(h_C));
-  checkCudaErrors(hipFree(d_A));
-  checkCudaErrors(hipFree(d_B));
-  checkCudaErrors(hipFree(d_C));
-  checkCudaErrors(hipEventDestroy(start));
-  checkCudaErrors(hipEventDestroy(stop));
+  HIPCHECK(hipHostFree(h_A));
+  HIPCHECK(hipHostFree(h_B));
+  HIPCHECK(hipHostFree(h_C));
+  HIPCHECK(hipFree(d_A));
+  HIPCHECK(hipFree(d_B));
+  HIPCHECK(hipFree(d_C));
+  HIPCHECK(hipEventDestroy(start));
+  HIPCHECK(hipEventDestroy(stop));
   printf(
       "\nNOTE: The CUDA Samples are not meant for performance "
       "measurements. Results may vary when GPU Boost is enabled.\n");
@@ -1056,7 +1056,7 @@ int main(int argc, char **argv) {
   }
 
   int major = 0;
-  checkCudaErrors(
+  HIPCHECK(
       hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, dev));
   if (major < 7) {
     printf("globalToShmemAsyncCopy requires SM 7.0 or higher.  Exiting...\n");
@@ -1064,6 +1064,13 @@ int main(int argc, char **argv) {
   }
 
   printf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y, dimsB.x,
+         dimsB.y);
+
+  int matrix_result = MatrixMultiply(argc, argv, dimsA, dimsB, selected_kernel);
+
+  exit(matrix_result);
+}
+rintf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y, dimsB.x,
          dimsB.y);
 
   int matrix_result = MatrixMultiply(argc, argv, dimsA, dimsB, selected_kernel);

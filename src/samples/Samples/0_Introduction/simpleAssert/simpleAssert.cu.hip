@@ -43,8 +43,6 @@
 
 // Utilities and timing functions
 #include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 // CUDA helper functions
 #include "helper_cuda_hipified.h"  // helper functions for CUDA error check

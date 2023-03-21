@@ -39,6 +39,8 @@
 
 // System includes
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <assert.h>
 
 // CUDA runtime
@@ -46,8 +48,6 @@
 
 // helper functions and utilities to work with CUDA
 #include "helper_functions.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "helper_cuda_hipified.h"
 
 #ifndef MAX

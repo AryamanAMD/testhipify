@@ -36,8 +36,6 @@
 // helper functions and utilities to work with CUDA
 #include "helper_cuda_hipified.h"
 #include "helper_functions.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 #ifndef MAX
 #define MAX(a, b) (a > b ? a : b)

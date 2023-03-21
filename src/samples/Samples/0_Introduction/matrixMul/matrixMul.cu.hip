@@ -42,6 +42,8 @@
 
 // System includes
 #include <stdio.h>
+//#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <assert.h>
 
 // CUDA runtime
@@ -49,8 +51,6 @@
 #include <hip/hip_runtime_api.h>
 
 // Helper functions and utilities to work with CUDA
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "helper_functions.h"
 #include "helper_cuda_hipified.h"
 

@@ -34,15 +34,15 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 // CUDA includes
 #include <hip/hip_runtime.h>
 
 // includes, project
 #include "helper_cuda_hipified.h"
-#include "helper_functions.h"  // helper for shared that are common to CUDA Samples
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
+#include <helper_functions.h>  // helper for shared that are common to CUDA Samples
 
 __global__ void SimpleKernel(float *src, float *dst) {
   // Just a dummy kernel, doing enough for us to verify that everything

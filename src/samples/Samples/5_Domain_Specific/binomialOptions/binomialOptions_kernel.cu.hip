@@ -37,8 +37,6 @@ namespace cg = cooperative_groups;
 
 #include "helper_cuda_hipified.h"
 #include "binomialOptions_common.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "realtype.h"
 
 // Preprocessed input option data

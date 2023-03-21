@@ -651,7 +651,7 @@ int main(int argc, char **argv)
     int dev = findCudaDevice(argc, (const char **)argv);
 
     hipDeviceProp_t deviceProp;
-    checkCudaErrors(hipGetDeviceProperties(&deviceProp, dev));
+    HIPCHECK(hipGetDeviceProperties(&deviceProp, dev));
 
     // Tensor cores require a GPU of Volta (SM8X) architecture or higher.
     if (deviceProp.major < 8) {
@@ -684,10 +684,10 @@ int main(int argc, char **argv)
     float *C = NULL;
     float *D = NULL;
 
-    checkCudaErrors(hipMalloc((void**)&A, sizeof(__nv_bfloat16) * M_GLOBAL * K_GLOBAL));
-    checkCudaErrors(hipMalloc((void**)&B, sizeof(__nv_bfloat16) * N_GLOBAL * K_GLOBAL));
-    checkCudaErrors(hipMalloc((void**)&C, sizeof(float) * M_GLOBAL * N_GLOBAL));
-    checkCudaErrors(hipMalloc((void**)&D, sizeof(float) * M_GLOBAL * N_GLOBAL));
+    HIPCHECK(hipMalloc((void**)&A, sizeof(__nv_bfloat16) * M_GLOBAL * K_GLOBAL));
+    HIPCHECK(hipMalloc((void**)&B, sizeof(__nv_bfloat16) * N_GLOBAL * K_GLOBAL));
+    HIPCHECK(hipMalloc((void**)&C, sizeof(float) * M_GLOBAL * N_GLOBAL));
+    HIPCHECK(hipMalloc((void**)&D, sizeof(float) * M_GLOBAL * N_GLOBAL));
 
     assert(((unsigned long long)A) % 128 == 0);
     assert(((unsigned long long)B) % 128 == 0);
@@ -698,10 +698,10 @@ int main(int argc, char **argv)
 
     printf("Preparing data for GPU...\n");
 
-    checkCudaErrors(hipMemcpy(A, A_h, sizeof(__nv_bfloat16) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
-    checkCudaErrors(hipMemcpy(B, B_h, sizeof(__nv_bfloat16) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
-    checkCudaErrors(hipMemcpy(C, C_h, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
-    checkCudaErrors(hipMemset(D, 0, sizeof(float) * M_GLOBAL * N_GLOBAL));
+    HIPCHECK(hipMemcpy(A, A_h, sizeof(__nv_bfloat16) * M_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+    HIPCHECK(hipMemcpy(B, B_h, sizeof(__nv_bfloat16) * N_GLOBAL * K_GLOBAL, hipMemcpyHostToDevice));
+    HIPCHECK(hipMemcpy(C, C_h, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyHostToDevice));
+    HIPCHECK(hipMemset(D, 0, sizeof(float) * M_GLOBAL * N_GLOBAL));
 
     enum {
         // Compute the right amount of shared memory to request.
@@ -719,9 +719,9 @@ int main(int argc, char **argv)
 
     hipEvent_t start, stop;
 
-    checkCudaErrors(hipEventCreate(&start));
-    checkCudaErrors(hipEventCreate(&stop));
-    checkCudaErrors(hipEventRecord(start));
+    HIPCHECK(hipEventCreate(&start));
+    HIPCHECK(hipEventCreate(&stop));
+    HIPCHECK(hipEventRecord(start));
 
     // kernel to run - default (b16mma_shmem_gemm_async_copy == 0)
     kernels selected_kernel = bf16mma_shmem_gemm_async_copy;
@@ -745,11 +745,11 @@ int main(int argc, char **argv)
         {
             case bf16mma_shmem_gemm_async_copy :
             default:
-                HIPCHECK(hipFuncSetAttribute((const void *)compute_bf16gemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                HIPCHECK(hipFuncSetAttribute(compute_bf16gemm_async_copy, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
                 checkKernelErrors((compute_bf16gemm_async_copy<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
                 break;
             case bf16mma_shmem_gemm :
-                HIPCHECK(hipFuncSetAttribute((const void *)compute_bf16gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
+                HIPCHECK(hipFuncSetAttribute(compute_bf16gemm, hipFuncAttributeMaxDynamicSharedMemorySize, SHMEM_SZ));
                 checkKernelErrors((compute_bf16gemm<<<deviceProp.multiProcessorCount*2, THREADS_PER_BLOCK, SHMEM_SZ>>>(A, B, C, D, alpha, beta)));
                 break;
         }
@@ -760,7 +760,7 @@ int main(int argc, char **argv)
     else {
         dim3 gridDim;
         dim3 blockDim;
-     
+
         // blockDim.x must be a multple of warpSize
         // 128x4 means we have 16 warps and a block computes a 64x64 output tile
         blockDim.x = 128;
@@ -772,12 +772,12 @@ int main(int argc, char **argv)
         printf("Computing... using simple_wmma_gemm kernel\n");
         simple_wmma_bf16gemm<<<gridDim, blockDim>>>(A, B, C, D, M_GLOBAL, N_GLOBAL, K_GLOBAL, alpha, beta);
 #if CPU_DEBUG
-        checkCudaErrors(hipMemcpy(result_hD, D, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
+        HIPCHECK(hipMemcpy(result_hD, D, sizeof(float) * M_GLOBAL * N_GLOBAL, hipMemcpyDeviceToHost));
 #endif
     }
 
-    checkCudaErrors(hipEventRecord(stop));
-    checkCudaErrors(hipEventSynchronize(stop));
+    HIPCHECK(hipEventRecord(stop));
+    HIPCHECK(hipEventSynchronize(stop));
 
 #if CPU_DEBUG
     printf("Verifying correctness of the computations...\n");
@@ -801,7 +801,7 @@ int main(int argc, char **argv)
 
     float milliseconds = 0;
 
-    checkCudaErrors(hipEventElapsedTime(&milliseconds, start, stop));
+    HIPCHECK(hipEventElapsedTime(&milliseconds, start, stop));
 
     printf("Time: %f ms\n", milliseconds);
     printf("TFLOPS: %.2f\n", (((double)M_GLOBAL * N_GLOBAL * K_GLOBAL * 2)/(milliseconds/1000.)) / 1e12);

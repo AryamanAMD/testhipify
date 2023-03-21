@@ -36,7 +36,7 @@
 #include <stdint.h>
 #include <cstdio>
 #include <ctime>
-
+#include "HIPCHECK.h"
 #define min(a, b) (a) < (b) ? (a) : (b)
 #define max(a, b) (a) > (b) ? (a) : (b)
 
@@ -59,11 +59,13 @@ __global__ void atomicKernel(int *atom_arr) {
     atomicMin_system(&atom_arr[3], tid);
 
     // Atomic increment (modulo 17+1)
-    // atomicInc_system((unsigned int *)&atom_arr[4], 17);
-       atomicAnd_system((unsigned int *)&atom_arr[4], 17);
+    //atomicInc_system((unsigned int *)&atom_arr[4], 17);
+    atomicInc((unsigned int *)&atom_arr[4], 17);
+
 
     // Atomic decrement
-    atomicDec_system((unsigned int *)&atom_arr[5], 137);
+    //atomicDec_system((unsigned int *)&atom_arr[5], 137);
+    atomicDec((unsigned int *)&atom_arr[4], 17);
 
     // Atomic compare-and-swap
     atomicCAS_system(&atom_arr[6], tid - 1, tid);

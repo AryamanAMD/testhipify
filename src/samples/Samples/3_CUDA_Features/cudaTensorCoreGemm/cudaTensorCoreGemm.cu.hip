@@ -654,3 +654,9 @@ rpret_cast<void *>(B)));
 
   return 0;
 }
+rpret_cast<void *>(B)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
+
+  return 0;
+}

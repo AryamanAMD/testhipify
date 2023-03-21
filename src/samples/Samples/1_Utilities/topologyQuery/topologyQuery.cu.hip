@@ -35,7 +35,7 @@
 
 // includes, project
 #include "helper_cuda_hipified.h"
-#include "helper_functions.h"  // helper for shared that are common to CUDA Samples
+#include <helper_functions.h>  // helper for shared that are common to CUDA Samples
 
 int main(int argc, char **argv) {
   int deviceCount = 0;

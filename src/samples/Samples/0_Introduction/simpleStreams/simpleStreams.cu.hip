@@ -66,8 +66,6 @@ const char *sDeviceSyncMethod[] = {
 
 // helper functions and utilities to work with CUDA
 #include "helper_functions.h"
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "helper_cuda_hipified.h"
 
 #ifndef WIN32

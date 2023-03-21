@@ -298,3 +298,4 @@ extern "C" void sobelFilter(Pixel *odata, int iw, int ih,
          iw, ih, fScale, texObject);
     } break;
   }
+}

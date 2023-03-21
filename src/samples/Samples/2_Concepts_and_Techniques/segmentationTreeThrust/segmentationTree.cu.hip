@@ -46,8 +46,6 @@
 #include <iostream>
 #include <fstream>
 #include <iterator>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <vector>
 #include <list>
 #include <deque>
@@ -73,9 +71,9 @@
 #include <thrust/device_free.h>
 
 // Sample framework includes.
-#include "helper_functions.h"
-#include "helper_cuda_hipified.h"
-#include "HIPCHECK.h"
+#include <helper_functions.h>
+#include <helper_cuda.h>
+
 // Project includes.
 #include "common.cuh"
 
@@ -267,13 +265,13 @@ class Pyramid
                     thrust::device_ptr<uint> superVerticesOffsets,
                     thrust::device_ptr<uint> verticesIDs)
                 {
-                    HIPCHECK(
+                    checkCudaErrors(
                         hipMemcpy(&(superNodesOffsets_[0]),
                                    superVerticesOffsets.get(),
                                    sizeof(uint) * superNodesOffsets_.size(),
                                    hipMemcpyDeviceToHost));
 
-                    HIPCHECK(
+                    checkCudaErrors(
                         hipMemcpy(&(nodes_[0]),
                                    verticesIDs.get(),
                                    sizeof(uint) * nodes_.size(),
@@ -517,15 +515,15 @@ class SegmentationTreeBuilder
             dOutputEdgesFlags_ = pools.uintEdges.get();
 
             // Copy graph to the device memory
-            HIPCHECK(hipMemcpy(dVertices_.get(),
+            checkCudaErrors(hipMemcpy(dVertices_.get(),
                                        &(graph.vertices[0]),
                                        sizeof(uint) * verticesCount_,
                                        hipMemcpyHostToDevice));
-            HIPCHECK(hipMemcpy(dEdges_.get(),
+            checkCudaErrors(hipMemcpy(dEdges_.get(),
                                        &(graph.edges[0]),
                                        sizeof(uint) * edgesCount_,
                                        hipMemcpyHostToDevice));
-            HIPCHECK(hipMemcpy(dWeights_.get(),
+            checkCudaErrors(hipMemcpy(dWeights_.get(),
                                        &(graph.weights[0]),
                                        sizeof(float) * edgesCount_,
                                        hipMemcpyHostToDevice));

@@ -31,8 +31,8 @@
  * See supplied whitepaper for more explanations.
  */
 
-#include "helper_functions.h"  // helper functions for string parsing
-#include "helper_cuda_hipified.h"  // helper functions CUDA error checking and initialization
+#include <helper_functions.h>  // helper functions for string parsing
+#include <helper_cuda.h>  // helper functions CUDA error checking and initialization
 
 ////////////////////////////////////////////////////////////////////////////////
 // Process an array of optN options on CPU

@@ -64,6 +64,8 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
 
@@ -71,8 +73,6 @@
 #include "helper_functions.h"
 #include "helper_cuda_hipified.h"
 
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #define VERSION_MAJOR (CUDART_VERSION / 1000)
 #define VERSION_MINOR (CUDART_VERSION % 100) / 10
 

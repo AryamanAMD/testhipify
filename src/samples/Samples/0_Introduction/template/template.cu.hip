@@ -34,6 +34,8 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
 
@@ -41,10 +43,8 @@
 #include <hip/hip_runtime.h>
 
 // includes, project
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "helper_cuda_hipified.h"
-#include "helper_functions.h" // helper functions for SDK examples
+#include <helper_functions.h> // helper functions for SDK examples
 
 ////////////////////////////////////////////////////////////////////////////////
 // declaration, forward

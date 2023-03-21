@@ -36,6 +36,8 @@
 //
 #include <hip/hip_cooperative_groups.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 namespace cg = cooperative_groups;
 #include "helper_cuda_hipified.h"
@@ -43,8 +45,6 @@ namespace cg = cooperative_groups;
 
 // This is a kernel that does no real work but runs at least for a specified
 // number of clocks
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 __global__ void clock_block(clock_t *d_o, clock_t clock_count) {
   unsigned int start_clock = (unsigned int)clock();
 

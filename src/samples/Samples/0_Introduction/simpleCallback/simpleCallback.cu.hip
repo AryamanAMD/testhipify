@@ -42,6 +42,8 @@
 
 // System includes
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 // helper functions and utilities to work with CUDA
 #include "helper_functions.h"
@@ -49,8 +51,6 @@
 
 #include "multithreading.h"
 
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 const int N_workloads = 8;
 const int N_elements_per_workload = 100000;
 
@@ -142,7 +142,8 @@ CUT_THREADPROC postprocess(void *void_arg) {
   CUT_THREADEND;
 }
 
-void (CUDART_CB* myStreamCallback)(hipStream_t stream, hipError_t status, void *data) {
+void myStreamCallback(hipStream_t stream, hipError_t status,
+                                void *data) {
   // Check status of GPU after stream operations are done
   HIPCHECK(status);
 

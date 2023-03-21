@@ -28,6 +28,7 @@
 
 // System includes.
 #include <stdio.h>
+//#include "rocprofiler.h"
 #include <iostream>
 
 // STL.
@@ -35,8 +36,6 @@
 
 // CUDA runtime.
 #include <hip/hip_runtime.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 // Helper functions and utilities to work with CUDA.
 #include "helper_functions.h"

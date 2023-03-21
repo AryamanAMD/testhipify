@@ -27,7 +27,7 @@
  */
 
 #include <iostream>
-#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+#include <helper_cuda.h>  // helper functions for CUDA error check
 
 const int manualBlockSize = 32;
 

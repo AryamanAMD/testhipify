@@ -30,6 +30,8 @@
 #define QUASIRANDOMGENERATOR_KERNEL_CUH
 
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <stdlib.h>
 #include "helper_cuda_hipified.h"
 #include "quasirandomGenerator_common.h"
@@ -37,8 +39,6 @@
 // Fast integer multiplication
 #define MUL(a, b) __umul24(a, b)
 
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 ////////////////////////////////////////////////////////////////////////////////
 // Niederreiter quasirandom number generation kernel
 ////////////////////////////////////////////////////////////////////////////////

@@ -43,8 +43,6 @@ namespace cg = cooperative_groups;
 
 const char *sSDKsample = "hyperQ";
 
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 // This subroutine does no real work but runs for at least the specified number
 // of clock ticks.
 __device__ void clock_block(clock_t *d_o, clock_t clock_count) {

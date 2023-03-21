@@ -32,6 +32,8 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
 
@@ -39,8 +41,6 @@
 #define WINDOWS_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #endif
 
 // Includes CUDA
@@ -51,7 +51,7 @@
 
 // CUDA helper functions
 #include "helper_cuda_hipified.h"  // helper functions for CUDA error check
-
+#include "HIPCHECK.h"
 // Includes, kernels
 #include "simpleAtomicIntrinsics_kernel.cuh"
 

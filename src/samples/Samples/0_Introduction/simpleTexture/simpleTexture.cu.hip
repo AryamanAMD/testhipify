@@ -37,6 +37,8 @@
 // Includes, system
 #include <stdlib.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
 
@@ -44,8 +46,6 @@
 #define WINDOWS_LEAN_AND_MEAN
 #define NOMINMAX
 #include <windows.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #endif
 
 // Includes CUDA
@@ -56,7 +56,7 @@
 
 // CUDA helper functions
 #include "helper_cuda_hipified.h"  // helper functions for CUDA error check
-
+#include "HIPCHECK.h"
 #define MAX_EPSILON_ERROR 5e-3f
 
 // Define the files that are to be save and the reference images for validation

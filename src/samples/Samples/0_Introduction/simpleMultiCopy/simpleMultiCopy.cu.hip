@@ -45,15 +45,15 @@ const char *sSDKname = "simpleMultiCopy";
 
 // includes, system
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 // include CUDA
 #include <hip/hip_runtime.h>
 
 // includes, project
 #include "helper_cuda_hipified.h"
-#include "helper_functions.h"  // helper for shared that are common to CUDA Samples
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
+#include <helper_functions.h>  // helper for shared that are common to CUDA Samples
 
 // includes, kernels
 // Declare the CUDA kernels here and main() code that is needed to launch

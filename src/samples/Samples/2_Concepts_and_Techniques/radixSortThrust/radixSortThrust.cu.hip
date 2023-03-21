@@ -34,7 +34,7 @@
 #include <thrust/generate.h>
 #include <thrust/detail/type_traits.h>
 
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 
 #include <algorithm>
 #include <time.h>
@@ -142,8 +142,8 @@ bool testSort(int argc, char **argv) {
 
   // run multiple iterations to compute an average sort time
   hipEvent_t start_event, stop_event;
-  checkCudaErrors(hipEventCreate(&start_event));
-  checkCudaErrors(hipEventCreate(&stop_event));
+  HIPCHECK(hipEventCreate(&start_event));
+  HIPCHECK(hipEventCreate(&stop_event));
 
   float totalTime = 0;
 
@@ -153,18 +153,18 @@ bool testSort(int argc, char **argv) {
 
     if (!keysOnly) d_values = h_values;
 
-    checkCudaErrors(hipEventRecord(start_event, 0));
+    HIPCHECK(hipEventRecord(start_event, 0));
 
     if (keysOnly)
       thrust::sort(d_keys.begin(), d_keys.end());
     else
       thrust::sort_by_key(d_keys.begin(), d_keys.end(), d_values.begin());
 
-    checkCudaErrors(hipEventRecord(stop_event, 0));
-    checkCudaErrors(hipEventSynchronize(stop_event));
+    HIPCHECK(hipEventRecord(stop_event, 0));
+    HIPCHECK(hipEventSynchronize(stop_event));
 
     float time = 0;
-    checkCudaErrors(hipEventElapsedTime(&time, start_event, stop_event));
+    HIPCHECK(hipEventElapsedTime(&time, start_event, stop_event));
     totalTime += time;
   }
 
@@ -188,8 +188,8 @@ bool testSort(int argc, char **argv) {
   bool bTestResult =
       thrust::is_sorted(h_keysSorted.begin(), h_keysSorted.end());
 
-  checkCudaErrors(hipEventDestroy(start_event));
-  checkCudaErrors(hipEventDestroy(stop_event));
+  HIPCHECK(hipEventDestroy(start_event));
+  HIPCHECK(hipEventDestroy(stop_event));
 
   if (!bTestResult && !quiet) {
     return false;
@@ -212,4 +212,6 @@ int main(int argc, char **argv) {
     bTestResult = testSort<unsigned int, false>(argc, argv);
 
   printf(bTestResult ? "Test passed\n" : "Test failed!\n");
+}
+tf(bTestResult ? "Test passed\n" : "Test failed!\n");
 }

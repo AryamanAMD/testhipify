@@ -39,6 +39,8 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
 
@@ -46,10 +48,8 @@
 #include <hip/hip_runtime.h>
 
 // includes, project
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include "helper_cuda_hipified.h"
-#include "helper_functions.h"  // helper for shared that are common to CUDA Samples
+#include <helper_functions.h>  // helper for shared that are common to CUDA Samples
 
 static const char *sSDKname = "simpleLayeredTexture";
 
