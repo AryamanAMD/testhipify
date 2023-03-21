@@ -55,7 +55,7 @@ def prepend_line(file_name, line):
 
 def prepend_line(file_name, line):
 	result=check_for_word(file_name,line)
-	if result==0:
+	if result!=-10:
 		p=os.path.dirname(file_name)
 		file=open(file_name,'r')
 		lines = file.readlines()
@@ -75,12 +75,10 @@ def prepend_line(file_name, line):
 
 def check_for_word(file_name,word):
 	file = open(file_name, 'r')
-	linelist = file.readlines()
+	linelist = file.read()
+	index=linelist.find(word)
 	file.close()
-	for line in linelist:
-		if str(word) in line:
-			return 1
-	return 0
+	return index
 		 
 
 
