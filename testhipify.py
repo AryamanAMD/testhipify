@@ -424,15 +424,17 @@ def apply_patches_individually(x):
 	dir=os.listdir(patch_path)
 	for fname in dir:
 		if os.path.isfile(patch_path+os.sep+fname):
-			f=open(patch_path+os.sep+fname,'r')
-			if search_path in f.read():
-				#print('found path in patch file '+fname)
-				patch_files.append(fname)
-			'''	
-			else:
-				print('Not found')
-			'''	
-			f.close()
+			#f=open(patch_path+os.sep+fname,'r')
+			with open(patch_path+os.sep+fname,'rb') as f:
+				contents = f.read()
+				if search_path in contents:
+					#print('found path in patch file '+fname)
+					patch_files.append(fname)
+				'''	
+				else:
+					print('Not found')
+				'''	
+				f.close()
 	for patch in patch_files:
 		command='git apply --reject --whitespace=fix '+patch_path+'/'+patch
 		print(command)
