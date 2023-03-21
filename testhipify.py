@@ -426,9 +426,11 @@ def apply_patches_individually(x):
 		if os.path.isfile(patch_path+os.sep+fname):
 			#f=open(patch_path+os.sep+fname,'r')
 			with open(patch_path+os.sep+fname,'rb') as f:
-				contents = f.read()
-				if search_path in contents.encode():
+				#contents = f.read()
+				lines = [y.decode('utf8').strip() for y in f.readlines()]
+				if search_path in lines:
 					#print('found path in patch file '+fname)
+					#lines = [x.decode('utf8').strip() for x in f.readlines()]
 					patch_files.append(fname)
 				'''	
 				else:
