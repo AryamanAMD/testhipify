@@ -55,7 +55,7 @@ def prepend_line(file_name, line):
 
 def prepend_line(file_name, line):
 	result=check_for_word(file_name,line)
-	if result!=-1:
+	if result==-1:
 		p=os.path.dirname(file_name)
 		file=open(file_name,'r')
 		lines = file.readlines()
