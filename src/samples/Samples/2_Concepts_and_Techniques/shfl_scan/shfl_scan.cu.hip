@@ -213,9 +213,9 @@ bool shuffle_simple_test(int argc, char **argv) {
   cuda_device = findCudaDevice(argc, (const char **)argv);
 
   hipDeviceProp_t deviceProp;
-  HIPCHECK(hipGetDevice(&cuda_device));
+  checkCudaErrors(hipGetDevice(&cuda_device));
 
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, cuda_device));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, cuda_device));
 
   printf("> Detected Compute SM %d.%d hardware with %d multi-processors\n",
          deviceProp.major, deviceProp.minor, deviceProp.multiProcessorCount);
@@ -227,9 +227,9 @@ bool shuffle_simple_test(int argc, char **argv) {
     exit(EXIT_WAIVED);
   }
 
-  HIPCHECK(hipHostMalloc(reinterpret_cast<void **>(&h_data),
+  checkCudaErrors(hipHostMalloc(reinterpret_cast<void **>(&h_data),
                                  sizeof(int) * n_elements));
-  HIPCHECK(hipHostMalloc(reinterpret_cast<void **>(&h_result),
+  checkCudaErrors(hipHostMalloc(reinterpret_cast<void **>(&h_result),
                                  sizeof(int) * n_elements));
 
   // initialize data:
@@ -259,32 +259,32 @@ bool shuffle_simple_test(int argc, char **argv) {
 
   // initialize a timer
   hipEvent_t start, stop;
-  HIPCHECK(hipEventCreate(&start));
-  HIPCHECK(hipEventCreate(&stop));
+  checkCudaErrors(hipEventCreate(&start));
+  checkCudaErrors(hipEventCreate(&stop));
   float et = 0;
   float inc = 0;
 
-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_data), sz));
-  HIPCHECK(
+  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_data), sz));
+  checkCudaErrors(
       hipMalloc(reinterpret_cast<void **>(&d_partial_sums), partial_sz));
-  HIPCHECK(hipMemset(d_partial_sums, 0, partial_sz));
+  checkCudaErrors(hipMemset(d_partial_sums, 0, partial_sz));
 
-  HIPCHECK(
+  checkCudaErrors(
       hipHostMalloc(reinterpret_cast<void **>(&h_partial_sums), partial_sz));
-  HIPCHECK(hipMemcpy(d_data, h_data, sz, hipMemcpyHostToDevice));
+  checkCudaErrors(hipMemcpy(d_data, h_data, sz, hipMemcpyHostToDevice));
 
-  HIPCHECK(hipEventRecord(start, 0));
+  checkCudaErrors(hipEventRecord(start, 0));
   shfl_scan_test<<<gridSize, blockSize, shmem_sz>>>(d_data, 32, d_partial_sums);
   shfl_scan_test<<<p_gridSize, p_blockSize, shmem_sz>>>(d_partial_sums, 32);
   uniform_add<<<gridSize - 1, blockSize>>>(d_data + blockSize, d_partial_sums,
                                            n_elements);
-  HIPCHECK(hipEventRecord(stop, 0));
-  HIPCHECK(hipEventSynchronize(stop));
-  HIPCHECK(hipEventElapsedTime(&inc, start, stop));
+  checkCudaErrors(hipEventRecord(stop, 0));
+  checkCudaErrors(hipEventSynchronize(stop));
+  checkCudaErrors(hipEventElapsedTime(&inc, start, stop));
   et += inc;
 
-  HIPCHECK(hipMemcpy(h_result, d_data, sz, hipMemcpyDeviceToHost));
-  HIPCHECK(hipMemcpy(h_partial_sums, d_partial_sums, partial_sz,
+  checkCudaErrors(hipMemcpy(h_result, d_data, sz, hipMemcpyDeviceToHost));
+  checkCudaErrors(hipMemcpy(h_partial_sums, d_partial_sums, partial_sz,
                              hipMemcpyDeviceToHost));
 
   printf("Test Sum: %d\n", h_partial_sums[n_partialSums - 1]);
@@ -294,11 +294,11 @@ bool shuffle_simple_test(int argc, char **argv) {
 
   bool bTestResult = CPUverify(h_data, h_result, n_elements);
 
-  HIPCHECK(hipHostFree(h_data));
-  HIPCHECK(hipHostFree(h_result));
-  HIPCHECK(hipHostFree(h_partial_sums));
-  HIPCHECK(hipFree(d_data));
-  HIPCHECK(hipFree(d_partial_sums));
+  checkCudaErrors(hipHostFree(h_data));
+  checkCudaErrors(hipHostFree(h_result));
+  checkCudaErrors(hipHostFree(h_partial_sums));
+  checkCudaErrors(hipFree(d_data));
+  checkCudaErrors(hipFree(d_partial_sums));
 
   return bTestResult;
 }
@@ -317,7 +317,7 @@ bool shuffle_integral_image_test() {
   printf("\nComputing Integral Image Test on size %d x %d synthetic data\n", w,
          h);
   printf("---------------------------------------------------\n");
-  HIPCHECK(hipHostMalloc(reinterpret_cast<void **>(&h_image), sz));
+  checkCudaErrors(hipHostMalloc(reinterpret_cast<void **>(&h_image), sz));
   // fill test "image" with synthetic 1's data
   memset(h_image, 0, sz);
 
@@ -327,11 +327,11 @@ bool shuffle_integral_image_test() {
   int gridSize = h;
 
   // Create a synthetic image for testing
-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_data), sz));
-  HIPCHECK(hipMalloc(reinterpret_cast<void **>(&d_integral_image),
+  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_data), sz));
+  checkCudaErrors(hipMalloc(reinterpret_cast<void **>(&d_integral_image),
                              n_elements * sizeof(int) * 4));
-  HIPCHECK(hipMemset(d_data, 1, sz));
-  HIPCHECK(hipMemset(d_integral_image, 0, sz));
+  checkCudaErrors(hipMemset(d_data, 1, sz));
+  checkCudaErrors(hipMemset(d_integral_image, 0, sz));
 
   hipEvent_t start, stop;
   hipEventCreate(&start);
@@ -345,12 +345,12 @@ bool shuffle_integral_image_test() {
       reinterpret_cast<uint4 *>(d_data),
       reinterpret_cast<uint4 *>(d_integral_image));
   hipEventRecord(stop);
-  HIPCHECK(hipEventSynchronize(stop));
-  HIPCHECK(hipEventElapsedTime(&et, start, stop));
+  checkCudaErrors(hipEventSynchronize(stop));
+  checkCudaErrors(hipEventElapsedTime(&et, start, stop));
   printf("Method: Fast  Time (GPU Timer): %f ms ", et);
 
   // verify the scan line results
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(h_image, d_integral_image, sz, hipMemcpyDeviceToHost));
   err = verifyDataRowSums(h_image, w, h);
   printf("Diff = %d\n", err);
@@ -363,21 +363,21 @@ bool shuffle_integral_image_test() {
   shfl_vertical_shfl<<<testGrid, blockSz>>>((unsigned int *)d_integral_image, w,
                                             h);
   hipEventRecord(stop);
-  HIPCHECK(hipEventSynchronize(stop));
-  HIPCHECK(hipEventElapsedTime(&et, start, stop));
+  checkCudaErrors(hipEventSynchronize(stop));
+  checkCudaErrors(hipEventElapsedTime(&et, start, stop));
   printf("Method: Vertical Scan  Time (GPU Timer): %f ms ", et);
 
   // Verify the column results
-  HIPCHECK(
+  checkCudaErrors(
       hipMemcpy(h_image, d_integral_image, sz, hipMemcpyDeviceToHost));
   printf("\n");
 
   int finalSum = h_image[w * h - 1];
   printf("CheckSum: %d, (expect %dx%d=%d)\n", finalSum, w, h, w * h);
 
-  HIPCHECK(hipFree(d_data));
-  HIPCHECK(hipFree(d_integral_image));
-  HIPCHECK(hipHostFree(h_image));
+  checkCudaErrors(hipFree(d_data));
+  checkCudaErrors(hipFree(d_integral_image));
+  checkCudaErrors(hipHostFree(h_image));
   // verify final sum: if the final value in the corner is the same as the size
   // of the buffer (all 1's) then the integral image was generated successfully
   return (finalSum == w * h) ? true : false;
@@ -395,9 +395,9 @@ int main(int argc, char *argv[]) {
   cuda_device = findCudaDevice(argc, (const char **)argv);
 
   hipDeviceProp_t deviceProp;
-  HIPCHECK(hipGetDevice(&cuda_device));
+  checkCudaErrors(hipGetDevice(&cuda_device));
 
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, cuda_device));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, cuda_device));
 
   printf("> Detected Compute SM %d.%d hardware with %d multi-processors\n",
          deviceProp.major, deviceProp.minor, deviceProp.multiProcessorCount);

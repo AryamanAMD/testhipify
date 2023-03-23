@@ -1,4 +1,4 @@
-
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -42,11 +42,9 @@
 #include <string.h>
 
 // includes, project
-#include "helper_cuda_hipified.h"  // helper functions for CUDA error checking and initialization
-#include "helper_functions.h"  // helper utility functions
+#include <helper_cuda.h>  // helper functions for CUDA error checking and initialization
+#include <helper_functions.h>  // helper utility functions
 
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 ////////////////////////////////////////////////////////////////////////////////
 // Misaligned types
 ////////////////////////////////////////////////////////////////////////////////
@@ -315,5 +313,3 @@ int main(int argc, char **argv) {
   printf("Test passed\n");
   exit(EXIT_SUCCESS);
 }
-XIT_FAILURE);
-  }

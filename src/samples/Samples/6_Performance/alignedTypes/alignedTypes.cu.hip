@@ -38,15 +38,13 @@
 // includes, system
 #include <math.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <string.h>
 
 // includes, project
-#include <helper_cuda.h>  // helper functions for CUDA error checking and initialization
+#include "helper_cuda_hipified.h"  // helper functions for CUDA error checking and initialization
 #include <helper_functions.h>  // helper utility functions
-
+#include "HIPCHECK.h"
 ////////////////////////////////////////////////////////////////////////////////
 // Misaligned types
 ////////////////////////////////////////////////////////////////////////////////
@@ -315,5 +313,3 @@ int main(int argc, char **argv) {
   printf("Test passed\n");
   exit(EXIT_SUCCESS);
 }
-XIT_FAILURE);
-  }

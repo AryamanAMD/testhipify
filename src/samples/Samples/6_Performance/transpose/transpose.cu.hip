@@ -45,8 +45,8 @@ namespace cg = cooperative_groups;
 // Utilities and system includes
 #include <helper_string.h>    // helper for string parsing
 #include <helper_image.h>     // helper for image and data comparison
-#include <helper_cuda.h>      // helper for cuda error checking functions
-
+#include <helper_cuda_hipified.h>      // helper for cuda error checking functions
+#include "HIPCHECK.h"
 const char *sSDKsample = "Transpose";
 
 // Each block transposes/copies a tile of TILE_DIM x TILE_DIM elements
@@ -612,7 +612,3 @@ int main(int argc, char **argv) {
   printf("Test passed\n");
   exit(EXIT_SUCCESS);
 }
-ccess) {
-    printf("Test failed!\n");
-    exit(EXIT_FAILURE);
-  }

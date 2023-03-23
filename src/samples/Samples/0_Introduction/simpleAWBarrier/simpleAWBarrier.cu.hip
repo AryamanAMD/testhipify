@@ -35,10 +35,10 @@
 #include <hip/hip_cooperative_groups.h>
 
 // Utilities and timing functions
-#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
 
 // CUDA helper functions
-#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+#include <helper_cuda.h>  // helper functions for CUDA error check
 
 namespace cg = cooperative_groups;
 
@@ -145,7 +145,7 @@ int main(int argc, char **argv) {
   int dev = findCudaDevice(argc, (const char **)argv);
 
   int major = 0;
-  HIPCHECK(
+  checkCudaErrors(
       hipDeviceGetAttribute(&major, hipDeviceAttributeComputeCapabilityMajor, dev));
 
   // Arrive-Wait Barrier require a GPU of Volta (SM7X) architecture or higher.
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
   }
 
   int supportsCooperativeLaunch = 0;
-  HIPCHECK(hipDeviceGetAttribute(&supportsCooperativeLaunch,
+  checkCudaErrors(hipDeviceGetAttribute(&supportsCooperativeLaunch,
                                          hipDeviceAttributeCooperativeLaunch, dev));
 
   if (!supportsCooperativeLaunch) {
@@ -178,11 +178,11 @@ int runNormVecByDotProductAWBarrier(int argc, char **argv, int deviceId) {
   double *d_partialResults;
   int size = 10000000;
 
-  HIPCHECK(hipHostMalloc(&vecA, sizeof(float) * size));
-  HIPCHECK(hipHostMalloc(&vecB, sizeof(float) * size));
+  checkCudaErrors(hipHostMalloc(&vecA, sizeof(float) * size));
+  checkCudaErrors(hipHostMalloc(&vecB, sizeof(float) * size));
 
-  HIPCHECK(hipMalloc(&d_vecA, sizeof(float) * size));
-  HIPCHECK(hipMalloc(&d_vecB, sizeof(float) * size));
+  checkCudaErrors(hipMalloc(&d_vecA, sizeof(float) * size));
+  checkCudaErrors(hipMalloc(&d_vecB, sizeof(float) * size));
 
   float baseVal = 2.0;
   for (int i = 0; i < size; i++) {
@@ -190,31 +190,31 @@ int runNormVecByDotProductAWBarrier(int argc, char **argv, int deviceId) {
   }
 
   hipStream_t stream;
-  HIPCHECK(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
+  checkCudaErrors(hipStreamCreateWithFlags(&stream, hipStreamNonBlocking));
 
-  HIPCHECK(hipMemcpyAsync(d_vecA, vecA, sizeof(float) * size,
+  checkCudaErrors(hipMemcpyAsync(d_vecA, vecA, sizeof(float) * size,
                                   hipMemcpyHostToDevice, stream));
-  HIPCHECK(hipMemcpyAsync(d_vecB, vecB, sizeof(float) * size,
+  checkCudaErrors(hipMemcpyAsync(d_vecB, vecB, sizeof(float) * size,
                                   hipMemcpyHostToDevice, stream));
 
   // Kernel configuration, where a one-dimensional
   // grid and one-dimensional blocks are configured.
   int minGridSize = 0, blockSize = 0;
-  HIPCHECK(hipOccupancyMaxPotentialBlockSize(
+  checkCudaErrors(hipOccupancyMaxPotentialBlockSize(
       &minGridSize, &blockSize, (void *)normVecByDotProductAWBarrier, 0, size));
 
   int smemSize = ((blockSize / 32) + 1) * sizeof(double);
 
   int numBlocksPerSm = 0;
-  HIPCHECK(hipOccupancyMaxActiveBlocksPerMultiprocessor(
+  checkCudaErrors(hipOccupancyMaxActiveBlocksPerMultiprocessor(
       &numBlocksPerSm, normVecByDotProductAWBarrier, blockSize, smemSize));
 
   int multiProcessorCount = 0;
-  HIPCHECK(hipDeviceGetAttribute(
+  checkCudaErrors(hipDeviceGetAttribute(
       &multiProcessorCount, hipDeviceAttributeMultiprocessorCount, deviceId));
 
   minGridSize = multiProcessorCount * numBlocksPerSm;
-  HIPCHECK(hipMalloc(&d_partialResults, minGridSize * sizeof(double)));
+  checkCudaErrors(hipMalloc(&d_partialResults, minGridSize * sizeof(double)));
 
   printf(
       "Launching normVecByDotProductAWBarrier kernel with numBlocks = %d "
@@ -226,13 +226,13 @@ int runNormVecByDotProductAWBarrier(int argc, char **argv, int deviceId) {
   void *kernelArgs[] = {(void *)&d_vecA, (void *)&d_vecB,
                         (void *)&d_partialResults, (void *)&size};
 
-  HIPCHECK(
+  checkCudaErrors(
       hipLaunchCooperativeKernel((void *)normVecByDotProductAWBarrier, dimGrid,
                                   dimBlock, kernelArgs, smemSize, stream));
 
-  HIPCHECK(hipMemcpyAsync(vecA, d_vecA, sizeof(float) * size,
+  checkCudaErrors(hipMemcpyAsync(vecA, d_vecA, sizeof(float) * size,
                                   hipMemcpyDeviceToHost, stream));
-  HIPCHECK(hipStreamSynchronize(stream));
+  checkCudaErrors(hipStreamSynchronize(stream));
 
   float expectedResult = (baseVal / sqrt(size * baseVal * baseVal));
   unsigned int matches = 0;
@@ -246,12 +246,12 @@ int runNormVecByDotProductAWBarrier(int argc, char **argv, int deviceId) {
   }
 
   printf("Result = %s\n", matches == size ? "PASSED" : "FAILED");
-  HIPCHECK(hipFree(d_vecA));
-  HIPCHECK(hipFree(d_vecB));
-  HIPCHECK(hipFree(d_partialResults));
+  checkCudaErrors(hipFree(d_vecA));
+  checkCudaErrors(hipFree(d_vecB));
+  checkCudaErrors(hipFree(d_partialResults));
 
-  HIPCHECK(hipHostFree(vecA));
-  HIPCHECK(hipHostFree(vecB));
+  checkCudaErrors(hipHostFree(vecA));
+  checkCudaErrors(hipHostFree(vecB));
   return matches == size;
 }
 eckCudaErrors(hipFree(d_partialResults));
