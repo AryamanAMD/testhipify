@@ -261,7 +261,7 @@ def ftale(x):
 	generate(x)
 	apply_patches_individually(x)
 	compilation_1(x)
-	compilation_2(x)
+	#compilation_2(x)
 	runsample(x)
 	
 def generate_all(y):
@@ -597,7 +597,7 @@ def fall(y):
 	"""
 	generate_all(y)
 	compilation_1_all(y)
-	compilation_2_all(y)
+	#compilation_2_all(y) -use-staticlib has been deprecated
 	runsample_all(y)
 
 
