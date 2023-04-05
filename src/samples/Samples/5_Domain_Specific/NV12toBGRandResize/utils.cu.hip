@@ -34,8 +34,8 @@
 
 #include <hip/hip_runtime.h>
 #include <hip/hip_runtime.h>
-
-#include "resize_convert.h"
+#include "HIPCHECK.h"
+#include "resize_convert_hipified.h"
 #include "utils.h"
 
 __global__ void floatToChar(float *src, unsigned char *dst, int height,
