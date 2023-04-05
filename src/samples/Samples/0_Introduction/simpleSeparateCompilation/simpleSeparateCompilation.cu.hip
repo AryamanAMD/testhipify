@@ -30,7 +30,7 @@
 #include <stdio.h>
 //#include "rocprofiler.h"
 #include <iostream>
-
+#include "HIPCHECK.h"
 // STL.
 #include <vector>
 

@@ -36,7 +36,7 @@
 
 #include <assert.h>
 #include <hip/hip_cooperative_groups.h>
-
+#inlcude "HIPCHECK.h"
 namespace cg = cooperative_groups;
 
 #include "helper_cuda_hipified.h"

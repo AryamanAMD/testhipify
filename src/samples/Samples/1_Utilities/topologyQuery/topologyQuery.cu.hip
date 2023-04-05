@@ -36,7 +36,7 @@
 // includes, project
 #include "helper_cuda_hipified.h"
 #include <helper_functions.h>  // helper for shared that are common to CUDA Samples
-
+#include "HIPCHECK.h"
 int main(int argc, char **argv) {
   int deviceCount = 0;
   HIPCHECK(hipGetDeviceCount(&deviceCount));

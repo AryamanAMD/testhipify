@@ -34,7 +34,7 @@
 #include "helper_cuda_hipified.h"
 #include <omp.h>
 #include <stdio.h>  // stdio functions are used since C++ streams aren't necessarily thread safe
-
+#include "HIPCHECK.h"
 using namespace std;
 
 // a simple kernel that simply increments each array element by b

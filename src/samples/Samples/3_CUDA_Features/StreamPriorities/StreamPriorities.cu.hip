@@ -28,7 +28,7 @@
 
 // std::system includes
 #include <cstdio>
-
+#include "HIPCHECK.h"
 // CUDA-C includes
 #include <hip/hip_runtime.h>
 

@@ -29,6 +29,7 @@
 #include <hip/hip_cooperative_groups.h>
 #include <hip/hip_runtime.h>
 #include "helper_cuda_hipified.h"
+#include "HIPCHECK.h"
 #include <vector>
 #include "jacobi.h"
 
