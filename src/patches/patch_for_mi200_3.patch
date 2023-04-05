@@ -399,7 +399,7 @@ index 7f4d166..1310094 100755
  #include "helper_cuda_hipified.h"
  #include <omp.h>
  #include <stdio.h>  // stdio functions are used since C++ streams aren't necessarily thread safe
--#include "HIPCHECK.h"
+ #include "HIPCHECK.h"
 +
  using namespace std;
  
@@ -1223,7 +1223,7 @@ index 3f01638..f800259 100755
  #include <stdio.h>
  //#include "rocprofiler.h"
  #include <iostream>
--#include "HIPCHECK.h"
+ #include "HIPCHECK.h"
 +
  // STL.
  #include <vector>
@@ -1382,7 +1382,7 @@ index d226320..824e287 100755
  #include <stdint.h>
  #include <cstdio>
  #include <ctime>
--#include "HIPCHECK.h"
+ #include "HIPCHECK.h"
 +
  #define min(a, b) (a) < (b) ? (a) : (b)
  #define max(a, b) (a) > (b) ? (a) : (b)
@@ -1544,7 +1544,7 @@ index 21c1a8d..47fd6d7 100755
  // includes, project
  #include "helper_cuda_hipified.h"
  #include <helper_functions.h>  // helper for shared that are common to CUDA Samples
--#include "HIPCHECK.h"
+ #include "HIPCHECK.h"
 +
  int main(int argc, char **argv) {
    int deviceCount = 0;
@@ -4015,7 +4015,7 @@ index 2dbdf6a..c3e1a8d 100755
  namespace cg = cooperative_groups;
  #include "helper_cuda_hipified.h"
  #include "scan_common.h"
--#include "HIPCHECK.h"
+ #include "HIPCHECK.h"
 +
  // All three kernels run 512 threads per workgroup
  // Must be a power of two
@@ -4605,7 +4605,7 @@ index 2736b81..245cb2b 100755
  
  // std::system includes
  #include <cstdio>
--#include "HIPCHECK.h"
++#include "HIPCHECK.h"
 +
  // CUDA-C includes
  #include <hip/hip_runtime.h>
@@ -5415,7 +5415,7 @@ index 35a8da9..f671fe4 100755
  #include <hip/hip_cooperative_groups.h>
  #include <hip/hip_runtime.h>
  #include "helper_cuda_hipified.h"
--#include "HIPCHECK.h"
++#include "HIPCHECK.h"
  #include <vector>
  #include "jacobi.h"
  
