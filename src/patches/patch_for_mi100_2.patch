@@ -1,0 +1,93 @@
+diff --git a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip
+index 40ec5e5..b004ed7 100755
+--- a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip
+@@ -45,7 +45,7 @@
+ #include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+ 
+ // CUDA helper functions
+-#include <helper_cuda.h>  // helper functions for CUDA error check
++#include <helper_cuda_hipified.h>  // helper functions for CUDA error check
+ 
+ const char *sampleName = "simpleAssert";
+ 
+diff --git a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out
+index c36dcf6..b26f8bb 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out and b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip b/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip
+index 24cfa48..ef722a3 100755
+--- a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu.hip
+@@ -48,7 +48,8 @@
+ #include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+ 
+ // CUDA helper functions
+-#include <helper_cuda.h>  // helper functions for CUDA error check
++#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
++#include "HIPCHECK.h"
+ 
+ // Includes, kernels
+ #include "simpleAtomicIntrinsics_kernel.cuh"
+@@ -132,6 +133,3 @@ void runTest(int argc, char **argv) {
+   HIPCHECK(hipHostFree(hOData));
+   HIPCHECK(hipFree(dOData));
+ }
+-ostFree(hOData));
+-  checkCudaErrors(hipFree(dOData));
+-}
+diff --git a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.out b/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.out
+index ba13918..e0afb2b 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.out and b/src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out b/src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out
+deleted file mode 100755
+index 8d5ecab..0000000
+Binary files a/src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out and /dev/null differ
+diff --git a/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip b/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip
+old mode 100755
+new mode 100644
+index aad2f81..9925dfc
+--- a/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip
+@@ -169,3 +169,4 @@ void runTest(int argc, const char **argv) {
+     exit(EXIT_FAILURE);
+   }
+ }
++
+diff --git a/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip b/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip
+index c00946a..0179e58 100755
+--- a/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu.hip
+@@ -53,7 +53,9 @@
+ #include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+ 
+ // CUDA helper functions
+-#include <helper_cuda.h>  // helper functions for CUDA error check
++#include "helper_cuda_hipified.h"
++#include "HIPCHECK.h"
++// helper functions for CUDA error check
+ 
+ #define MIN_EPSILON_ERROR 5e-3f
+ 
+@@ -81,8 +83,8 @@ __global__ void surfaceWriteKernel(float *gIData, int width, int height,
+   unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+ 
+   // read from global memory and write to cuarray (via surface reference)
+-  surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y,
+-              hipBoundaryModeTrap);
++  surf2Dwrite(gIData[y * width + x], outputSurface, x * 4, y);
++             // hipBoundaryModeTrap);
+ }
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+@@ -294,8 +296,3 @@ void runTest(int argc, char **argv) {
+   free(imagePath);
+   free(refPath);
+ }
+-e(dData));
+-  checkCudaErrors(hipFreeArray(cuArray));
+-  free(imagePath);
+-  free(refPath);
+-}
+diff --git a/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.out b/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.out
+index 95307f1..65e8749 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.out and b/src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.out differ

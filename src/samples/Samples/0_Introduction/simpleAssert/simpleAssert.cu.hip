@@ -45,7 +45,7 @@
 #include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
 
 // CUDA helper functions
-#include <helper_cuda.h>  // helper functions for CUDA error check
+#include <helper_cuda_hipified.h>  // helper functions for CUDA error check
 
 const char *sampleName = "simpleAssert";
 
