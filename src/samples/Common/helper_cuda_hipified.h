@@ -33,6 +33,7 @@
 
 #pragma once
 #include <hip/hip_runtime.h>
+#include <hip/hip_runtime_api.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
