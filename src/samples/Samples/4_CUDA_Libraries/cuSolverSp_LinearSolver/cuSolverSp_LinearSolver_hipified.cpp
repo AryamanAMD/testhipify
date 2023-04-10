@@ -546,13 +546,8 @@ int main(int argc, char *argv[]) {
            singularity, tol);
   }
   /* Q*x = z */
-  hipsparseSpVecDescr_t vecz = NULL;
-  checkCudaErrors(hipsparseCreateSpVec(&vecz, colsA, rowsA, d_Q, d_z, HIPSPARSE_INDEX_32I,
-      HIPSPARSE_INDEX_BASE_ZERO, HIPBLAS_R_64F));
-  checkCudaErrors(hipsparseScatter(cusparseHandle, vecz, vecx));
-  checkCudaErrors(hipsparseDestroySpVec(vecz));
-
-  
+  checkCudaErrors(hipsparseDsctr(cusparseHandle, rowsA, d_z, d_Q, d_x,
+                                HIPSPARSE_INDEX_BASE_ZERO));
   checkCudaErrors(hipDeviceSynchronize());
 
   stop = second();

@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -51,8 +50,9 @@
 #include <hip/hip_runtime_api.h>
 
 // Helper functions and utilities to work with CUDA
-#include "helper_functions.h"
-#include "helper_cuda_hipified.h"
+#include <helper_functions.h>
+//#include <helper_cuda.h>
+#include <helper_cuda_hipified.h>
 
 /**
  * Matrix multiplication (CUDA Kernel) on the device: C = A * B
@@ -348,9 +348,9 @@ int main(int argc, char **argv) {
   printf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y,
          dimsB.x, dimsB.y);
 
-  //HIPCHECK(hipProfilerStart());
+//  HIPCHECK(rocprofiler_start());
   int matrix_result = MatrixMultiply(argc, argv, block_size, dimsA, dimsB);
-  //HIPCHECK(hipProfilerStop());
+//  HIPCHECK(rocprofiler_stop());
 
   exit(matrix_result);
 }

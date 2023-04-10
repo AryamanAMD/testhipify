@@ -47,7 +47,7 @@ using std::cerr;
 using std::endl;
 
 // User include
-#include "simpleMPI.h"
+#include "simpleMPI_hipified.h"
 
 // Error handling macros
 #define MPI_CHECK(call)                          \

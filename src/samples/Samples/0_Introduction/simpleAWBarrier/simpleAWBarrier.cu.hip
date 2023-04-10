@@ -31,7 +31,7 @@
 
 // Includes CUDA
 #include <hip/hip_runtime.h>
-#include "cuda/barrier"
+#include <cuda/barrier>
 #include <hip/hip_cooperative_groups.h>
 
 // Utilities and timing functions
@@ -249,18 +249,6 @@ int runNormVecByDotProductAWBarrier(int argc, char **argv, int deviceId) {
   checkCudaErrors(hipFree(d_vecA));
   checkCudaErrors(hipFree(d_vecB));
   checkCudaErrors(hipFree(d_partialResults));
-
-  checkCudaErrors(hipHostFree(vecA));
-  checkCudaErrors(hipHostFree(vecB));
-  return matches == size;
-}
-eckCudaErrors(hipFree(d_partialResults));
-
-  checkCudaErrors(hipHostFree(vecA));
-  checkCudaErrors(hipHostFree(vecB));
-  return matches == size;
-}
-eckCudaErrors(hipFree(d_partialResults));
 
   checkCudaErrors(hipHostFree(vecA));
   checkCudaErrors(hipHostFree(vecB));

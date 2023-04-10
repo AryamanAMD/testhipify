@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,10 +25,12 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#include <hip/hip_runtime.h>
 #include <cstdio>
 #include <vector>
 
-#include "helper_cuda_hipified.h"
+#include <helper_cuda.h>
 #include <helper_timer.h>
 
 using namespace std;
@@ -201,7 +202,7 @@ void outputBandwidthMatrix(int numElems, int numGPUs, bool p2p, P2PDataTransfer 
       cudaCheckError();
 
       // Block the stream until all the work is queued up
-      // DANGER! - hipMemcpy*Async may infinitely block waiting for
+      // DANGER! - cudaMemcpy*Async may infinitely block waiting for
       // room to push the operation, so keep the number of repeatitions
       // relatively low.  Higher repeatitions will cause the delay kernel
       // to timeout and lead to unstable results.
@@ -343,7 +344,7 @@ void outputBidirectionalBandwidthMatrix(int numElems, int numGPUs, bool p2p) {
       cudaCheckError();
 
       // Block the stream until all the work is queued up
-      // DANGER! - hipMemcpy*Async may infinitely block waiting for
+      // DANGER! - cudaMemcpy*Async may infinitely block waiting for
       // room to push the operation, so keep the number of repeatitions
       // relatively low.  Higher repeatitions will cause the delay kernel
       // to timeout and lead to unstable results.
@@ -502,7 +503,7 @@ void outputLatencyMatrix(int numGPUs, bool p2p, P2PDataTransfer p2p_method) {
       cudaCheckError();
 
       // Block the stream until all the work is queued up
-      // DANGER! - hipMemcpy*Async may infinitely block waiting for
+      // DANGER! - cudaMemcpy*Async may infinitely block waiting for
       // room to push the operation, so keep the number of repeatitions
       // relatively low.  Higher repeatitions will cause the delay kernel
       // to timeout and lead to unstable results.

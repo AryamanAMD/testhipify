@@ -289,7 +289,7 @@ LIBRARIES :=
 
 ALL_CCFLAGS += --threads 0 --std=c++11
 
-LIBRARIES += -lcusolver -lnvJitLink -lcublas -lcusparse
+LIBRARIES += -lcusolver -lcublas -lcusparse
 
 ifeq ($(SAMPLE_ENABLED),0)
 EXEC ?= @echo "[@]"

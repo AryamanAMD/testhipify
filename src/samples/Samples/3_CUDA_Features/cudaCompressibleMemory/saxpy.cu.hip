@@ -1,4 +1,4 @@
-
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,8 +33,6 @@
 // compression.
 
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <hip/hip_runtime.h>
 #define CUDA_DRIVER_API
 #include "helper_cuda.h"
@@ -161,7 +159,7 @@ int main(int argc, char **argv)
     bool compressibleZbuf = 0;
     if ((major == 8 && minor == 0) || (major == 8 && minor == 6))
     {
-        // On SM 8.0 and 8.6 GPUs compressible buffer can only be initialized
+        // On SM 8.0 and 8.6 GPUs compressible buffer can only be initialized 
         // through hipMemcpy.
         printf("allocating non-compressible Z buffer\n");
         checkCudaErrors(allocateCompressible((void **)&z, size, false));
@@ -173,3 +171,29 @@ int main(int argc, char **argv)
         compressibleZbuf = 1;
     }
 
+    printf("Running saxpy on %zu bytes of Compressible memory\n", size);
+
+    const float a = 1.0f;
+    const float init_val = 1.0f;
+    launchSaxpy(a, x, y, z, n, init_val, compressibleZbuf);
+ 
+    checkCudaErrors(freeCompressible(x, size, true));
+    checkCudaErrors(freeCompressible(y, size, true));
+    checkCudaErrors(freeCompressible(z, size, true));
+
+    printf("Running saxpy on %zu bytes of Non-Compressible memory\n", size);
+    // Allocating non-compressible memory
+    checkCudaErrors(allocateCompressible((void **)&x, size, false));
+    checkCudaErrors(allocateCompressible((void **)&y, size, false));
+    checkCudaErrors(allocateCompressible((void **)&z, size, false));
+
+    launchSaxpy(a, x, y, z, n, init_val, compressibleZbuf);
+
+    checkCudaErrors(freeCompressible(x, size, false));
+    checkCudaErrors(freeCompressible(y, size, false));
+    checkCudaErrors(freeCompressible(z, size, false));
+
+    printf("\nNOTE: The CUDA Samples are not meant for performance measurements. "
+      "Results may vary when GPU Boost is enabled.\n");
+    return EXIT_SUCCESS;
+}

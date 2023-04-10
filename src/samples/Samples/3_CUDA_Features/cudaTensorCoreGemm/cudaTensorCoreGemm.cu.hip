@@ -63,13 +63,12 @@
 
 #include <assert.h>
 #include <hip/hip_runtime.h>
-//#include <mma.h>
-#include "rocwmma.hpp"
+#include <mma.h>
 #include <stdio.h>
 
 // helper functions and utilities to work with CUDA
-#include "helper_cuda_hipified.h"
-#include "helper_functions.h"
+#include <helper_cuda.h>
+#include <helper_functions.h>
 
 // Externally configurable parameters.
 
@@ -176,8 +175,8 @@
     }                                                       \
   } while (0)
 
-//using namespace nvcuda;
-using namespace rocwmma;
+using namespace nvcuda;
+
 __host__ void init_host_matrices(half *a, half *b, float *c) {
   for (int i = 0; i < M_GLOBAL; i++) {
     for (int j = 0; j < K_GLOBAL; j++) {
@@ -643,18 +642,6 @@ int main(int argc, char **argv) {
   free(C_h);
   checkCudaErrors(hipFree(reinterpret_cast<void *>(A)));
   checkCudaErrors(hipFree(reinterpret_cast<void *>(B)));
-  checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
-  checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
-
-  return 0;
-}
-rpret_cast<void *>(B)));
-  checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
-  checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
-
-  return 0;
-}
-rpret_cast<void *>(B)));
   checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
   checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
 

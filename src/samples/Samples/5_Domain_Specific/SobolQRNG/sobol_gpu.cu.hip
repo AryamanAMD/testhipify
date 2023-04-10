@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -55,12 +54,14 @@
  *
  */
 
+
+#include <hip/hip_runtime.h>
 #include "sobol.h"
 #include "sobol_gpu.h"
 #include <hip/hip_cooperative_groups.h>
-
+#include "HIPCHECK.h"
 namespace cg = cooperative_groups;
-#include "helper_cuda_hipified.h"
+#include <helper_cuda.h>
 
 #define k_2powneg32 2.3283064E-10F
 

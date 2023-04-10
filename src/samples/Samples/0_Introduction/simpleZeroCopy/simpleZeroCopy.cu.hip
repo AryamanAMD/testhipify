@@ -36,7 +36,7 @@
 // helper functions and utilities to work with CUDA
 #include "helper_cuda_hipified.h"
 #include "helper_functions.h"
-
+#define CUDART_VERSION 3020
 #ifndef MAX
 #define MAX(a, b) (a > b ? a : b)
 #endif
@@ -243,7 +243,3 @@ int main(int argc, char **argv) {
 
   exit(errorNorm / refNorm < 1.e-6f ? EXIT_SUCCESS : EXIT_FAILURE);
 }
-HostFree(b));
-    checkCudaErrors(hipHostFree(c));
-#endif
-  }

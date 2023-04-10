@@ -37,6 +37,8 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
 
@@ -188,7 +190,7 @@ int runTest(int argc, char **argv) {
   // The host needs to get a copy of the device pointer to the callback
   hipfftCallbackLoadC hostCopyOfCallbackPtr;
 
-  HIPCHECK(hipMemcpyFromSymbol(&hostCopyOfCallbackPtr, HIP_SYMBOL(myOwnCallbackPtr),
+  HIP_SYMBOL(myOwnCallbackPtr)(hipMemcpyFromSymbol(&hostCopyOfCallbackPtr, myOwnCallbackPtr,
                                        sizeof(hostCopyOfCallbackPtr)));
 
   // Now associate the load callback with the plan.
@@ -206,7 +208,7 @@ int runTest(int argc, char **argv) {
                                      HIPFFT_CB_LD_COMPLEX, (void **)&d_params));
 
   // Transform signal and kernel
-  printf("Transforming signal hipfftExecC2C\n");
+  printf("Transforming signal cufftExecC2C\n");
   HIPCHECK(hipfftExecC2C(plan, (hipfftComplex *)d_signal,
                                (hipfftComplex *)d_signal, HIPFFT_FORWARD));
   HIPCHECK(hipfftExecC2C(plan, (hipfftComplex *)d_filter_kernel,
@@ -214,7 +216,7 @@ int runTest(int argc, char **argv) {
 
   // Transform signal back, using the callback to do the pointwise multiply on
   // the way in.
-  printf("Transforming signal back hipfftExecC2C\n");
+  printf("Transforming signal back cufftExecC2C\n");
   HIPCHECK(hipfftExecC2C(cb_plan, (hipfftComplex *)d_signal,
                                (hipfftComplex *)d_signal, HIPFFT_BACKWARD));
 
@@ -334,7 +336,7 @@ static __device__ __host__ inline Complex ComplexMul(Complex a, Complex b) {
   c.y = a.x * b.y + a.y * b.x;
   return c;
 }
-c __device__ __host__ inline Complex ComplexMul(Complex a, Complex b) {
+ice__ __host__ inline Complex ComplexMul(Complex a, Complex b) {
   Complex c;
   c.x = a.x * b.x - a.y * b.y;
   c.y = a.x * b.y + a.y * b.x;

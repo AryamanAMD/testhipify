@@ -40,8 +40,6 @@
 
 // includes, system
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 #ifdef _WIN32
 #define WINDOWS_LEAN_AND_MEAN
@@ -311,4 +309,11 @@ void runTest(int argc, char **argv) {
 
   HIPCHECK(hipEventDestroy(start));
   HIPCHECK(hipEventDestroy(stop));
+}
+dataPL));
+  checkCudaErrors(hipFreeArray(d_idataArray));
+  checkCudaErrors(hipFree(d_odata));
+
+  checkCudaErrors(hipEventDestroy(start));
+  checkCudaErrors(hipEventDestroy(stop));
 }

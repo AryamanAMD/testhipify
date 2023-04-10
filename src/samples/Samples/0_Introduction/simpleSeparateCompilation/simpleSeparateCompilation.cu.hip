@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,7 +29,7 @@
 #include <stdio.h>
 //#include "rocprofiler.h"
 #include <iostream>
-#include "HIPCHECK.h"
+
 // STL.
 #include <vector>
 
@@ -38,11 +37,17 @@
 #include <hip/hip_runtime.h>
 
 // Helper functions and utilities to work with CUDA.
-#include "helper_functions.h"
 #include "helper_cuda_hipified.h"
+#include <helper_functions.h>
+#include "HIPCHECK.h"
+//#include <helper_cuda.h>
 
 // Device library includes.
-#include "simpleDeviceLibrary.cuh"
+#include "simpleDeviceLibrary_hipified.cuh"
+
+extern __device__ float multiplyByTwo(float number);
+
+extern __device__ float divideByTwo(float number);
 
 using std::cout;
 using std::endl;

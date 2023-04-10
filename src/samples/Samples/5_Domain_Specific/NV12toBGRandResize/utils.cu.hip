@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,12 +30,12 @@
 #include <sys/types.h>
 #include <fstream>
 #include <iostream>
-
-#include <hip/hip_runtime.h>
-#include <hip/hip_runtime.h>
 #include "HIPCHECK.h"
+#include <hip/hip_runtime.h>
+
+
 #include "resize_convert_hipified.h"
-#include "utils.h"
+#include "utils_hipified.h"
 
 __global__ void floatToChar(float *src, unsigned char *dst, int height,
                             int width, int batchSize) {

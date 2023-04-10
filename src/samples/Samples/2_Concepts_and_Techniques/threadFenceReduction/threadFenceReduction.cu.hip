@@ -64,22 +64,20 @@
 // includes, system
 #include <stdlib.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <string.h>
 #include <math.h>
-
+#include "HIPCHECK.h"
 // includes, project
-#include "helper_functions.h"
+#include "hip/hip_runtime.h"
 #include "helper_cuda_hipified.h"
-
+#include "helper_functions.h"
 #define VERSION_MAJOR (CUDART_VERSION / 1000)
 #define VERSION_MINOR (CUDART_VERSION % 100) / 10
-
 const char *sSDKsample = "threadFenceReduction";
 
 #if CUDART_VERSION >= 2020
-#include "threadFenceReduction_kernel.cuh"
+#include "threadFenceReduction_kernel_hipified.cuh"
+#include "threadFenceReduction_hipified.h"
 #else
 #pragma comment(user, "CUDA 2.2 is required to build for threadFenceReduction")
 #endif
@@ -128,7 +126,7 @@ int main(int argc, char **argv) {
 #if CUDART_VERSION >= 2020
   bTestResult = runTest(argc, argv);
 #else
-  print_NVCC_min_spec(sSDKsample, "2.2", "Version 185");
+  //print_NVCC_min_spec(sSDKsample, "2.2", "Version 185");
   exit(EXIT_SUCCESS);
 #endif
 
@@ -201,7 +199,7 @@ float benchmarkReduce(int n, int numThreads, int numBlocks, int maxThreads,
   for (int i = 0; i < testIterations; ++i) {
     gpu_result = 0;
     unsigned int retCnt = 0;
-    error = setRetirementCount(retCnt);
+    //error = setRetirementCount(retCnt);
     HIPCHECK(error);
 
     hipDeviceSynchronize();
@@ -465,7 +463,3 @@ bool runTest(int argc, char **argv) {
 
   return bTestResult;
 }
-   free(h_odata);
-    hipFree(d_idata);
-    hipFree(d_odata);
-  }

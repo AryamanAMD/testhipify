@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
   int device = -1;
   hipDeviceProp_t deviceProp;
   device = findCudaDevice(argc, (const char **)argv);
-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, device));
+  HIPCHECK(hipGetDeviceProperties(&deviceProp, device));
 
   if (!(deviceProp.major > 3 ||
         (deviceProp.major == 3 && deviceProp.minor >= 5))) {
@@ -157,6 +157,9 @@ int main(int argc, char **argv) {
   printf(
       "************************************************************************"
       "***\n\n");
+
+  // We set the recursion limit for CDP to max_depth.
+  hipDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, max_depth);
 
   // Launch the kernel from the CPU.
   printf("Launching cdp_kernel() with CUDA Dynamic Parallelism:\n\n");

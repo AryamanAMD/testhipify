@@ -42,7 +42,7 @@
 #include <helper_cuda.h>  // helper functions for CUDA error checking and initialization
 #include <helper_functions.h>  // helper for shared functions common to CUDA Samples
 
-#include <hip/hip_runtime.h>
+
 
 #include <cassert>
 #include <iostream>
@@ -245,7 +245,7 @@ int runTest(const int argc, const char **argv) {
       if (deviceProp.computeMode == hipComputeModeProhibited) {
         fprintf(stderr,
                 "Error: device is running in <Compute Mode Prohibited>, no "
-                "threads can use ::hipSetDevice().\n");
+                "threads can use ::cudaSetDevice().\n");
         HIPCHECK(hipSetDevice(currentDevice));
 
         exit(EXIT_FAILURE);
@@ -829,7 +829,7 @@ float testDeviceToDeviceTransfer(unsigned int memSize) {
   HIPCHECK(hipEventRecord(stop, 0));
 
   // Since device to device memory copies are non-blocking,
-  // hipDeviceSynchronize() is required in order to get
+  // cudaDeviceSynchronize() is required in order to get
   // proper timing.
   HIPCHECK(hipDeviceSynchronize());
 

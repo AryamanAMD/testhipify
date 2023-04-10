@@ -343,7 +343,7 @@ int main(int argc, char **argv) {
   // This will pick the best possible CUDA capable device
   hipDeviceProp_t deviceProp;
   int devID = findCudaDevice(argc, (const char **)argv);
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, devID));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, devID));
 
   if (!deviceProp.managedMemory) {
     // This sample requires being run on a device that supports Unified Memory
@@ -386,17 +386,17 @@ int main(int argc, char **argv) {
   *dot_result = 0.0;
 
   // temp memory for CG
-  HIPCHECK(
+  checkCudaErrors(
       hipMallocManaged(reinterpret_cast<void **>(&r), N * sizeof(float)));
-  HIPCHECK(
+  checkCudaErrors(
       hipMallocManaged(reinterpret_cast<void **>(&p), N * sizeof(float)));
-  HIPCHECK(
+  checkCudaErrors(
       hipMallocManaged(reinterpret_cast<void **>(&Ax), N * sizeof(float)));
 
   hipDeviceSynchronize();
 
-  HIPCHECK(hipEventCreate(&start));
-  HIPCHECK(hipEventCreate(&stop));
+  checkCudaErrors(hipEventCreate(&start));
+  checkCudaErrors(hipEventCreate(&stop));
 
 #if ENABLE_CPU_DEBUG_CODE
   float *Ax_cpu = reinterpret_cast<float *>(malloc(sizeof(float) * N));
@@ -426,21 +426,21 @@ int main(int argc, char **argv) {
   int numBlocksPerSm = 0;
   int numThreads = THREADS_PER_BLOCK;
 
-  HIPCHECK(hipOccupancyMaxActiveBlocksPerMultiprocessor(
+  checkCudaErrors(hipOccupancyMaxActiveBlocksPerMultiprocessor(
       &numBlocksPerSm, gpuConjugateGradient, numThreads, sMemSize));
 
   int numSms = deviceProp.multiProcessorCount;
   dim3 dimGrid(numSms * numBlocksPerSm, 1, 1),
       dimBlock(THREADS_PER_BLOCK, 1, 1);
-  HIPCHECK(hipEventRecord(start, 0));
-  HIPCHECK(hipLaunchCooperativeKernel((void *)gpuConjugateGradient,
+  checkCudaErrors(hipEventRecord(start, 0));
+  checkCudaErrors(hipLaunchCooperativeKernel((void *)gpuConjugateGradient,
                                               dimGrid, dimBlock, kernelArgs,
                                               sMemSize, NULL));
-  HIPCHECK(hipEventRecord(stop, 0));
-  HIPCHECK(hipDeviceSynchronize());
+  checkCudaErrors(hipEventRecord(stop, 0));
+  checkCudaErrors(hipDeviceSynchronize());
 
   float time;
-  HIPCHECK(hipEventElapsedTime(&time, start, stop));
+  checkCudaErrors(hipEventElapsedTime(&time, start, stop));
 
   r1 = *dot_result;
 
@@ -467,17 +467,17 @@ int main(int argc, char **argv) {
     }
   }
 
-  HIPCHECK(hipFree(I));
-  HIPCHECK(hipFree(J));
-  HIPCHECK(hipFree(val));
-  HIPCHECK(hipFree(x));
-  HIPCHECK(hipFree(rhs));
-  HIPCHECK(hipFree(r));
-  HIPCHECK(hipFree(p));
-  HIPCHECK(hipFree(Ax));
-  HIPCHECK(hipFree(dot_result));
-  HIPCHECK(hipEventDestroy(start));
-  HIPCHECK(hipEventDestroy(stop));
+  checkCudaErrors(hipFree(I));
+  checkCudaErrors(hipFree(J));
+  checkCudaErrors(hipFree(val));
+  checkCudaErrors(hipFree(x));
+  checkCudaErrors(hipFree(rhs));
+  checkCudaErrors(hipFree(r));
+  checkCudaErrors(hipFree(p));
+  checkCudaErrors(hipFree(Ax));
+  checkCudaErrors(hipFree(dot_result));
+  checkCudaErrors(hipEventDestroy(start));
+  checkCudaErrors(hipEventDestroy(stop));
 
 #if ENABLE_CPU_DEBUG_CODE
   free(Ax_cpu);
@@ -488,10 +488,6 @@ int main(int argc, char **argv) {
 
   printf("Test Summary:  Error amount = %f \n", err);
   fprintf(stdout, "&&&& conjugateGradientMultiBlockCG %s\n",
-          (sqrt(r1) < tol) ? "PASSED" : "FAILED");
-  exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
-}
-(stdout, "&&&& conjugateGradientMultiBlockCG %s\n",
           (sqrt(r1) < tol) ? "PASSED" : "FAILED");
   exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
 }

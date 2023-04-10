@@ -43,7 +43,8 @@
 // includes, project
 #include <helper_cuda_drvapi.h>
 #include "helper_functions.h"
-
+#include "helper_cuda_hipified.h"
+#include "HIPCHECK.h"
 // includes, CUDA
 #include <builtin_types.h>
 
@@ -78,11 +79,11 @@ int main(int argc, char **argv) {
   size_t size = N * sizeof(float);
 
   // Initialize
-  checkCudaErrors(hipInit(0));
+  HIPCHECK(hipInit(0));
 
   cuDevice = findCudaDeviceDRV(argc, (const char **)argv);
   // Create context
-  checkCudaErrors(hipCtxCreate(&cuContext, 0, cuDevice));
+  HIPCHECK(hipCtxCreate(&cuContext, 0, cuDevice));
 
   // first search for the module path before we load the results
   string module_path;
@@ -101,10 +102,10 @@ int main(int argc, char **argv) {
   }
 
   // Create module from binary file (FATBIN)
-  checkCudaErrors(hipModuleLoadData(&cuModule, fatbin.str().c_str()));
+  HIPCHECK(hipModuleLoadData(&cuModule, fatbin.str().c_str()));
 
   // Get function handle from module
-  checkCudaErrors(
+  HIPCHECK(
       hipModuleGetFunction(&vecAdd_kernel, cuModule, "VecAdd_kernel"));
 
   // Allocate input vectors h_A and h_B in host memory
@@ -117,16 +118,16 @@ int main(int argc, char **argv) {
   RandomInit(h_B, N);
 
   // Allocate vectors in device memory
-  checkCudaErrors(hipMalloc(&d_A, size));
+  HIPCHECK(hipMalloc(&d_A, size));
 
-  checkCudaErrors(hipMalloc(&d_B, size));
+  HIPCHECK(hipMalloc(&d_B, size));
 
-  checkCudaErrors(hipMalloc(&d_C, size));
+  HIPCHECK(hipMalloc(&d_C, size));
 
   // Copy vectors from host memory to device memory
-  checkCudaErrors(hipMemcpyHtoD(d_A, h_A, size));
+  HIPCHECK(hipMemcpyHtoD(d_A, h_A, size));
 
-  checkCudaErrors(hipMemcpyHtoD(d_B, h_B, size));
+  HIPCHECK(hipMemcpyHtoD(d_B, h_B, size));
 
   if (1) {
     // This is the new CUDA 4.0 API for Kernel Parameter Passing and Kernel
@@ -139,7 +140,7 @@ int main(int argc, char **argv) {
     void *args[] = {&d_A, &d_B, &d_C, &N};
 
     // Launch the CUDA kernel
-    checkCudaErrors(hipModuleLaunchKernel(vecAdd_kernel, blocksPerGrid, 1, 1,
+    HIPCHECK(hipModuleLaunchKernel(vecAdd_kernel, blocksPerGrid, 1, 1,
                                    threadsPerBlock, 1, 1, 0, NULL, args, NULL));
   } else {
     // This is the new CUDA 4.0 API for Kernel Parameter Passing and Kernel
@@ -160,18 +161,18 @@ int main(int argc, char **argv) {
     int blocksPerGrid = (N + threadsPerBlock - 1) / threadsPerBlock;
 
     // Launch the CUDA kernel
-    checkCudaErrors(hipModuleLaunchKernel(vecAdd_kernel, blocksPerGrid, 1, 1,
+    HIPCHECK(hipModuleLaunchKernel(vecAdd_kernel, blocksPerGrid, 1, 1,
                                    threadsPerBlock, 1, 1, 0, NULL, NULL,
                                    argBuffer));
   }
 
 #ifdef _DEBUG
-  checkCudaErrors(hipCtxSynchronize());
+  HIPCHECK(hipCtxSynchronize());
 #endif
 
   // Copy result from device memory to host memory
   // h_C contains the result in host memory
-  checkCudaErrors(hipMemcpyDtoH(h_C, d_C, size));
+  HIPCHECK(hipMemcpyDtoH(h_C, d_C, size));
 
   // Verify result
   int i;
@@ -192,9 +193,9 @@ int main(int argc, char **argv) {
 
 int CleanupNoFailure() {
   // Free device memory
-  checkCudaErrors(hipFree(d_A));
-  checkCudaErrors(hipFree(d_B));
-  checkCudaErrors(hipFree(d_C));
+  HIPCHECK(hipFree(d_A));
+  HIPCHECK(hipFree(d_B));
+  HIPCHECK(hipFree(d_C));
 
   // Free host memory
   if (h_A) {
@@ -209,7 +210,7 @@ int CleanupNoFailure() {
     free(h_C);
   }
 
-  checkCudaErrors(hipCtxDestroy(cuContext));
+  HIPCHECK(hipCtxDestroy(cuContext));
 
   return EXIT_SUCCESS;
 }

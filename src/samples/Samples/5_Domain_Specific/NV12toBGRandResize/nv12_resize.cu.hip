@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,6 +28,7 @@
 // Implements interlace NV12 frames batch resize
 
 #include <hip/hip_runtime.h>
+
 #include "resize_convert_hipified.h"
 #include "HIPCHECK.h"
 __global__ static void resizeNV12BatchKernel(hipTextureObject_t texSrcLuma,

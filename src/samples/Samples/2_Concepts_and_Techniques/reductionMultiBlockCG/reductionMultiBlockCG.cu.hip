@@ -61,8 +61,8 @@
 #include <math.h>
 
 // includes, project
-#include "helper_functions.h"
-#include "helper_cuda_hipified.h"
+#include <helper_functions.h>
+#include <helper_cuda.h>
 
 #include <hip/hip_runtime.h>
 
@@ -380,24 +380,6 @@ bool runTest(int argc, char **argv, int device) {
 
   free(h_idata);
   free(h_odata);
-  hipFree(d_idata);
-  hipFree(d_odata);
-
-  return bTestPassed;
-}
-ta);
-  hipFree(d_idata);
-  hipFree(d_odata);
-
-  return bTestPassed;
-}
-ta);
-  hipFree(d_idata);
-  hipFree(d_odata);
-
-  return bTestPassed;
-}
-ta);
   hipFree(d_idata);
   hipFree(d_odata);
 

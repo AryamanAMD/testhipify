@@ -173,17 +173,17 @@ hipError_t initCUDA(int argc, char **argv, hipFunction_t *pMatrixMul, int *block
         void **jitOptVals = new void *[jitNumOptions];
 
         // set up size of compilation log buffer
-        jitOptions[0] = HIPRTC_JIT_INFO_LOG_BUFFER_SIZE_BYTES;
+        jitOptions[0] = hipJitOptionInfoLogBufferSizeBytes;
         int jitLogBufferSize = 1024;
         jitOptVals[0] = (void *)(size_t)jitLogBufferSize;
 
         // set up pointer to the compilation log buffer
-        jitOptions[1] = HIPRTC_JIT_INFO_LOG_BUFFER;
+        jitOptions[1] = hipJitOptionInfoLogBuffer;
         char *jitLogBuffer = new char[jitLogBufferSize];
         jitOptVals[1] = jitLogBuffer;
 
         // set up pointer to set the Maximum # of registers for a particular kernel
-        jitOptions[2] = HIPRTC_JIT_MAX_REGISTERS;
+        jitOptions[2] = hipJitOptionMaxRegisters;
         int jitRegCount = 32;
         jitOptVals[2] = (void *)(size_t)jitRegCount;
 

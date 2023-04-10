@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -45,7 +44,8 @@
 #include <hip/hip_runtime_api.h>
 
 // includes, project
-#include "helper_cuda_hipified.h"
+//#include <helper_cuda.h>
+#include <helper_cuda_hipified.h>
 #include <helper_functions.h>  // helper utility functions
 
 __global__ void increment_kernel(int *g_data, int inc_value) {
@@ -107,7 +107,7 @@ int main(int argc, char *argv[]) {
   float gpu_time = 0.0f;
 
   // asynchronously issue work to the GPU (all to stream 0)
-  HIPCHECK(hipProfilerStart());
+  //HIPCHECK(rocprofiler_start());
   sdkStartTimer(&timer);
   hipEventRecord(start, 0);
   hipMemcpyAsync(d_a, a, nbytes, hipMemcpyHostToDevice, 0);
@@ -115,7 +115,7 @@ int main(int argc, char *argv[]) {
   hipMemcpyAsync(a, d_a, nbytes, hipMemcpyDeviceToHost, 0);
   hipEventRecord(stop, 0);
   sdkStopTimer(&timer);
-  HIPCHECK(hipProfilerStop());
+  //HIPCHECK(rocprofiler_stop());
 
   // have CPU do some work while waiting for stage 1 to finish
   unsigned long int counter = 0;

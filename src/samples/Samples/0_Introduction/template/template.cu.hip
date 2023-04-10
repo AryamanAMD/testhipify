@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -44,7 +43,7 @@
 
 // includes, project
 #include "helper_cuda_hipified.h"
-#include <helper_functions.h> // helper functions for SDK examples
+#include "helper_functions.h" // helper functions for SDK examples
 
 ////////////////////////////////////////////////////////////////////////////////
 // declaration, forward

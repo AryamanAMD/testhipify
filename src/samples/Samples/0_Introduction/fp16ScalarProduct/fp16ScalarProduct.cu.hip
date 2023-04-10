@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,8 +25,11 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+
+#include <hip/hip_runtime.h>
 #include "hip/hip_fp16.h"
-#include "helper_cuda.h"
+#include "helper_cuda_hipified.h"
+#include "helper_functions.h"
 
 #include <cstdio>
 #include <cstdlib>

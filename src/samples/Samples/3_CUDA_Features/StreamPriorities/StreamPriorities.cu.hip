@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -28,11 +27,11 @@
 
 // std::system includes
 #include <cstdio>
-#include "HIPCHECK.h"
+
 // CUDA-C includes
 #include <hip/hip_runtime.h>
 
-#include "helper_cuda_hipified.h"
+
 
 #define TOTAL_SIZE 256 * 1024 * 1024
 #define EACH_SIZE 128 * 1024 * 1024
@@ -40,7 +39,9 @@
 // # threadblocks
 #define TBLOCKS 1024
 #define THREADS 512
-
+#include "HIPCHECK.h"
+#include "helper_cuda_hipified.h"
+#include "helper_functions.h"
 // throw error on equality
 #define ERR_EQ(X, Y)                                                           \
   do {                                                                         \

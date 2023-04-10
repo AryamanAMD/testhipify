@@ -36,9 +36,7 @@
 //
 #include <hip/hip_cooperative_groups.h>
 #include <stdio.h>
-#include "rocprofiler.h"
 #include "HIPCHECK.h"
-
 namespace cg = cooperative_groups;
 #include "helper_cuda_hipified.h"
 #include "helper_functions.h"
@@ -188,7 +186,7 @@ int main(int argc, char **argv) {
   // the commands in this stream get dispatched as soon as all the kernel events
   // have been recorded
   sum<<<1, 32, 0, streams[nstreams - 1]>>>(d_a, nkernels);
-  HIPCHECK(hipMemcpyAsync(
+  checkCudaErrors(hipMemcpyAsync(
       a, d_a, sizeof(clock_t), hipMemcpyDeviceToHost, streams[nstreams - 1]));
 
   // at this point the CPU has dispatched all work for the GPU and can continue
@@ -229,6 +227,3 @@ int main(int argc, char **argv) {
   printf("Test passed\n");
   exit(EXIT_SUCCESS);
 }
-Test failed!\n");
-    exit(EXIT_FAILURE);
-  }

@@ -48,7 +48,7 @@
 #include "helper_cuda_hipified.h"
 #include <helper_cuda_drvapi.h>
 #include "helper_functions.h"  // helper for shared that are common to CUDA Samples
-#include "hip/hiprtc.h"
+
 #if defined(_WIN64) || defined(__LP64__)
 #define PTX_FILE "ptxjit_kernel64.ptx"
 #else
@@ -105,26 +105,26 @@ void ptxJIT(int argc, char **argv, hipModule_t *phModule, hipFunction_t *phKerne
 
   // Setup linker options
   // Return walltime from JIT compilation
-  options[0] = HIPRTC_JIT_WALL_TIME;
+  options[0] = hipJitOptionWallTime;
   optionVals[0] = (void *)&walltime;
   // Pass a buffer for info messages
-  options[1] = HIPRTC_JIT_INFO_LOG_BUFFER;
+  options[1] = hipJitOptionInfoLogBuffer;
   optionVals[1] = (void *)info_log;
   // Pass the size of the info buffer
-  options[2] = HIPRTC_JIT_INFO_LOG_BUFFER_SIZE_BYTES;
+  options[2] = hipJitOptionInfoLogBufferSizeBytes;
   optionVals[2] = (void *)(long)logSize;
   // Pass a buffer for error message
-  options[3] = HIPRTC_JIT_ERROR_LOG_BUFFER;
+  options[3] = hipJitOptionErrorLogBuffer;
   optionVals[3] = (void *)error_log;
   // Pass the size of the error buffer
-  options[4] = HIPRTC_JIT_ERROR_LOG_BUFFER_SIZE_BYTES;
+  options[4] = hipJitOptionErrorLogBufferSizeBytes;
   optionVals[4] = (void *)(long)logSize;
   // Make the linker verbose
-  options[5] = HIPRTC_JIT_LOG_VERBOSE;
+  options[5] = hipJitOptionLogVerbose;
   optionVals[5] = (void *)1;
 
   // Create a pending linker invocation
-  checkCudaErrors(hiprtcLinkCreate(6, options, optionVals, lState));
+  checkCudaErrors(cuLinkCreate(6, options, optionVals, lState));
 
   // first search for the module path before we load the results
   if (!findModulePath(PTX_FILE, module_path, argv, ptx_source)) {
@@ -136,17 +136,17 @@ void ptxJIT(int argc, char **argv, hipModule_t *phModule, hipFunction_t *phKerne
 
   // Load the PTX from the ptx file
   printf("Loading ptxjit_kernel[] program\n");
-  myErr = hiprtcLinkAddData(*lState, HIPRTC_JIT_INPUT_PTX, (void *)ptx_source.c_str(),
+  myErr = cuLinkAddData(*lState, CU_JIT_INPUT_PTX, (void *)ptx_source.c_str(),
                         strlen(ptx_source.c_str()) + 1, 0, 0, 0, 0);
 
   if (myErr != hipSuccess) {
-    // Errors will be put in error_log, per HIPRTC_JIT_ERROR_LOG_BUFFER option
+    // Errors will be put in error_log, per hipJitOptionErrorLogBuffer option
     // above.
     fprintf(stderr, "PTX Linker Error:\n%s\n", error_log);
   }
 
   // Complete the linker step
-  checkCudaErrors(hiprtcLinkComplete(*lState, &cuOut, &outSize));
+  checkCudaErrors(cuLinkComplete(*lState, &cuOut, &outSize));
 
   // Linker walltime and info_log were requested in options above.
   printf("CUDA Link Completed in %fms. Linker Output:\n%s\n", walltime,
@@ -159,7 +159,7 @@ void ptxJIT(int argc, char **argv, hipModule_t *phModule, hipFunction_t *phKerne
   checkCudaErrors(hipModuleGetFunction(phKernel, *phModule, "myKernel"));
 
   // Destroy the linker invocation
-  checkCudaErrors(hiprtcLinkDestroy(*lState));
+  checkCudaErrors(cuLinkDestroy(*lState));
 }
 
 int main(int argc, char **argv) {

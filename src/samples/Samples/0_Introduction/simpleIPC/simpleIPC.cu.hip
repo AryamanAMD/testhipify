@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -30,6 +29,8 @@
  * This sample demonstrates Inter Process Communication
  * using one process per GPU for computation.
  */
+
+#include <hip/hip_runtime.h>
 #include <stdio.h>
 #include "rocprofiler.h"
 #include "HIPCHECK.h"
@@ -44,6 +45,7 @@ static const char shmName[] = "simpleIPCshm";
 #define MAX_DEVICES (32)
 #define DATA_SIZE (64ULL << 20ULL)  // 64MB
 
+/*
 #if defined(__linux__)
 #define cpu_atomic_add32(a, x) __sync_add_and_fetch(a, x)
 #elif defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -51,6 +53,9 @@ static const char shmName[] = "simpleIPCshm";
 #else
 #error Unsupported system
 #endif
+*/
+#define cpu_atomic_add32(a, x) __sync_add_and_fetch(a, x)
+
 
 typedef struct shmStruct_st {
   size_t nprocesses;

@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -27,7 +26,7 @@
  */
 
 #include <hip/hip_runtime.h>
-#include <hip/hip_cooperative_groups.h>
+#include <hip/hip_cooperative_groups.h>	
 #include "helper_cuda_hipified.h"
 #include <vector>
 #include "HIPCHECK.h"

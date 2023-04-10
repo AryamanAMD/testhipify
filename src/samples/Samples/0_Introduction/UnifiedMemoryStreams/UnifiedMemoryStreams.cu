@@ -46,7 +46,10 @@
 #include <cublas_v2.h>
 
 // utilities
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
+#include "hip/hip_runtime.h"
+#include "hip/hip_runtime_api.h"
+#include "HIPCHECK.h"
 
 #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 // SRAND48 and DRAND48 don't exist on windows, but these are the equivalent
@@ -69,28 +72,28 @@ struct Task {
   Task(unsigned int s) : size(s), id(0), data(NULL), result(NULL) {
     // allocate unified memory -- the operation performed in this example will
     // be a DGEMV
-    checkCudaErrors(cudaMallocManaged(&data, sizeof(T) * size * size));
-    checkCudaErrors(cudaMallocManaged(&result, sizeof(T) * size));
-    checkCudaErrors(cudaMallocManaged(&vector, sizeof(T) * size));
-    checkCudaErrors(cudaDeviceSynchronize());
+    HIPCHECK(cudaMallocManaged(&data, sizeof(T) * size * size));
+    HIPCHECK(cudaMallocManaged(&result, sizeof(T) * size));
+    HIPCHECK(cudaMallocManaged(&vector, sizeof(T) * size));
+    HIPCHECK(cudaDeviceSynchronize());
   }
 
   ~Task() {
     // ensure all memory is deallocated
-    checkCudaErrors(cudaDeviceSynchronize());
-    checkCudaErrors(cudaFree(data));
-    checkCudaErrors(cudaFree(result));
-    checkCudaErrors(cudaFree(vector));
+    HIPCHECK(cudaDeviceSynchronize());
+    HIPCHECK(cudaFree(data));
+    HIPCHECK(cudaFree(result));
+    HIPCHECK(cudaFree(vector));
   }
 
   void allocate(const unsigned int s, const unsigned int unique_id) {
     // allocate unified memory outside of constructor
     id = unique_id;
     size = s;
-    checkCudaErrors(cudaMallocManaged(&data, sizeof(T) * size * size));
-    checkCudaErrors(cudaMallocManaged(&result, sizeof(T) * size));
-    checkCudaErrors(cudaMallocManaged(&vector, sizeof(T) * size));
-    checkCudaErrors(cudaDeviceSynchronize());
+    HIPCHECK(cudaMallocManaged(&data, sizeof(T) * size * size));
+    HIPCHECK(cudaMallocManaged(&result, sizeof(T) * size));
+    HIPCHECK(cudaMallocManaged(&vector, sizeof(T) * size));
+    HIPCHECK(cudaDeviceSynchronize());
 
     // populate data with random elements
     for (unsigned int i = 0; i < size * size; i++) {
@@ -147,14 +150,14 @@ void *execute(void *inpArgs) {
 
       // attach managed memory to a (dummy) stream to allow host access while
       // the device is running
-      checkCudaErrors(
+      HIPCHECK(
           cudaStreamAttachMemAsync(stream[0], t.data, 0, cudaMemAttachHost));
-      checkCudaErrors(
+      HIPCHECK(
           cudaStreamAttachMemAsync(stream[0], t.vector, 0, cudaMemAttachHost));
-      checkCudaErrors(
+      HIPCHECK(
           cudaStreamAttachMemAsync(stream[0], t.result, 0, cudaMemAttachHost));
       // necessary to ensure Async cudaStreamAttachMemAsync calls have finished
-      checkCudaErrors(cudaStreamSynchronize(stream[0]));
+      HIPCHECK(cudaStreamSynchronize(stream[0]));
       // call the host operation
       gemv(t.size, t.size, 1.0, t.data, t.vector, 0.0, t.result);
     } else {
@@ -165,15 +168,15 @@ void *execute(void *inpArgs) {
       double zero = 0.0;
 
       // attach managed memory to my stream
-      checkCudaErrors(cublasSetStream(handle[tid + 1], stream[tid + 1]));
-      checkCudaErrors(cudaStreamAttachMemAsync(stream[tid + 1], t.data, 0,
+      HIPCHECK(cublasSetStream(handle[tid + 1], stream[tid + 1]));
+      HIPCHECK(cudaStreamAttachMemAsync(stream[tid + 1], t.data, 0,
                                                cudaMemAttachSingle));
-      checkCudaErrors(cudaStreamAttachMemAsync(stream[tid + 1], t.vector, 0,
+      HIPCHECK(cudaStreamAttachMemAsync(stream[tid + 1], t.vector, 0,
                                                cudaMemAttachSingle));
-      checkCudaErrors(cudaStreamAttachMemAsync(stream[tid + 1], t.result, 0,
+      HIPCHECK(cudaStreamAttachMemAsync(stream[tid + 1], t.result, 0,
                                                cudaMemAttachSingle));
       // call the device operation
-      checkCudaErrors(cublasDgemv(handle[tid + 1], CUBLAS_OP_N, t.size, t.size,
+      HIPCHECK(cublasDgemv(handle[tid + 1], CUBLAS_OP_N, t.size, t.size,
                                   &one, t.data, t.size, t.vector, 1, &zero,
                                   t.result, 1));
     }
@@ -192,14 +195,14 @@ void execute(Task<T> &t, cublasHandle_t *handle, cudaStream_t *stream,
 
     // attach managed memory to a (dummy) stream to allow host access while the
     // device is running
-    checkCudaErrors(
+    HIPCHECK(
         cudaStreamAttachMemAsync(stream[0], t.data, 0, cudaMemAttachHost));
-    checkCudaErrors(
+    HIPCHECK(
         cudaStreamAttachMemAsync(stream[0], t.vector, 0, cudaMemAttachHost));
-    checkCudaErrors(
+    HIPCHECK(
         cudaStreamAttachMemAsync(stream[0], t.result, 0, cudaMemAttachHost));
     // necessary to ensure Async cudaStreamAttachMemAsync calls have finished
-    checkCudaErrors(cudaStreamSynchronize(stream[0]));
+    HIPCHECK(cudaStreamSynchronize(stream[0]));
     // call the host operation
     gemv(t.size, t.size, 1.0, t.data, t.vector, 0.0, t.result);
   } else {
@@ -210,15 +213,15 @@ void execute(Task<T> &t, cublasHandle_t *handle, cudaStream_t *stream,
     double zero = 0.0;
 
     // attach managed memory to my stream
-    checkCudaErrors(cublasSetStream(handle[tid + 1], stream[tid + 1]));
-    checkCudaErrors(cudaStreamAttachMemAsync(stream[tid + 1], t.data, 0,
+    HIPCHECK(cublasSetStream(handle[tid + 1], stream[tid + 1]));
+    HIPCHECK(cudaStreamAttachMemAsync(stream[tid + 1], t.data, 0,
                                              cudaMemAttachSingle));
-    checkCudaErrors(cudaStreamAttachMemAsync(stream[tid + 1], t.vector, 0,
+    HIPCHECK(cudaStreamAttachMemAsync(stream[tid + 1], t.vector, 0,
                                              cudaMemAttachSingle));
-    checkCudaErrors(cudaStreamAttachMemAsync(stream[tid + 1], t.result, 0,
+    HIPCHECK(cudaStreamAttachMemAsync(stream[tid + 1], t.result, 0,
                                              cudaMemAttachSingle));
     // call the device operation
-    checkCudaErrors(cublasDgemv(handle[tid + 1], CUBLAS_OP_N, t.size, t.size,
+    HIPCHECK(cublasDgemv(handle[tid + 1], CUBLAS_OP_N, t.size, t.size,
                                 &one, t.data, t.size, t.vector, 1, &zero,
                                 t.result, 1));
   }
@@ -240,7 +243,7 @@ int main(int argc, char **argv) {
   // set device
   cudaDeviceProp device_prop;
   int dev_id = findCudaDevice(argc, (const char **)argv);
-  checkCudaErrors(cudaGetDeviceProperties(&device_prop, dev_id));
+  HIPCHECK(cudaGetDeviceProperties(&device_prop, dev_id));
 
   if (!device_prop.managedMemory) {
     // This samples requires being run on a device that supports Unified Memory
@@ -270,8 +273,8 @@ int main(int argc, char **argv) {
   cublasHandle_t *handles = new cublasHandle_t[nthreads + 1];
 
   for (int i = 0; i < nthreads + 1; i++) {
-    checkCudaErrors(cudaStreamCreate(&streams[i]));
-    checkCudaErrors(cublasCreate(&handles[i]));
+    HIPCHECK(cudaStreamCreate(&streams[i]));
+    HIPCHECK(cublasCreate(&handles[i]));
   }
 
   // create list of N tasks
@@ -287,7 +290,7 @@ int main(int argc, char **argv) {
   threadData *InputToThreads = new threadData[nthreads];
 
   for (int i = 0; i < nthreads; i++) {
-    checkCudaErrors(cudaSetDevice(dev_id));
+    HIPCHECK(cudaSetDevice(dev_id));
     InputToThreads[i].tid = i;
     InputToThreads[i].streams = streams;
     InputToThreads[i].handles = handles;
@@ -319,7 +322,7 @@ int main(int argc, char **argv) {
   omp_set_num_threads(nthreads);
 #pragma omp parallel for schedule(dynamic)
   for (int i = 0; i < TaskList.size(); i++) {
-    checkCudaErrors(cudaSetDevice(dev_id));
+    HIPCHECK(cudaSetDevice(dev_id));
     int tid = omp_get_thread_num();
     execute(TaskList[i], handles, streams, tid);
   }

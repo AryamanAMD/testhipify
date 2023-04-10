@@ -1,4 +1,3 @@
-#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -49,7 +48,7 @@
 
 // includes, project
 #include "helper_cuda_hipified.h"
-#include <helper_functions.h>  // helper for shared that are common to CUDA Samples
+#include "helper_functions.h"  // helper for shared that are common to CUDA Samples
 
 static const char *sSDKname = "simpleLayeredTexture";
 

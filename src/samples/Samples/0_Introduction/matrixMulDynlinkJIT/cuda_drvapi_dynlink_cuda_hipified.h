@@ -328,7 +328,7 @@ typedef enum hipJitOption
      * Max number of registers that a thread may use.\n
      * Option type: unsigned int
      */
-    HIPRTC_JIT_MAX_REGISTERS = 0,
+    hipJitOptionMaxRegisters = 0,
 
     /**
      * IN: Specifies minimum number of threads per block to target compilation
@@ -341,22 +341,22 @@ typedef enum hipJitOption
      * shared memory utilization.\n
      * Option type: unsigned int
      */
-    HIPRTC_JIT_THREADS_PER_BLOCK,
+    hipJitOptionThreadsPerBlock,
 
     /**
      * Returns a float value in the option of the wall clock time, in
      * milliseconds, spent creating the cubin\n
      * Option type: float
      */
-    HIPRTC_JIT_WALL_TIME,
+    hipJitOptionWallTime,
 
     /**
      * Pointer to a buffer in which to print any log messsages from PTXAS
      * that are informational in nature (the buffer size is specified via
-     * option ::HIPRTC_JIT_INFO_LOG_BUFFER_SIZE_BYTES) \n
+     * option ::hipJitOptionInfoLogBufferSizeBytes) \n
      * Option type: char*
      */
-    HIPRTC_JIT_INFO_LOG_BUFFER,
+    hipJitOptionInfoLogBuffer,
 
     /**
      * IN: Log buffer size in bytes.  Log messages will be capped at this size
@@ -364,15 +364,15 @@ typedef enum hipJitOption
      * OUT: Amount of log buffer filled with messages\n
      * Option type: unsigned int
      */
-    HIPRTC_JIT_INFO_LOG_BUFFER_SIZE_BYTES,
+    hipJitOptionInfoLogBufferSizeBytes,
 
     /**
      * Pointer to a buffer in which to print any log messages from PTXAS that
      * reflect errors (the buffer size is specified via option
-     * ::HIPRTC_JIT_ERROR_LOG_BUFFER_SIZE_BYTES)\n
+     * ::hipJitOptionErrorLogBufferSizeBytes)\n
      * Option type: char*
      */
-    HIPRTC_JIT_ERROR_LOG_BUFFER,
+    hipJitOptionErrorLogBuffer,
 
     /**
      * IN: Log buffer size in bytes.  Log messages will be capped at this size
@@ -380,34 +380,34 @@ typedef enum hipJitOption
      * OUT: Amount of log buffer filled with messages\n
      * Option type: unsigned int
      */
-    HIPRTC_JIT_ERROR_LOG_BUFFER_SIZE_BYTES,
+    hipJitOptionErrorLogBufferSizeBytes,
 
     /**
      * Level of optimizations to apply to generated code (0 - 4), with 4
      * being the default and highest level of optimizations.\n
      * Option type: unsigned int
      */
-    HIPRTC_JIT_OPTIMIZATION_LEVEL,
+    hipJitOptionOptimizationLevel,
 
     /**
      * No option value required. Determines the target based on the current
      * attached context (default)\n
      * Option type: No option value needed
      */
-    HIPRTC_JIT_TARGET_FROM_HIPCONTEXT,
+    hipJitOptionTargetFromContext,
 
     /**
      * Target is chosen based on supplied ::CUjit_target_enum.\n
      * Option type: unsigned int for enumerated type ::CUjit_target_enum
      */
-    HIPRTC_JIT_TARGET,
+    hipJitOptionTarget,
 
     /**
      * Specifies choice of fallback strategy if matching cubin is not found.
      * Choice is based on supplied ::CUjit_fallback_enum.\n
      * Option type: unsigned int for enumerated type ::CUjit_fallback_enum
      */
-    HIPRTC_JIT_FALLBACK_STRATEGY
+    hipJitOptionFallbackStrategy
 
 } hipJitOption;
 
@@ -479,7 +479,7 @@ typedef enum CUarray_cubemap_face_enum
  */
 typedef enum hipLimit_t
 {
-    hipLimitStackSize        = 0x00, /**< GPU thread stack size */
+    CU_LIMIT_STACK_SIZE        = 0x00, /**< GPU thread stack size */
     hipLimitPrintfFifoSize  = 0x01, /**< GPU printf FIFO size */
     hipLimitMallocHeapSize  = 0x02  /**< GPU malloc heap size */
 } hipLimit_t;
@@ -1913,7 +1913,7 @@ extern tcuGraphicsResourceSetMapFlags        *cuGraphicsResourceSetMapFlags;
 extern tcuGraphicsMapResources               *hipGraphicsMapResources;
 extern tcuGraphicsUnmapResources             *hipGraphicsUnmapResources;
 extern tcuGetExportTable                     *cuGetExportTable;
-extern tcuCtxSetLimit                        *hipDeviceSetLimit;
+extern tcuCtxSetLimit                        *cuCtxSetLimit;
 extern tcuCtxGetLimit                        *hipDeviceGetLimit;
 
 // These functions could be using the CUDA 3.2 interface (_v2)

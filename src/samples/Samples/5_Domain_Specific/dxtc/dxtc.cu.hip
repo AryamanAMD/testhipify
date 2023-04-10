@@ -37,9 +37,9 @@ namespace cg = cooperative_groups;
 #include <helper_math.h>
 #include <float.h>  // for FLT_MAX
 
-#include "CudaMath_hipified.h"
-#include "dds_hipified.h"
-#include "permutations_hipified.h"
+#include "CudaMath.h"
+#include "dds.h"
+#include "permutations.h"
 
 // Definitions
 #define INPUT_IMAGE "teapot512_std.ppm"
@@ -611,12 +611,12 @@ int main(int argc, char **argv) {
 
   // copy into global mem
   uint *d_data = NULL;
-  checkCudaErrors(hipMalloc((void **)&d_data, memSize));
+  HIPCHECK(hipMalloc((void **)&d_data, memSize));
 
   // Result
   uint *d_result = NULL;
   const uint compressedSize = (w / 4) * (h / 4) * 8;
-  checkCudaErrors(hipMalloc((void **)&d_result, compressedSize));
+  HIPCHECK(hipMalloc((void **)&d_result, compressedSize));
   uint *h_result = (uint *)malloc(compressedSize);
 
   // Compute permutations.
@@ -625,8 +625,8 @@ int main(int argc, char **argv) {
 
   // Copy permutations host to devie.
   uint *d_permutations = NULL;
-  checkCudaErrors(hipMalloc((void **)&d_permutations, 1024 * sizeof(uint)));
-  checkCudaErrors(hipMemcpy(d_permutations, permutations, 1024 * sizeof(uint),
+  HIPCHECK(hipMalloc((void **)&d_permutations, 1024 * sizeof(uint)));
+  HIPCHECK(hipMemcpy(d_permutations, permutations, 1024 * sizeof(uint),
                              hipMemcpyHostToDevice));
 
   // create a timer
@@ -634,7 +634,7 @@ int main(int argc, char **argv) {
   sdkCreateTimer(&timer);
 
   // Copy image from host to device
-  checkCudaErrors(
+  HIPCHECK(
       hipMemcpy(d_data, block_image, memSize, hipMemcpyHostToDevice));
 
   // Determine launch configuration and run timed computation numIterations
@@ -646,8 +646,8 @@ int main(int argc, char **argv) {
   hipDeviceProp_t deviceProp;
 
   // get number of SMs on this GPU
-  checkCudaErrors(hipGetDevice(&devID));
-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, devID));
+  HIPCHECK(hipGetDevice(&devID));
+  HIPCHECK(hipGetDeviceProperties(&deviceProp, devID));
 
   // Restrict the numbers of blocks to launch on low end GPUs to avoid kernel
   // timeout
@@ -660,7 +660,7 @@ int main(int argc, char **argv) {
 
   for (int i = -1; i < numIterations; ++i) {
     if (i == 0) {
-      checkCudaErrors(hipDeviceSynchronize());
+      HIPCHECK(hipDeviceSynchronize());
       sdkStartTimer(&timer);
     }
 
@@ -673,7 +673,7 @@ int main(int argc, char **argv) {
   getLastCudaError("compress");
 
   // sync to host, stop timer, record perf
-  checkCudaErrors(hipDeviceSynchronize());
+  HIPCHECK(hipDeviceSynchronize());
   sdkStopTimer(&timer);
   double dAvgTime = 1.0e-3 * sdkGetTimerValue(&timer) / (double)numIterations;
   printf(
@@ -682,7 +682,7 @@ int main(int argc, char **argv) {
       (1.0e-6 * (double)(W * H) / dAvgTime), dAvgTime, (W * H), 1, NUM_THREADS);
 
   // copy result data from device to host
-  checkCudaErrors(
+  HIPCHECK(
       hipMemcpy(h_result, d_result, compressedSize, hipMemcpyDeviceToHost));
 
   // Write out result data to DDS file
@@ -770,9 +770,9 @@ int main(int argc, char **argv) {
   rms /= w * h * 3;
 
   // Free allocated resources and exit
-  checkCudaErrors(hipFree(d_permutations));
-  checkCudaErrors(hipFree(d_data));
-  checkCudaErrors(hipFree(d_result));
+  HIPCHECK(hipFree(d_permutations));
+  HIPCHECK(hipFree(d_data));
+  HIPCHECK(hipFree(d_result));
   free(image_path);
   free(data);
   free(block_image);
@@ -782,14 +782,6 @@ int main(int argc, char **argv) {
 
   printf("RMS(reference, result) = %f\n\n", rms);
   printf(rms <= ERROR_THRESHOLD ? "Test passed\n" : "Test failed!\n");
-  /* Return zero if test passed, one otherwise */
-  return rms > ERROR_THRESHOLD;
-}
-!\n");
-  /* Return zero if test passed, one otherwise */
-  return rms > ERROR_THRESHOLD;
-}
-!\n");
   /* Return zero if test passed, one otherwise */
   return rms > ERROR_THRESHOLD;
 }

@@ -42,8 +42,8 @@
 #include <hipfftXt.h>
 
 // helper functions and utilities to work with CUDA
-#include "helper_functions.h"
-#include "helper_cuda_hipified.h"
+#include <helper_functions.h>
+#include <helper_cuda.h>
 
 // Complex data type
 typedef float2 Complex;
@@ -153,7 +153,7 @@ int main(int argc, char **argv) {
   // hipfftCreate() - Create an empty plan
   hipfftResult result;
   hipfftHandle plan_input;
-  HIPCHECK(hipfftCreate(&plan_input));
+  checkCudaErrors(hipfftCreate(&plan_input));
 
   // cufftXtSetGPUs() - Define which GPUs to use
   result = cufftXtSetGPUs(plan_input, nGPUs, whichGPUs);
@@ -180,41 +180,41 @@ int main(int argc, char **argv) {
   worksize = (size_t *)malloc(sizeof(size_t) * nGPUs);
 
   // hipfftMakePlan1d() - Create the plan
-  HIPCHECK(
+  checkCudaErrors(
       hipfftMakePlan1d(plan_input, new_size, HIPFFT_C2C, 1, worksize));
 
   // cufftXtMalloc() - Malloc data on multiple GPUs
   cudaLibXtDesc *d_signal;
-  HIPCHECK(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_signal,
+  checkCudaErrors(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_signal,
                                 CUFFT_XT_FORMAT_INPLACE));
   cudaLibXtDesc *d_out_signal;
-  HIPCHECK(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_out_signal,
+  checkCudaErrors(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_out_signal,
                                 CUFFT_XT_FORMAT_INPLACE));
   cudaLibXtDesc *d_filter_kernel;
-  HIPCHECK(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_filter_kernel,
+  checkCudaErrors(cufftXtMalloc(plan_input, (cudaLibXtDesc **)&d_filter_kernel,
                                 CUFFT_XT_FORMAT_INPLACE));
   cudaLibXtDesc *d_out_filter_kernel;
-  HIPCHECK(cufftXtMalloc(plan_input,
+  checkCudaErrors(cufftXtMalloc(plan_input,
                                 (cudaLibXtDesc **)&d_out_filter_kernel,
                                 CUFFT_XT_FORMAT_INPLACE));
 
   // cufftXtMemcpy() - Copy data from host to multiple GPUs
-  HIPCHECK(cufftXtMemcpy(plan_input, d_signal, h_padded_signal,
+  checkCudaErrors(cufftXtMemcpy(plan_input, d_signal, h_padded_signal,
                                 CUFFT_COPY_HOST_TO_DEVICE));
-  HIPCHECK(cufftXtMemcpy(plan_input, d_filter_kernel,
+  checkCudaErrors(cufftXtMemcpy(plan_input, d_filter_kernel,
                                 h_padded_filter_kernel,
                                 CUFFT_COPY_HOST_TO_DEVICE));
 
   // cufftXtExecDescriptorC2C() - Execute FFT on data on multiple GPUs
-  HIPCHECK(
+  checkCudaErrors(
       cufftXtExecDescriptorC2C(plan_input, d_signal, d_signal, HIPFFT_FORWARD));
-  HIPCHECK(cufftXtExecDescriptorC2C(plan_input, d_filter_kernel,
+  checkCudaErrors(cufftXtExecDescriptorC2C(plan_input, d_filter_kernel,
                                            d_filter_kernel, HIPFFT_FORWARD));
 
   // cufftXtMemcpy() - Copy the data to natural order on GPUs
-  HIPCHECK(cufftXtMemcpy(plan_input, d_out_signal, d_signal,
+  checkCudaErrors(cufftXtMemcpy(plan_input, d_out_signal, d_signal,
                                 CUFFT_COPY_DEVICE_TO_DEVICE));
-  HIPCHECK(cufftXtMemcpy(plan_input, d_out_filter_kernel,
+  checkCudaErrors(cufftXtMemcpy(plan_input, d_out_filter_kernel,
                                 d_filter_kernel, CUFFT_COPY_DEVICE_TO_DEVICE));
 
   printf("\n\nValue of Library Descriptor\n");
@@ -232,7 +232,7 @@ int main(int argc, char **argv) {
 
   // cufftXtExecDescriptorC2C() - Execute inverse  FFT on data on multiple GPUs
   printf("Transforming signal back hipfftExecC2C\n");
-  HIPCHECK(cufftXtExecDescriptorC2C(plan_input, d_out_signal,
+  checkCudaErrors(cufftXtExecDescriptorC2C(plan_input, d_out_signal,
                                            d_out_signal, HIPFFT_BACKWARD));
 
   // Create host pointer pointing to padded signal
@@ -266,13 +266,13 @@ int main(int argc, char **argv) {
   free(h_convolved_signal_ref);
 
   // cudaXtFree() - Free GPU memory
-  HIPCHECK(cufftXtFree(d_signal));
-  HIPCHECK(cufftXtFree(d_filter_kernel));
-  HIPCHECK(cufftXtFree(d_out_signal));
-  HIPCHECK(cufftXtFree(d_out_filter_kernel));
+  checkCudaErrors(cufftXtFree(d_signal));
+  checkCudaErrors(cufftXtFree(d_filter_kernel));
+  checkCudaErrors(cufftXtFree(d_out_signal));
+  checkCudaErrors(cufftXtFree(d_out_filter_kernel));
 
   // hipfftDestroy() - Destroy FFT plan
-  HIPCHECK(hipfftDestroy(plan_input));
+  checkCudaErrors(hipfftDestroy(plan_input));
 
   exit(bTestResult ? EXIT_SUCCESS : EXIT_FAILURE);
 }
@@ -395,11 +395,6 @@ static __global__ void ComplexPointwiseMulAndScale(hipfftComplex *a,
                                                    float scale) {
   const int numThreads = blockDim.x * gridDim.x;
   const int threadID = blockIdx.x * blockDim.x + threadIdx.x;
-  for (int i = threadID; i < size; i += numThreads) {
-    a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
-  }
-}
-t threadID = blockIdx.x * blockDim.x + threadIdx.x;
   for (int i = threadID; i < size; i += numThreads) {
     a[i] = ComplexScale(ComplexMul(a[i], b[i]), scale);
   }

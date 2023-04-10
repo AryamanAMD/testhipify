@@ -343,8 +343,3 @@ int main(int argc, char **argv) {
   printf("All Done!\n");
   exit(EXIT_SUCCESS);
 }
-cuBlas handles
-  for (int i = 0; i < nthreads + 1; i++) {
-    hipStreamDestroy(streams[i]);
-    hipblasDestroy(handles[i]);
-  }

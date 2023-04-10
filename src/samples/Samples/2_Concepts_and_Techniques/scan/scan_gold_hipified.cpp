@@ -35,3 +35,4 @@ extern "C" void scanExclusiveHost(uint *dst, uint *src, uint batchSize,
     for (uint j = 1; j < arrayLength; j++) dst[j] = src[j - 1] + dst[j - 1];
   }
 }
+

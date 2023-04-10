@@ -43,7 +43,7 @@ hipError_t setProp(hipMemAllocationProp *prop, bool UseCompressibleMemory)
     prop->location.id = currentDevice;
 
     if (UseCompressibleMemory)
-       // prop->allocFlags.compressionType = CU_MEM_ALLOCATION_COMP_GENERIC;
+        prop->allocFlags.compressionType = CU_MEM_ALLOCATION_COMP_GENERIC;
 
     return hipSuccess;
 }
@@ -72,10 +72,10 @@ hipError_t allocateCompressible(void **adr, size_t size, bool UseCompressibleMem
     if (UseCompressibleMemory) {
         hipMemAllocationProp allocationProp = {};
         hipMemGetAllocationPropertiesFromHandle(&allocationProp, allocationHandle);
-       // if (allocationProp.allocFlags.compressionType != CU_MEM_ALLOCATION_COMP_GENERIC) {
-       //     printf("Could not allocate compressible memory... so waiving execution\n");
-       //     exit(EXIT_WAIVED);
-       // }
+        if (allocationProp.allocFlags.compressionType != CU_MEM_ALLOCATION_COMP_GENERIC) {
+            printf("Could not allocate compressible memory... so waiving execution\n");
+            exit(EXIT_WAIVED);
+        }
     }
 
     if (hipMemMap(dptr, size, 0, allocationHandle, 0) != hipSuccess)

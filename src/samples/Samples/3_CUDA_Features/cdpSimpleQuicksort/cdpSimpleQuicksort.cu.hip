@@ -130,6 +130,7 @@ __global__ void cdp_simple_quicksort(unsigned int *data, int left, int right,
 ////////////////////////////////////////////////////////////////////////////////
 void run_qsort(unsigned int *data, unsigned int nitems) {
   // Prepare CDP for the max depth 'MAX_DEPTH'.
+  HIPCHECK(hipDeviceSetLimit(cudaLimitDevRuntimeSyncDepth, MAX_DEPTH));
 
   // Launch on device
   int left = 0;
@@ -244,7 +245,7 @@ int main(int argc, char **argv) {
 
   exit(EXIT_SUCCESS);
 }
-ipFree(d_data));
+rrors(hipFree(d_data));
 
   exit(EXIT_SUCCESS);
 }

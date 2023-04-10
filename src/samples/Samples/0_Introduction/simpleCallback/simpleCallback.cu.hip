@@ -42,21 +42,20 @@
 
 // System includes
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 
 // helper functions and utilities to work with CUDA
 #include "helper_functions.h"
 #include "helper_cuda_hipified.h"
-
+#include <hip/hip_runtime_api.h>
 #include "multithreading.h"
-
+#include "HIPCHECK.h"
 const int N_workloads = 8;
 const int N_elements_per_workload = 100000;
 
 CUTBarrier thread_barrier;
 
-void (CUDART_CB* myStreamCallback)(hipStream_t event, hipError_t status, void *data);
+void myStreamCallback(hipStream_t event, hipError_t status,
+                                void *data);
 
 struct heterogeneous_workload {
   int id;

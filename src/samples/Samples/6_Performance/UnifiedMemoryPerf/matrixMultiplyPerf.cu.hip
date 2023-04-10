@@ -125,7 +125,7 @@ void verifyMatrixData(float *expectedData, float *observedData,
 }
 
 #define BLOCK_SIZE 32
-__global__ void matrixMultiplyKernel(float *C,float *A,float *B,
+__global__ void matrixMultiplyKernel(float *C, float *A, float *B,
                                      unsigned int matrixDim) {
   // Block index
   int bx = blockIdx.x;
@@ -206,13 +206,9 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
                              double *gpuLaunchTransferSyncTimes,
                              double *cpuAccessTimes, double *overallTimes,
                              int device_id) {
-  void *dptrA = NULL,  *hptrA = NULL;
-  void *dptrB = NULL,  *hptrB = NULL;
-  void *dptrC = NULL,  *hptrC = NULL;
-  //float *dptrA = NULL,  *hptrA = NULL;
-  //float *dptrB = NULL,  *hptrB = NULL;
-  //float *dptrC = NULL,  *hptrC = NULL;
-
+  float *dptrA = NULL, *hptrA = NULL;
+  float *dptrB = NULL, *hptrB = NULL;
+  float *dptrC = NULL, *hptrC = NULL;
   float *randValuesX = NULL, *randValuesY = NULL;
   float *randValuesVerifyXmulY = NULL, *randValuesVerifyYmulX = NULL;
   bool copyRequired = false, hintsRequired = false;
@@ -262,7 +258,7 @@ void runMatrixMultiplyKernel(unsigned int matrixDim, int allocType,
       hipMemcpyAsync(dptrA, randValuesX, size, hipMemcpyHostToDevice));
   HIPCHECK(
       hipMemcpyAsync(dptrB, randValuesY, size, hipMemcpyHostToDevice));
-matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
+  matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
   HIPCHECK(hipMemcpyAsync(randValuesVerifyXmulY, dptrC, size,
                                   hipMemcpyDeviceToHost));
   HIPCHECK(hipStreamSynchronize(NULL));
@@ -318,9 +314,9 @@ matrixMultiplyKernel<<<grid, threads>>>(dptrC, dptrA, dptrB, matrixDim);
       HIPCHECK(hipHostMalloc(&hptrA, size));
       HIPCHECK(hipHostMalloc(&hptrB, size));
       HIPCHECK(hipHostMalloc(&hptrC, size));
-      HIPCHECK(hipHostGetDevicePointer(&dptrA, hptrA, 0));
-      HIPCHECK(hipHostGetDevicePointer(&dptrB, hptrB, 0));
-      HIPCHECK(hipHostGetDevicePointer(&dptrC, hptrC, 0));
+      HIPCHECK(hipHostGetDevicePointer((void **)&dptrA, hptrA, 0));
+      HIPCHECK(hipHostGetDevicePointer((void **)&dptrB, hptrB, 0));
+      HIPCHECK(hipHostGetDevicePointer((void **)&dptrC, hptrC, 0));
       break;
 
     case USE_MANAGED_MEMORY:
@@ -700,11 +696,3 @@ int main(int argc, char **argv) {
       "Results may vary when GPU Boost is enabled.\n");
   exit(EXIT_SUCCESS);
 }
-{
-    numKernelRuns =
-        getCmdLineArgumentInt(argc, (const char **)argv, "kernel-iterations");
-  }
-
-  if (checkCmdLineFlag(argc, (const char **)argv, "verbose")) {
-    verboseResults = 1;
-  }

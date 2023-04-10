@@ -52,8 +52,8 @@
 #include <hipfftXt.h>
 
 // helper functions and utilities to work with CUDA
-#include "helper_functions.h"
-#include "helper_cuda_hipified.h"
+#include <helper_functions.h>
+#include <helper_cuda.h>
 
 // Complex data type
 typedef float2 Complex;
@@ -377,8 +377,5 @@ __global__ void solvePoisson(hipfftComplex *ft, hipfftComplex *ft_k, float *k,
 
     ft_k[index].x = -ft[index].x * 1 / k2;
     ft_k[index].y = -ft[index].y * 1 / k2;
-  }
-}
-x].y * 1 / k2;
   }
 }

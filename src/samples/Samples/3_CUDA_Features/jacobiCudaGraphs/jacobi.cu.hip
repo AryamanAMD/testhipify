@@ -28,11 +28,10 @@
 
 #include <hip/hip_cooperative_groups.h>
 #include <hip/hip_runtime.h>
-#include "helper_cuda_hipified.h"
-#include "HIPCHECK.h"
+#include <helper_cuda.h>
 #include <vector>
 #include "jacobi.h"
-
+#include "HIPCHECK.h"
 namespace cg = cooperative_groups;
 
 // 8 Rows of square-matrix A processed by each CTA.
@@ -393,10 +392,3 @@ double JacobiMethodGpu(const float *A, const double *b,
   HIPCHECK(hipFree(d_sum));
   return sum;
 }
-    hipMemcpyDeviceToHost, stream));
-      checkCudaErrors(hipStreamSynchronize(stream));
-      printf("GPU iterations : %d\n", k + 1);
-      printf("GPU error : %.3e\n", sum);
-      break;
-    }
-  }

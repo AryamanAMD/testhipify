@@ -41,7 +41,7 @@
 
 #define MAXTHREADS 256
 #define NUM_INTS 32
-#include "HIPCHECK.h"
+
 #if defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
 // Windows threads use different data structures
 #include <windows.h>
@@ -73,7 +73,7 @@ pthread_mutex_t g_mutex;
 
 #include <iostream>
 #include <cstring>
-
+#include "HIPCHECK.h"
 using namespace std;
 
 int NumThreads;

@@ -36,7 +36,7 @@
 #include <stdint.h>
 #include <cstdio>
 #include <ctime>
-#include "HIPCHECK.h"
+
 #define min(a, b) (a) < (b) ? (a) : (b)
 #define max(a, b) (a) > (b) ? (a) : (b)
 
@@ -59,13 +59,10 @@ __global__ void atomicKernel(int *atom_arr) {
     atomicMin_system(&atom_arr[3], tid);
 
     // Atomic increment (modulo 17+1)
-    //atomicInc_system((unsigned int *)&atom_arr[4], 17);
-    atomicInc((unsigned int *)&atom_arr[4], 17);
-
+    atomicInc_system((unsigned int *)&atom_arr[4], 17);
 
     // Atomic decrement
-    //atomicDec_system((unsigned int *)&atom_arr[5], 137);
-    atomicDec((unsigned int *)&atom_arr[4], 17);
+    atomicDec_system((unsigned int *)&atom_arr[5], 137);
 
     // Atomic compare-and-swap
     atomicCAS_system(&atom_arr[6], tid - 1, tid);
@@ -283,7 +280,7 @@ int main(int argc, char **argv) {
   // set device
   hipDeviceProp_t device_prop;
   int dev_id = findCudaDevice(argc, (const char **)argv);
-  checkCudaErrors(hipGetDeviceProperties(&device_prop, dev_id));
+  HIPCHECK(hipGetDeviceProperties(&device_prop, dev_id));
 
   if (!device_prop.managedMemory) {
     // This samples requires being run on a device that supports Unified Memory
@@ -318,7 +315,7 @@ int main(int argc, char **argv) {
     atom_arr = (int *)malloc(sizeof(int) * numData);
   } else {
     printf("CANNOT access pageable memory\n");
-    checkCudaErrors(hipMallocManaged(&atom_arr, sizeof(int) * numData));
+    HIPCHECK(hipMallocManaged(&atom_arr, sizeof(int) * numData));
   }
 
   for (unsigned int i = 0; i < numData; i++) atom_arr[i] = 0;
@@ -329,7 +326,7 @@ int main(int argc, char **argv) {
   atomicKernel<<<numBlocks, numThreads>>>(atom_arr);
   atomicKernel_CPU(atom_arr, numBlocks * numThreads);
 
-  checkCudaErrors(hipDeviceSynchronize());
+  HIPCHECK(hipDeviceSynchronize());
 
   // Compute & verify reference solution
   int testResult = verify(atom_arr, 2 * numThreads * numBlocks);
