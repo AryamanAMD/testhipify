@@ -1,3 +1,4 @@
+#include "hip/hip_runtime.h"
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,15 +30,12 @@
  * This sample demonstrates Inter Process Communication
  * using one process per GPU for computation.
  */
-
-#include <hip/hip_runtime.h>
 #include <stdio.h>
-#include "rocprofiler.h"
-#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <vector>
-#include "helper_cuda.h"
-#include "helper_multiprocess.h"
+#include "helper_cuda_hipified.h"
+#include "helper_multiprocess.cpp"
+#include "HIPCHECK.h"
 static const char shmName[] = "simpleIPCshm";
 // For direct NVLINK and PCI-E peers, at max 8 simultaneous peers are allowed
 // For NVSWITCH connected peers like DGX-2, simultaneous peers are not limited
@@ -45,7 +43,6 @@ static const char shmName[] = "simpleIPCshm";
 #define MAX_DEVICES (32)
 #define DATA_SIZE (64ULL << 20ULL)  // 64MB
 
-/*
 #if defined(__linux__)
 #define cpu_atomic_add32(a, x) __sync_add_and_fetch(a, x)
 #elif defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
@@ -53,9 +50,6 @@ static const char shmName[] = "simpleIPCshm";
 #else
 #error Unsupported system
 #endif
-*/
-#define cpu_atomic_add32(a, x) __sync_add_and_fetch(a, x)
-
 
 typedef struct shmStruct_st {
   size_t nprocesses;
@@ -220,7 +214,9 @@ static void parentProcess(char *app) {
     HIPCHECK(hipGetDeviceProperties(&prop, i));
 
     // CUDA IPC is only supported on devices with unified addressing
-    if (!prop.unifiedAddressing) {
+    // Aryaman: Problem #1: hipDeviceProp_t does not have unifiedAddressing.  Closest one is managedMemory, used for testing
+    //if (!prop.unifiedAddressing) {
+    if (!prop.managedMemory) {
       printf("Device %d does not support unified addressing, skipping...\n", i);
       continue;
     }
@@ -278,7 +274,9 @@ static void parentProcess(char *app) {
     HIPCHECK(hipMalloc(&ptr, DATA_SIZE));
     HIPCHECK(
         hipIpcGetMemHandle((hipIpcMemHandle_t *)&shm->memHandle[i], ptr));
-    HIPCHECK(hipEventCreate(
+    // Aryaman: Problem #2: hipEventCreate does not accept flags argument.  hipify-perl converted cudaEventCreate to hipEventCreate.  This code is not usable immediately after hipify-perl.
+    //HIPCHECK(hipEventCreate(
+    HIPCHECK(hipEventCreateWithFlags(
         &event, hipEventDisableTiming | hipEventInterprocess));
     HIPCHECK(hipIpcGetEventHandle(
         (hipIpcEventHandle_t *)&shm->eventHandle[i], event));
@@ -335,12 +333,4 @@ int main(int argc, char **argv) {
   return EXIT_SUCCESS;
 #endif
 }
-__arm__) || defined(__aarch64__)
-  printf("Not supported on ARM\n");
-  return EXIT_WAIVED;
-#else
-  if (argc == 1) {
-    parentProcess(argv[0]);
-  } else {
-    childProcess(atoi(argv[1]));
-  }
+
