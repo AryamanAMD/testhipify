@@ -124,6 +124,7 @@ def setup():
 		os.system('rm CHANGELOG.md')
 		os.system('rm -rf .git')	
 		os.system('rm LICENSE')
+		os.chdir('../../')
 	print("Enter 'generate' to hipify additional files.")
 	user_input=input()
 	if user_input.lower() == 'generate':
