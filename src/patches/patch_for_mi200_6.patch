@@ -1,0 +1,6 @@
+diff --git a/src/samples/Samples/0_Introduction/simpleIPC/simpleIPC.out b/src/samples/Samples/0_Introduction/simpleIPC/simpleIPC.out
+index 84faa35..64f9145 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleIPC/simpleIPC.out and b/src/samples/Samples/0_Introduction/simpleIPC/simpleIPC.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out
+index cffdd4e..9171ea0 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out and b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out differ
