@@ -461,7 +461,17 @@ def compilation_1(x):
 		print(command)
 		os.system(command)
 		return None
-	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu' and user_platform.lower() == 'amd':
+	elif x=='src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu' and user_platform.lower() == 'amd':
+		command='hipcc -I src/samples/Common -I -fopenmp  /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu.hip -o src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.out'
+		print(command)
+		os.system(command)
+		return None	
+	elif x=='src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu' and user_platform.lower() == 'nvidia':
+		command='hipcc -I src/samples/Common -I -fopenmp  /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu.hip -o src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.out'
+		print(command)
+		os.system(command)
+		return None	
+	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu' and user_platform.lower() == 'amd':
 		command='hipcc -I src/samples/Common -fgpu-rdc src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu.hip src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.hip -o src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out'
 		print(command)
 		os.system(command)
@@ -476,7 +486,7 @@ def compilation_1(x):
 		print(command)
 		os.system(command)
 		return None
-	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu' and user_platform.lower() == 'nvidia':
+	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu' and user_platform.lower() == 'nvidia':
 		command='hipcc -I src/samples/Common -fgpu-rdc src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu.cpp src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu.cpp -o src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out'
 		print(command)
 		os.system(command)
