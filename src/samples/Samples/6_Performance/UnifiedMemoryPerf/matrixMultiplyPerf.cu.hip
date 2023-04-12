@@ -696,3 +696,4 @@ int main(int argc, char **argv) {
       "Results may vary when GPU Boost is enabled.\n");
   exit(EXIT_SUCCESS);
 }
+

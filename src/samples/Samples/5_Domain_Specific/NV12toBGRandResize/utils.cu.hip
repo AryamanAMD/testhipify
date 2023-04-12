@@ -30,13 +30,13 @@
 #include <sys/types.h>
 #include <fstream>
 #include <iostream>
-#include "HIPCHECK.h"
-#include <hip/hip_runtime.h>
 
+#include <hip/hip_runtime.h>
+#include <hip/hip_runtime.h>
 
 #include "resize_convert_hipified.h"
 #include "utils_hipified.h"
-
+#include "HIPCHECK.h"
 __global__ void floatToChar(float *src, unsigned char *dst, int height,
                             int width, int batchSize) {
   int x = threadIdx.x + blockIdx.x * blockDim.x;

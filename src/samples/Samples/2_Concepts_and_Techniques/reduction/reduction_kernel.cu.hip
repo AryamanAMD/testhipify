@@ -35,8 +35,10 @@
 
 #define _CG_ABI_EXPERIMENTAL
 #include <hip/hip_cooperative_groups.h>
-#include "cooperative_groups/reduce.h"
+#include <cooperative_groups/reduce.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 
 namespace cg = cooperative_groups;
 

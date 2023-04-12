@@ -115,7 +115,7 @@ __device__ inline float MoroInvCNDgpu(unsigned int x) {
   // Special case (Chebychev) for tail
   else {
     z = __logf(-__logf(p1));
-    z = -(c1 + z * (c2 + z * (c3 + z * (c4 + z * (c5 + z * (c6 + z * 
+    z = -(c1 + z * (c2 + z * (c3 + z * (c4 + z * (c5 + z * (c6 + z *
         (c7 + z * (c8 + z * c9))))))));
   }
 

@@ -6,8 +6,7 @@
 #define KMAG "\x1B[35m"
 #define KCYN "\x1B[36m"
 #define KWHT "\x1B[37m"
-
-
+#include "hip/hip_runtime_api.h"
 #define failed(...)                                                                                \
     printf("%serror: ", KRED);                                                                     \
     printf(__VA_ARGS__);                                                                           \

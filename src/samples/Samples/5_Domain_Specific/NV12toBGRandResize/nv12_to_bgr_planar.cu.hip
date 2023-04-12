@@ -30,7 +30,6 @@
 
 #include <hip/hip_runtime.h>
 
-
 #include "resize_convert_hipified.h"
 
 #define CONV_THREADS_X 64

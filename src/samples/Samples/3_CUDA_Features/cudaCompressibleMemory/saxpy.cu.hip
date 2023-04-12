@@ -1,4 +1,4 @@
-#include "hip/hip_runtime.h"
+
 /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -159,7 +159,7 @@ int main(int argc, char **argv)
     bool compressibleZbuf = 0;
     if ((major == 8 && minor == 0) || (major == 8 && minor == 6))
     {
-        // On SM 8.0 and 8.6 GPUs compressible buffer can only be initialized 
+        // On SM 8.0 and 8.6 GPUs compressible buffer can only be initialized
         // through hipMemcpy.
         printf("allocating non-compressible Z buffer\n");
         HIPCHECK(allocateCompressible((void **)&z, size, false));
@@ -176,7 +176,7 @@ int main(int argc, char **argv)
     const float a = 1.0f;
     const float init_val = 1.0f;
     launchSaxpy(a, x, y, z, n, init_val, compressibleZbuf);
- 
+
     HIPCHECK(freeCompressible(x, size, true));
     HIPCHECK(freeCompressible(y, size, true));
     HIPCHECK(freeCompressible(z, size, true));

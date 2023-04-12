@@ -43,7 +43,7 @@
 #include <stdlib.h>
 
 // cuBLAS
-#include <hipblas/hipblas.h>
+#include <hipblas.h>
 
 // utilities
 #include "helper_cuda_hipified.h"
@@ -213,7 +213,7 @@ void execute(Task<T> &t, hipblasHandle_t *handle, hipStream_t *stream,
     double zero = 0.0;
 
     // attach managed memory to my stream
-    //HIPCHECK(hipblasSetStream(handle[tid + 1], stream[tid + 1]));
+   // HIPCHECK(hipblasSetStream(handle[tid + 1], stream[tid + 1]));
     HIPCHECK(hipStreamAttachMemAsync(stream[tid + 1], t.data, 0,
                                              hipMemAttachSingle));
     HIPCHECK(hipStreamAttachMemAsync(stream[tid + 1], t.vector, 0,

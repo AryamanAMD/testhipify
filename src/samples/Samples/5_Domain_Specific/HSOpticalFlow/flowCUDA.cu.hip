@@ -25,17 +25,15 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include "common_hipified.h"
 
-#include <hip/hip_runtime.h>
-#include "common.h"
-#include "helper_cuda_hipified.h"
 // include kernels
 #include "downscaleKernel_hipified.cuh"
-#include "upscaleKernel_hipified.cuh"
-#include "warpingKernel_hipified.cuh"
-#include "derivativesKernel_hipified.cuh"
-#include "solverKernel_hipified.cuh"
-#include "addKernel_hipified.cuh"
+#include "upscaleKernel.cuh"
+#include "warpingKernel.cuh"
+#include "derivativesKernel.cuh"
+#include "solverKernel.cuh"
+#include "addKernel.cuh"
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief method logic

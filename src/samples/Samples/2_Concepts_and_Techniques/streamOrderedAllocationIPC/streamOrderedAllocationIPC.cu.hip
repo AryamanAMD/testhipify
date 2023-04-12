@@ -451,3 +451,27 @@ d(_WIN32) || defined(WIN64) || defined(_WIN64)
   return EXIT_SUCCESS;
 #endif
 }
+d(_WIN32) || defined(WIN64) || defined(_WIN64)
+  printf("Not supported on ARM\n");
+  return EXIT_WAIVED;
+#else
+  if (argc == 1) {
+    parentProcess(argv[0]);
+  } else {
+    childProcess(atoi(argv[1]));
+  }
+  return EXIT_SUCCESS;
+#endif
+}
+d(_WIN32) || defined(WIN64) || defined(_WIN64)
+  printf("Not supported on ARM\n");
+  return EXIT_WAIVED;
+#else
+  if (argc == 1) {
+    parentProcess(argv[0]);
+  } else {
+    childProcess(atoi(argv[1]));
+  }
+  return EXIT_SUCCESS;
+#endif
+}

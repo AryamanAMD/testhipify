@@ -432,13 +432,13 @@ extern "C" __global__ void multiGpuConjugateGradient(
 // Map of device version to device number
 std::multimap<std::pair<int, int>, int> getIdenticalGPUs() {
   int numGpus = 0;
-  checkCudaErrors(hipGetDeviceCount(&numGpus));
+  HIPCHECK(hipGetDeviceCount(&numGpus));
 
   std::multimap<std::pair<int, int>, int> identicalGpus;
 
   for (int i = 0; i < numGpus; i++) {
     hipDeviceProp_t deviceProp;
-    checkCudaErrors(hipGetDeviceProperties(&deviceProp, i));
+    HIPCHECK(hipGetDeviceProperties(&deviceProp, i));
 
     // Filter unsupported devices
     if (deviceProp.cooperativeLaunch && deviceProp.concurrentManagedAccess) {
@@ -497,7 +497,7 @@ int main(int argc, char **argv) {
   // access between participating GPUs gives better performance.
   for (auto itr = bestFit.first; itr != bestFit.second; itr++) {
     int deviceId = itr->second;
-    checkCudaErrors(hipSetDevice(deviceId));
+    HIPCHECK(hipSetDevice(deviceId));
 
     std::for_each(
         itr, bestFit.second,
@@ -505,7 +505,7 @@ int main(int argc, char **argv) {
          &kNumGpusRequired](decltype(*itr) mapPair) {
           if (deviceId != mapPair.second) {
             int access = 0;
-            checkCudaErrors(
+            HIPCHECK(
                 hipDeviceCanAccessPeer(&access, deviceId, mapPair.second));
             printf("Device=%d %s Access Peer Device=%d\n", deviceId,
                    access ? "CAN" : "CANNOT", mapPair.second);
@@ -551,12 +551,12 @@ int main(int argc, char **argv) {
     // participating devices.
     for (auto p1_itr = bestFitDeviceIds.begin();
          p1_itr != bestFitDeviceIds.end(); p1_itr++) {
-      checkCudaErrors(hipSetDevice(*p1_itr));
+      HIPCHECK(hipSetDevice(*p1_itr));
       for (auto p2_itr = bestFitDeviceIds.begin();
            p2_itr != bestFitDeviceIds.end(); p2_itr++) {
         if (*p1_itr != *p2_itr) {
-          checkCudaErrors(hipDeviceEnablePeerAccess(*p2_itr, 0));
-          checkCudaErrors(hipSetDevice(*p1_itr));
+          HIPCHECK(hipDeviceEnablePeerAccess(*p2_itr, 0));
+          HIPCHECK(hipSetDevice(*p1_itr));
         }
       }
     }
@@ -566,33 +566,33 @@ int main(int argc, char **argv) {
   N = 10485760 * 2;
   nz = (N - 2) * 3 + 4;
 
-  checkCudaErrors(hipMallocManaged((void **)&I, sizeof(int) * (N + 1)));
-  checkCudaErrors(hipMallocManaged((void **)&J, sizeof(int) * nz));
-  checkCudaErrors(hipMallocManaged((void **)&val, sizeof(float) * nz));
+  HIPCHECK(hipMallocManaged((void **)&I, sizeof(int) * (N + 1)));
+  HIPCHECK(hipMallocManaged((void **)&J, sizeof(int) * nz));
+  HIPCHECK(hipMallocManaged((void **)&val, sizeof(float) * nz));
 
   float *val_cpu = (float *)malloc(sizeof(float) * nz);
 
   genTridiag(I, J, val_cpu, N, nz);
 
   memcpy(val, val_cpu, sizeof(float) * nz);
-  checkCudaErrors(
+  HIPCHECK(
       hipMemAdvise(I, sizeof(int) * (N + 1), hipMemAdviseSetReadMostly, 0));
-  checkCudaErrors(
+  HIPCHECK(
       hipMemAdvise(J, sizeof(int) * nz, hipMemAdviseSetReadMostly, 0));
-  checkCudaErrors(
+  HIPCHECK(
       hipMemAdvise(val, sizeof(float) * nz, hipMemAdviseSetReadMostly, 0));
 
-  checkCudaErrors(hipMallocManaged((void **)&x, sizeof(float) * N));
+  HIPCHECK(hipMallocManaged((void **)&x, sizeof(float) * N));
 
   double *dot_result;
-  checkCudaErrors(hipMallocManaged((void **)&dot_result, sizeof(double)));
+  HIPCHECK(hipMallocManaged((void **)&dot_result, sizeof(double)));
 
-  checkCudaErrors(hipMemset(dot_result, 0, sizeof(double)));
+  HIPCHECK(hipMemset(dot_result, 0, sizeof(double)));
 
   // temp memory for ConjugateGradient
-  checkCudaErrors(hipMallocManaged((void **)&r, N * sizeof(float)));
-  checkCudaErrors(hipMallocManaged((void **)&p, N * sizeof(float)));
-  checkCudaErrors(hipMallocManaged((void **)&Ax, N * sizeof(float)));
+  HIPCHECK(hipMallocManaged((void **)&r, N * sizeof(float)));
+  HIPCHECK(hipMallocManaged((void **)&p, N * sizeof(float)));
+  HIPCHECK(hipMallocManaged((void **)&Ax, N * sizeof(float)));
 
   std::cout << "\nRunning on GPUs = " << kNumGpusRequired << std::endl;
   hipStream_t nStreams[kNumGpusRequired];
@@ -606,11 +606,11 @@ int main(int argc, char **argv) {
   // set numSms & numBlocksPerSm to be lowest of 2 devices
   while (deviceId != bestFitDeviceIds.end()) {
     hipDeviceProp_t deviceProp;
-    checkCudaErrors(hipSetDevice(*deviceId));
-    checkCudaErrors(hipGetDeviceProperties(&deviceProp, *deviceId));
+    HIPCHECK(hipSetDevice(*deviceId));
+    HIPCHECK(hipGetDeviceProperties(&deviceProp, *deviceId));
 
     int numBlocksPerSm_current = 0;
-    checkCudaErrors(hipOccupancyMaxActiveBlocksPerMultiprocessor(
+    HIPCHECK(hipOccupancyMaxActiveBlocksPerMultiprocessor(
         &numBlocksPerSm_current, multiGpuConjugateGradient, numThreads,
         sMemSize));
 
@@ -634,8 +634,8 @@ int main(int argc, char **argv) {
   int totalThreadsPerGPU = numSms * numBlocksPerSm * THREADS_PER_BLOCK;
   deviceId = bestFitDeviceIds.begin();
   while (deviceId != bestFitDeviceIds.end()) {
-    checkCudaErrors(hipSetDevice(*deviceId));
-    checkCudaErrors(hipStreamCreate(&nStreams[device_count]));
+    HIPCHECK(hipSetDevice(*deviceId));
+    HIPCHECK(hipStreamCreate(&nStreams[device_count]));
 
     int perGPUIter = N / (totalThreadsPerGPU * kNumGpusRequired);
     int offset_Ax = device_count * totalThreadsPerGPU;
@@ -643,11 +643,11 @@ int main(int argc, char **argv) {
     int offset_p = device_count * totalThreadsPerGPU;
     int offset_x = device_count * totalThreadsPerGPU;
 
-    checkCudaErrors(hipMemPrefetchAsync(I, sizeof(int) * N, *deviceId,
+    HIPCHECK(hipMemPrefetchAsync(I, sizeof(int) * N, *deviceId,
                                          nStreams[device_count]));
-    checkCudaErrors(hipMemPrefetchAsync(val, sizeof(float) * nz, *deviceId,
+    HIPCHECK(hipMemPrefetchAsync(val, sizeof(float) * nz, *deviceId,
                                          nStreams[device_count]));
-    checkCudaErrors(hipMemPrefetchAsync(J, sizeof(float) * nz, *deviceId,
+    HIPCHECK(hipMemPrefetchAsync(J, sizeof(float) * nz, *deviceId,
                                          nStreams[device_count]));
 
     if (offset_Ax <= N) {
@@ -704,7 +704,7 @@ int main(int argc, char **argv) {
 
   // Structure used for cross-grid synchronization.
   MultiDeviceData multi_device_data;
-  checkCudaErrors(hipHostAlloc(
+  HIPCHECK(hipHostAlloc(
       &multi_device_data.hostMemoryArrivedList,
       (kNumGpusRequired - 1) * sizeof(*multi_device_data.hostMemoryArrivedList),
       hipHostMallocPortable));
@@ -725,23 +725,23 @@ int main(int argc, char **argv) {
   deviceId = bestFitDeviceIds.begin();
   device_count = 0;
   while (deviceId != bestFitDeviceIds.end()) {
-    checkCudaErrors(hipSetDevice(*deviceId));
-    checkCudaErrors(hipLaunchCooperativeKernel(
+    HIPCHECK(hipSetDevice(*deviceId));
+    HIPCHECK(hipLaunchCooperativeKernel(
         (void *)multiGpuConjugateGradient, dimGrid, dimBlock, kernelArgs,
         sMemSize, nStreams[device_count++]));
     multi_device_data.deviceRank++;
     deviceId++;
   }
 
-  checkCudaErrors(hipMemPrefetchAsync(x, sizeof(float) * N, hipCpuDeviceId));
-  checkCudaErrors(
+  HIPCHECK(hipMemPrefetchAsync(x, sizeof(float) * N, hipCpuDeviceId));
+  HIPCHECK(
       hipMemPrefetchAsync(dot_result, sizeof(double), hipCpuDeviceId));
 
   deviceId = bestFitDeviceIds.begin();
   device_count = 0;
   while (deviceId != bestFitDeviceIds.end()) {
-    checkCudaErrors(hipSetDevice(*deviceId));
-    checkCudaErrors(hipStreamSynchronize(nStreams[device_count++]));
+    HIPCHECK(hipSetDevice(*deviceId));
+    HIPCHECK(hipStreamSynchronize(nStreams[device_count++]));
     deviceId++;
   }
 
@@ -769,18 +769,42 @@ int main(int argc, char **argv) {
     }
   }
 
-  checkCudaErrors(hipHostFree(multi_device_data.hostMemoryArrivedList));
-  checkCudaErrors(hipFree(I));
-  checkCudaErrors(hipFree(J));
-  checkCudaErrors(hipFree(val));
-  checkCudaErrors(hipFree(x));
-  checkCudaErrors(hipFree(r));
-  checkCudaErrors(hipFree(p));
-  checkCudaErrors(hipFree(Ax));
-  checkCudaErrors(hipFree(dot_result));
+  HIPCHECK(hipHostFree(multi_device_data.hostMemoryArrivedList));
+  HIPCHECK(hipFree(I));
+  HIPCHECK(hipFree(J));
+  HIPCHECK(hipFree(val));
+  HIPCHECK(hipFree(x));
+  HIPCHECK(hipFree(r));
+  HIPCHECK(hipFree(p));
+  HIPCHECK(hipFree(Ax));
+  HIPCHECK(hipFree(dot_result));
   free(val_cpu);
 
 #if ENABLE_CPU_DEBUG_CODE
+  free(Ax_cpu);
+  free(r_cpu);
+  free(p_cpu);
+  free(x_cpu);
+#endif
+
+  printf("Test Summary:  Error amount = %f \n", err);
+  fprintf(stdout, "&&&& conjugateGradientMultiDeviceCG %s\n",
+          (sqrt(r1) < tol) ? "PASSED" : "FAILED");
+  exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+G_CODE
+  free(Ax_cpu);
+  free(r_cpu);
+  free(p_cpu);
+  free(x_cpu);
+#endif
+
+  printf("Test Summary:  Error amount = %f \n", err);
+  fprintf(stdout, "&&&& conjugateGradientMultiDeviceCG %s\n",
+          (sqrt(r1) < tol) ? "PASSED" : "FAILED");
+  exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
+}
+G_CODE
   free(Ax_cpu);
   free(r_cpu);
   free(p_cpu);

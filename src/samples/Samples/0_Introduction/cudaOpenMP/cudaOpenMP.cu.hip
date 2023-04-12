@@ -33,7 +33,7 @@
  * needs a compiler that supports OpenMP 2.0
  */
 
-#include <helper_cuda.h>
+#include "helper_cuda_hipified.h"
 #include <omp.h>
 #include <stdio.h>  // stdio functions are used since C++ streams aren't necessarily thread safe
 

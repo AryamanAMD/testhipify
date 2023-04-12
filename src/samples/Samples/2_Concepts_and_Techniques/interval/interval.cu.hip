@@ -38,9 +38,11 @@
  */
 
 const static char *sSDKsample = "Interval Computing";
-#include "hip/hip_runtime.h"
+
 #include <iostream>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include "helper_cuda_hipified.h"
 #include "interval_hipified.h"
 #include "cuda_interval_hipified.h"

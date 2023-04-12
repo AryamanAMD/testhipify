@@ -26,7 +26,7 @@
  */
 
 #include <hip/hip_runtime.h>
-#include <hip/hip_cooperative_groups.h>	
+#include <hip/hip_cooperative_groups.h>
 #include "helper_cuda_hipified.h"
 #include <vector>
 #include "HIPCHECK.h"

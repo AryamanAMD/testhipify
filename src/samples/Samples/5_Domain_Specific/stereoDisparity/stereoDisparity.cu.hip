@@ -40,8 +40,8 @@
 #include "stereoDisparity_kernel.cuh"
 
 // includes, project
-#include <helper_functions.h>  // helper for shared that are common to CUDA Samples
-#include <helper_cuda.h>  // helper for checking cuda initialization and error checking
+#include "helper_functions.h"  // helper for shared that are common to CUDA Samples
+#include "helper_cuda_hipified.h"  // helper for checking cuda initialization and error checking
 #include <helper_string.h>  // helper functions for string parsing
 
 static const char *sSDKsample = "[stereoDisparity]\0";
@@ -274,6 +274,12 @@ void runTest(int argc, char **argv) {
 
   if (h_img1 != NULL) free(h_img1);
 
+  if (dispOut != NULL) free(dispOut);
+
+  sdkDeleteTimer(&timer);
+
+  exit((checkSum == cpuCheckSum) ? EXIT_SUCCESS : EXIT_FAILURE);
+}
   if (dispOut != NULL) free(dispOut);
 
   sdkDeleteTimer(&timer);

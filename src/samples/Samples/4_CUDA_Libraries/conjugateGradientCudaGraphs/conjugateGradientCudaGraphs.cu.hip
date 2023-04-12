@@ -43,8 +43,8 @@
 #include <hipsparse.h>
 
 // Utilities and system includes
-#include <helper_cuda.h>  // helper function CUDA error checking and initialization
-#include <helper_functions.h>  // helper for shared functions common to CUDA Samples
+#include "helper_cuda_hipified.h"  // helper function CUDA error checking and initialization
+#include "helper_functions.h"  // helper for shared functions common to CUDA Samples
 
 const char *sSDKname = "conjugateGradientCudaGraphs";
 

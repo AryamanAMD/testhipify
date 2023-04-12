@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
   int device = -1;
   hipDeviceProp_t deviceProp;
   device = findCudaDevice(argc, (const char **)argv);
-  HIPCHECK(hipGetDeviceProperties(&deviceProp, device));
+  checkCudaErrors(hipGetDeviceProperties(&deviceProp, device));
 
   if (!(deviceProp.major > 3 ||
         (deviceProp.major == 3 && deviceProp.minor >= 5))) {

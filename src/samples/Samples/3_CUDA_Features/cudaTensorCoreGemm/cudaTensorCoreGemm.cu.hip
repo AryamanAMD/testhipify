@@ -63,12 +63,13 @@
 
 #include <assert.h>
 #include <hip/hip_runtime.h>
-#include <mma.h>
+//#include <mma.h>
+#include "rocwmma.hpp"
 #include <stdio.h>
 
 // helper functions and utilities to work with CUDA
-#include <helper_cuda.h>
-#include <helper_functions.h>
+#include "helper_cuda_hipified.h"
+#include "helper_functions.h"
 
 // Externally configurable parameters.
 
@@ -642,6 +643,18 @@ int main(int argc, char **argv) {
   free(C_h);
   checkCudaErrors(hipFree(reinterpret_cast<void *>(A)));
   checkCudaErrors(hipFree(reinterpret_cast<void *>(B)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
+
+  return 0;
+}
+rpret_cast<void *>(B)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
+  checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
+
+  return 0;
+}
+rpret_cast<void *>(B)));
   checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
   checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
 

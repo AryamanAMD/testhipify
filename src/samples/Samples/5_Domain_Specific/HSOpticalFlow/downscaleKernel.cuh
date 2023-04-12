@@ -25,7 +25,7 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "common.h"
+#include "common_hipified.h"
 
 ///////////////////////////////////////////////////////////////////////////////
 /// \brief downscale image

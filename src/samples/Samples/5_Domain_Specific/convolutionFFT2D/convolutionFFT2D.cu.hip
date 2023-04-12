@@ -27,11 +27,13 @@
 
 #include <assert.h>
 #include <stdio.h>
+#include "rocprofiler.h"
+#include "HIPCHECK.h"
 #include <stdlib.h>
 #include <string.h>
-#include <helper_cuda.h>
-#include "convolutionFFT2D_common_hipified.h"
-#include "convolutionFFT2D_hipified.cuh"
+#include "helper_cuda_hipified.h"
+#include "convolutionFFT2D_common.h"
+#include "convolutionFFT2D.cuh"
 
 ////////////////////////////////////////////////////////////////////////////////
 /// Position convolution kernel center at (0, 0) in the image

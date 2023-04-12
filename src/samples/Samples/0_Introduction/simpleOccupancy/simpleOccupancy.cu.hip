@@ -25,10 +25,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-#include <hip/hip_runtime.h>
 #include <iostream>
-#include <helper_cuda.h>  // helper functions for CUDA error check
+#include <helper_cuda_hipified.h>  // helper functions for CUDA error check
 #include "HIPCHECK.h"
 const int manualBlockSize = 32;
 

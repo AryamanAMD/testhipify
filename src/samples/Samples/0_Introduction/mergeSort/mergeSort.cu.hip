@@ -33,16 +33,15 @@
  * Victor Podlozhnyuk 09/24/2009
  */
 
-
-#include <hip/hip_runtime.h>
 #include <assert.h>
-#include <hip/hip_cooperative_groups.h>
-#include "HIPCHECK.h"
-namespace cg = cooperative_groups;
+
+
 
 #include "helper_cuda_hipified.h"
 #include "mergeSort_common.h"
-
+#include "HIPCHECK.h"
+#include <hip/hip_cooperative_groups.h>
+namespace cg = cooperative_groups;
 ////////////////////////////////////////////////////////////////////////////////
 // Helper functions
 ////////////////////////////////////////////////////////////////////////////////
