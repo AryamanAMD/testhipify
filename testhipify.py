@@ -488,12 +488,12 @@ def compilation_1(x):
 		os.system(command)
 		return None	
 	elif x=='src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu' and user_platform.lower() == 'amd':
-		command='hipcc -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/asyncAPI/helper_multiprocess_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/multithreading_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip -o src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out'
+		command='hipcc -fopenmp -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/asyncAPI/helper_multiprocess_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/multithreading_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip -o src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out'
 		print(command)
 		os.system(command)
 		return None	
 	elif x=='src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu' and user_platform.lower() == 'nvidia':
-		command='hipcc -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/asyncAPI/helper_multiprocess_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/multithreading_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.cpp -o src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out'
+		command='hipcc -fopenmp -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/asyncAPI/helper_multiprocess_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/multithreading_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.cpp -o src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out'
 		print(command)
 		os.system(command)
 		return None	
@@ -590,12 +590,12 @@ def compilation_2(x):
 		os.system(command)
 		return None		
 	elif x=='src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu' and user_platform.lower() == 'amd':
-		command='hipcc -use-staticlib -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/asyncAPI/helper_multiprocess_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/multithreading_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip -o src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out'
+		command='hipcc -fopenmp -use-staticlib -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/asyncAPI/helper_multiprocess_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/multithreading_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip -o src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out'
 		print(command)
 		os.system(command)
 		return None	
 	elif x=='src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu' and user_platform.lower() == 'nvidia':
-		command='hipcc -use-staticlib -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/asyncAPI/helper_multiprocess_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/multithreading_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.cpp -o src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out'
+		command='hipcc -fopenmp -use-staticlib -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/asyncAPI/helper_multiprocess_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/multithreading_hipified.cpp src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.cpp -o src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out'
 		print(command)
 		os.system(command)
 		return None	
