@@ -643,6 +643,7 @@ def rem(z):
 	'#include "cuda_d3d9_interop.h"','#include "drm.h"','#include "cuda_runtime_api.h"','#include "GLFW/glfw3.h"',
 	'#include "cuda/barrier"','#include "cuda_runtime.h"','#include "cooperative_groups/reduce.h"',
 	'#include "cuda_bf16.h"','#include "mma.h"','#include "cuda/pipeline"','"builtin_types.h"']
+	
 	listofFiles=getListOfFiles(z)
 	for elem in listofFiles:
 		if elem.endswith('.cu'):
@@ -707,7 +708,33 @@ def rem(z):
 	
 	#os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
 	os.remove('samples_to_be_ignored.txt')
-		    
+	paths = []
+	for root, dirs, files in os.walk(z):
+		for file in files:
+			if file.endswith('.cu'):
+				path = os.path.join(root, file)
+				paths.append(path)
+	# write the paths to a file
+	output_file = "sample_list.txt"
+	with open(output_file, "w") as f:
+		for path in paths:
+			path=path.replace("\\","/")
+			f.write(path + "\n")
+	file1 = "sample_list.txt"
+	file2=	"final_ignored_samples.txt"
+	with open(file1, "r") as f:
+		content1 = f.readlines()
+	with open(file2, "r") as f:
+		content2 = f.readlines()
+	# subtract the content of the second file from the first file
+	result = [line for line in content1 if line not in content2]
+	output_file = "working_samples.txt"
+	with open(output_file, "w") as f:
+		for line in result:
+			f.write(line)	
+
+    					
+
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
 parser.add_argument("-b", "--generate", help='Generate .hip files')
