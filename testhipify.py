@@ -472,12 +472,12 @@ def compilation_1(x):
 		print(command)
 		os.system(command)
 		return None	
-	elif x=='src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip' and user_platform.lower() == 'amd':
+	elif x=='src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu' and user_platform.lower() == 'amd':
 		command='hipcc -fopenmp -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip src/samples/Samples/0_Introduction/simpleCallback/multithreading_hipified.cpp -o src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out'
 		print(command)
 		os.system(command)
 		return None	
-	elif x=='src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip' and user_platform.lower() == 'nvidia':
+	elif x=='src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu' and user_platform.lower() == 'nvidia':
 		command='hipcc -fopenmp -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip src/samples/Samples/0_Introduction/simpleCallback/multithreading_hipified.cpp -o src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out'
 		print(command)
 		os.system(command)
@@ -544,12 +544,12 @@ def compilation_2(x):
 		print(command)
 		os.system(command)
 		return None	
-	elif x=='src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip' and user_platform.lower() == 'amd':
+	elif x=='src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu' and user_platform.lower() == 'amd':
 		command='hipcc -use-staticlib -fopenmp -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip src/samples/Samples/0_Introduction/simpleCallback/multithreading_hipified.cpp -o src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out'
 		print(command)
 		os.system(command)
 		return None	
-	elif x=='src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip' and user_platform.lower() == 'nvidia':
+	elif x=='src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu' and user_platform.lower() == 'nvidia':
 		command='hipcc -use-staticlib -fopenmp -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip src/samples/Samples/0_Introduction/simpleCallback/multithreading_hipified.cpp -o src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out'
 		print(command)
 		os.system(command)
