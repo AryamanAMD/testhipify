@@ -1,0 +1,6 @@
+src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu
+src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu
+src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu
+src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu
+src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.cu
+src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_kernel.cu (-fopenmp)
