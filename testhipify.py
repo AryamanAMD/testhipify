@@ -40,7 +40,14 @@ def sorting(filename):
     outfile.writelines(i)
     outfile.writelines("\n")
   outfile.close()
-  os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
+  with open('final_ignored_samples1.txt','r') as f:lines=f.readlines()
+  os.remove('final_ignored_samples1.txt')
+  with open('accused_samples.txt','r') as f:lines_to_remove=f.readlines()
+  new_lines=[line for line in lines if line not in lines_to_remove]
+  with open('final_ignored_samples.txt','w') as f:
+	  f.writelines(new_lines)
+  #os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")
+	
 """
 def prepend_line(file_name, line):
 	#line='#include "HIPCHECK.h"'
@@ -771,18 +778,32 @@ def rem(z):
 		for path in paths:
 			path=path.replace("\\","/")
 			f.write(path + "\n")
-	file1 = "sample_list.txt"
-	file2=	"final_ignored_samples.txt"
+	file1="sample_list.txt"
+	file2="final_ignored_samples.txt"
+	file3="accused_samples.txt" 
 	with open(file1, "r") as f:
 		content1 = f.readlines()
 	with open(file2, "r") as f:
 		content2 = f.readlines()
+	with open(file3, "r") as f:
+		content3 = f.readlines()	
 	# subtract the content of the second file from the first file
 	result = [line for line in content1 if line not in content2]
 	output_file = "working_samples.txt"
 	with open(output_file, "w") as f:
 		for line in result:
-			f.write(line)	
+			f.write(line)
+	'''		
+	# subtract the content of the third file from the second file
+	result = [line for line in content2 if line not in content3]
+	output_file = "final_ignored_samples1.txt"
+	with open(output_file, "w") as f:
+		for line in result:
+			f.write(line)
+	os.remove('final_ignored_samples.txt')		
+	os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")	
+	'''				
+			
 
     					
 

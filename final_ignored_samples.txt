@@ -3,16 +3,11 @@ src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu
 src/samples/Samples/0_Introduction/matrixMulDrv/matrixMul_kernel.cu
 src/samples/Samples/0_Introduction/matrixMul_nvrtc/matrixMul_kernel.cu
 src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu
-src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu
 src/samples/Samples/0_Introduction/simpleAssert_nvrtc/simpleAssert_kernel.cu
-src/samples/Samples/0_Introduction/simpleAtomicIntrinsics/simpleAtomicIntrinsics.cu
 src/samples/Samples/0_Introduction/simpleAttributes/simpleAttributes.cu
 src/samples/Samples/0_Introduction/simpleCUDA2GL/simpleCUDA2GL.cu
 src/samples/Samples/0_Introduction/simpleDrvRuntime/vectorAdd_kernel.cu
-src/samples/Samples/0_Introduction/simplePitchLinearTexture/simplePitchLinearTexture.cu
-src/samples/Samples/0_Introduction/simpleSurfaceWrite/simpleSurfaceWrite.cu
 src/samples/Samples/0_Introduction/simpleTemplates_nvrtc/simpleTemplates_kernel.cu
-src/samples/Samples/0_Introduction/simpleTexture/simpleTexture.cu
 src/samples/Samples/0_Introduction/simpleTexture3D/simpleTexture3D_kernel.cu
 src/samples/Samples/0_Introduction/simpleTextureDrv/simpleTexture_kernel.cu
 src/samples/Samples/0_Introduction/simpleVoteIntrinsics/simpleVoteIntrinsics.cu
@@ -36,7 +31,6 @@ src/samples/Samples/2_Concepts_and_Techniques/particles/particleSystem_cuda.cu
 src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu
 src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu
 src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu
-src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_kernel.cu
 src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu
 src/samples/Samples/3_CUDA_Features/binaryPartitionCG/binaryPartitionCG.cu
 src/samples/Samples/3_CUDA_Features/bindlessTexture/bindlessTexture_kernel.cu
@@ -103,6 +97,7 @@ src/samples/Samples/5_Domain_Specific/simpleD3D9/simpleD3D9_kernel.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D9Texture/texture_2d.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D9Texture/texture_cube.cu
 src/samples/Samples/5_Domain_Specific/simpleD3D9Texture/texture_volume.cu
+src/samples/Samples/5_Domain_Specific/simpleGL/simpleGL.cu
 src/samples/Samples/5_Domain_Specific/simpleGL/simpleGL.cu
 src/samples/Samples/5_Domain_Specific/simpleGLES/simpleGLES.cu
 src/samples/Samples/5_Domain_Specific/simpleGLES_EGLOutput/simpleGLES_EGLOutput.cu
