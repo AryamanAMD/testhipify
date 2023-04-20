@@ -475,7 +475,7 @@ def compilation_1(x):
 		command='hipcc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	file4.close()	
 	print(command)
-	#os.system(command)			
+	os.system(command)			
 	'''			
 	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu' and user_platform.lower() == 'amd':
 		command='hipcc -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
@@ -574,7 +574,8 @@ def compilation_2(x):
 	else:
 		command='hipcc -use-staticlib -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	file4.close()	
-	print(command)			
+	print(command)	
+	os.system(command)		
 	'''			
 	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu' and user_platform.lower() == 'amd':
 		command='hipcc -use-staticlib -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
