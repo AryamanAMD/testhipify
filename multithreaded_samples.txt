@@ -1,0 +1,8 @@
+src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_kernel.cu
+src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu
+src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu
+src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu
+src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu
+src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu
+src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu
+src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu

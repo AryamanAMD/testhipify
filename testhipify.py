@@ -465,6 +465,7 @@ def compilation_1(x):
 		for file in os.listdir(p):
 			if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
 				cpp.append(file)
+	'''			
 	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu' and user_platform.lower() == 'amd':
 		command='hipcc -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
 		print(command)
@@ -535,11 +536,16 @@ def compilation_1(x):
 		print(command)
 		os.system(command)
 		return None
+	'''
+	cpp = [p+'/'+y for y in cpp]
+	with open('multithreaded_samples.txt','r') as f:
+		threaded_samples=f.readlines()
+	if x in threaded_samples:
+		command='hipcc -fopenmp -fgpu-rdc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	else:
-		cpp = [p+'/'+y for y in cpp]
 		command='hipcc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
-		print(command)
-		os.system(command)		
+	print(command)
+	os.system(command)		
 
 def compilation_2(x):
 	global cuda_path
@@ -557,6 +563,7 @@ def compilation_2(x):
 		for file in os.listdir(p):
 			if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
 				cpp.append(file)
+	'''			
 	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu' and user_platform.lower() == 'amd':
 		command='hipcc -use-staticlib -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
 		print(command)
@@ -621,7 +628,17 @@ def compilation_2(x):
 		cpp = [p+'/'+y for y in cpp]
 		command='hipcc -use-staticlib -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 		print(command)
-		os.system(command)		
+		os.system(command)
+	'''	
+	cpp = [p+'/'+y for y in cpp]
+	with open('multithreaded_samples.txt','r') as f:
+		threaded_samples=f.readlines()
+	if x in threaded_samples:
+		command='hipcc -fopenmp -fgpu-rdc -use-staticlib -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+	else:
+		command='hipcc -use-staticlib -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+	print(command)
+	os.system(command)		
 			
 
 def runsample(x):	
