@@ -524,7 +524,17 @@ def compilation_1(x):
 		command='hipcc -I src/samples/Common -fopenmp src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu.cpp -o src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out'
 		print(command)
 		os.system(command)
-		return None		
+		return None
+	elif x=='src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_kernel.cu' and user_platform.lower() == 'amd':
+		command='hipcc -fopenmp -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_kernel.cu.hip src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_hipified.cpp -o src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration.out'
+		print(command)
+		os.system(command)
+		return None
+	elif x=='src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_kernel.cu' and user_platform.lower() == 'nvidia':
+		command='hipcc -fopenmp -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_kernel.cu.cpp src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration_hipified.cpp -o src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration.out'
+		print(command)
+		os.system(command)
+		return None
 	else:
 		cpp = [p+'/'+y for y in cpp]
 		command='hipcc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
