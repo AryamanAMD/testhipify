@@ -1,0 +1,1057 @@
+diff --git a/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.out b/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.out
+index 065e615..3521a28 100755
+Binary files a/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.out and b/src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.out differ
+diff --git a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip
+index 8fb84b6..f89874a 100755
+--- a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip
++++ b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.cu.hip
+@@ -37,15 +37,18 @@
+ 
+ // includes, system
+ #include <stdio.h>
++//#include "rocprofiler.h"
++#include "HIPCHECK.h"
+ 
+ // includes CUDA Runtime
+ #include <hip/hip_runtime.h>
+ #include <hip/hip_runtime_api.h>
+ 
+ // includes, project
+-#include "helper_cuda_hipified.h"
+-#include "helper_functions.h" // helper utility functions
+-#include "HIPCHECK.h"
++//#include <helper_cuda.h>
++#include <helper_cuda_hipified.h>
++#include <helper_functions.h>  // helper utility functions
++
+ __global__ void increment_kernel(int *g_data, int inc_value) {
+   int idx = blockIdx.x * blockDim.x + threadIdx.x;
+   g_data[idx] = g_data[idx] + inc_value;
+diff --git a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out
+index 755b5dd..23de796 100755
+Binary files a/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out and b/src/samples/Samples/0_Introduction/asyncAPI/asyncAPI.out differ
+diff --git a/src/samples/Samples/0_Introduction/clock/clock.out b/src/samples/Samples/0_Introduction/clock/clock.out
+index 5de4227..bec6614 100755
+Binary files a/src/samples/Samples/0_Introduction/clock/clock.out and b/src/samples/Samples/0_Introduction/clock/clock.out differ
+diff --git a/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.out b/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.out
+index d1f0e73..fe8d87a 100755
+Binary files a/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.out and b/src/samples/Samples/0_Introduction/concurrentKernels/concurrentKernels.out differ
+diff --git a/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.cu.hip b/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.cu.hip
+index 43eb9f4..b88a0b5 100755
+--- a/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.cu.hip
++++ b/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.cu.hip
+@@ -1,3 +1,4 @@
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+diff --git a/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.out b/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.out
+index 6c64cd3..02f3c72 100755
+Binary files a/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.out and b/src/samples/Samples/0_Introduction/cppIntegration/cppIntegration.out differ
+diff --git a/src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu.hip b/src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu.hip
+index 5aa864c..945c49c 100755
+--- a/src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu.hip
++++ b/src/samples/Samples/0_Introduction/cppOverload/cppOverload.cu.hip
+@@ -90,12 +90,12 @@ int main(int argc, const char *argv[]) {
+   printf("%s starting...\n", sampleName);
+ 
+   int deviceCount;
+-  HIPCHECK(hipGetDeviceCount(&deviceCount));
++  checkCudaErrors(hipGetDeviceCount(&deviceCount));
+   printf("Device Count: %d\n", deviceCount);
+ 
+   int deviceID = findCudaDevice(argc, argv);
+   hipDeviceProp_t prop;
+-  HIPCHECK(hipGetDeviceProperties(&prop, deviceID));
++  checkCudaErrors(hipGetDeviceProperties(&prop, deviceID));
+   if (prop.major < 2) {
+     printf(
+         "ERROR: cppOverload requires GPU devices with compute SM 2.0 or "
+@@ -105,22 +105,22 @@ int main(int argc, const char *argv[]) {
+     exit(EXIT_WAIVED);
+   }
+ 
+-  HIPCHECK(hipSetDevice(deviceID));
++  checkCudaErrors(hipSetDevice(deviceID));
+ 
+   // Allocate device memory
+-  HIPCHECK(hipMalloc(&dInput, sizeof(int) * N * 2));
+-  HIPCHECK(hipMalloc(&dOutput, sizeof(int) * N));
++  checkCudaErrors(hipMalloc(&dInput, sizeof(int) * N * 2));
++  checkCudaErrors(hipMalloc(&dOutput, sizeof(int) * N));
+ 
+   // Allocate host memory
+-  HIPCHECK(hipHostMalloc(&hInput, sizeof(int) * N * 2));
+-  HIPCHECK(hipHostMalloc(&hOutput, sizeof(int) * N));
++  checkCudaErrors(hipHostMalloc(&hInput, sizeof(int) * N * 2));
++  checkCudaErrors(hipHostMalloc(&hOutput, sizeof(int) * N));
+ 
+   for (int i = 0; i < N * 2; i++) {
+     hInput[i] = i;
+   }
+ 
+   // Copy data from host to device
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMemcpy(dInput, hInput, sizeof(int) * N * 2, hipMemcpyHostToDevice));
+ 
+   // Test C++ overloading
+@@ -136,11 +136,11 @@ int main(int argc, const char *argv[]) {
+   // overload function 1
+   func1 = simple_kernel;
+   memset(&attr, 0, sizeof(attr));
+-  HIPCHECK(hipFuncSetCacheConfig(*func1, hipFuncCachePreferShared));
+-  HIPCHECK(hipFuncGetAttributes(&attr, *func1));
++  checkCudaErrors(hipFuncSetCacheConfig(*func1, hipFuncCachePreferShared));
++  checkCudaErrors(hipFuncGetAttributes(&attr, *func1));
+   OUTPUT_ATTR(attr);
+   (*func1)<<<DIV_UP(N, THREAD_N), THREAD_N>>>(dInput, dOutput, a);
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMemcpy(hOutput, dOutput, sizeof(int) * N, hipMemcpyDeviceToHost));
+   funcResult = check_func1(hInput, hOutput, a);
+   printf("simple_kernel(const int *pIn, int *pOut, int a) %s\n\n",
+@@ -150,11 +150,11 @@ int main(int argc, const char *argv[]) {
+   // overload function 2
+   func2 = simple_kernel;
+   memset(&attr, 0, sizeof(attr));
+-  HIPCHECK(hipFuncSetCacheConfig(*func2, hipFuncCachePreferShared));
+-  HIPCHECK(hipFuncGetAttributes(&attr, *func2));
++  checkCudaErrors(hipFuncSetCacheConfig(*func2, hipFuncCachePreferShared));
++  checkCudaErrors(hipFuncGetAttributes(&attr, *func2));
+   OUTPUT_ATTR(attr);
+   (*func2)<<<DIV_UP(N, THREAD_N), THREAD_N>>>((int2 *)dInput, dOutput, a);
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMemcpy(hOutput, dOutput, sizeof(int) * N, hipMemcpyDeviceToHost));
+   funcResult = check_func2(reinterpret_cast<int2 *>(hInput), hOutput, a);
+   printf("simple_kernel(const int2 *pIn, int *pOut, int a) %s\n\n",
+@@ -164,11 +164,11 @@ int main(int argc, const char *argv[]) {
+   // overload function 3
+   func3 = simple_kernel;
+   memset(&attr, 0, sizeof(attr));
+-  HIPCHECK(hipFuncSetCacheConfig(*func3, hipFuncCachePreferShared));
+-  HIPCHECK(hipFuncGetAttributes(&attr, *func3));
++  checkCudaErrors(hipFuncSetCacheConfig(*func3, hipFuncCachePreferShared));
++  checkCudaErrors(hipFuncGetAttributes(&attr, *func3));
+   OUTPUT_ATTR(attr);
+   (*func3)<<<DIV_UP(N, THREAD_N), THREAD_N>>>(dInput, dInput + N, dOutput, a);
+-  HIPCHECK(
++  checkCudaErrors(
+       hipMemcpy(hOutput, dOutput, sizeof(int) * N, hipMemcpyDeviceToHost));
+   funcResult = check_func3(&hInput[0], &hInput[N], hOutput, a);
+   printf(
+@@ -177,12 +177,12 @@ int main(int argc, const char *argv[]) {
+       funcResult ? "PASSED" : "FAILED");
+   testResult &= funcResult;
+ 
+-  HIPCHECK(hipFree(dInput));
+-  HIPCHECK(hipFree(dOutput));
+-  HIPCHECK(hipHostFree(hOutput));
+-  HIPCHECK(hipHostFree(hInput));
++  checkCudaErrors(hipFree(dInput));
++  checkCudaErrors(hipFree(dOutput));
++  checkCudaErrors(hipHostFree(hOutput));
++  checkCudaErrors(hipHostFree(hInput));
+ 
+-  HIPCHECK(hipDeviceSynchronize());
++  checkCudaErrors(hipDeviceSynchronize());
+ 
+   exit(testResult ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
+diff --git a/src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out b/src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out
+index 6d3465b..0d1cfb3 100755
+Binary files a/src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out and b/src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.out differ
+diff --git a/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out b/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out
+index 43d9ae7..63f210a 100755
+Binary files a/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out and b/src/samples/Samples/0_Introduction/fp16ScalarProduct/fp16ScalarProduct.out differ
+diff --git a/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out b/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out
+index 679e818..ee7127c 100755
+Binary files a/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out and b/src/samples/Samples/0_Introduction/matrixMul/matrixMul.out differ
+diff --git a/src/samples/Samples/0_Introduction/mergeSort/bitonic.cu.hip b/src/samples/Samples/0_Introduction/mergeSort/bitonic.cu.hip
+index fc01b30..f225214 100755
+--- a/src/samples/Samples/0_Introduction/mergeSort/bitonic.cu.hip
++++ b/src/samples/Samples/0_Introduction/mergeSort/bitonic.cu.hip
+@@ -1,4 +1,3 @@
+-#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -26,6 +25,8 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++
++#include <hip/hip_runtime.h>
+ #include <hip/hip_cooperative_groups.h>
+ 
+ namespace cg = cooperative_groups;
+diff --git a/src/samples/Samples/0_Introduction/mergeSort/mergeSort.cu.hip b/src/samples/Samples/0_Introduction/mergeSort/mergeSort.cu.hip
+index 3229101..dc6c717 100755
+--- a/src/samples/Samples/0_Introduction/mergeSort/mergeSort.cu.hip
++++ b/src/samples/Samples/0_Introduction/mergeSort/mergeSort.cu.hip
+@@ -34,14 +34,14 @@
+  */
+ 
+ #include <assert.h>
+-
+-
+-
+ #include "helper_cuda_hipified.h"
+-#include "mergeSort_common.h"
+-#include "HIPCHECK.h"
+ #include <hip/hip_cooperative_groups.h>
++
+ namespace cg = cooperative_groups;
++
++#include "HIPCHECK.h"
++#include "mergeSort_common.h"
++
+ ////////////////////////////////////////////////////////////////////////////////
+ // Helper functions
+ ////////////////////////////////////////////////////////////////////////////////
+diff --git a/src/samples/Samples/0_Introduction/mergeSort/mergeSort.out b/src/samples/Samples/0_Introduction/mergeSort/mergeSort.out
+index c26bfb2..e21afc2 100755
+Binary files a/src/samples/Samples/0_Introduction/mergeSort/mergeSort.out and b/src/samples/Samples/0_Introduction/mergeSort/mergeSort.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip b/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip
+index 6918f18..46acf01 100755
+--- a/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleAWBarrier/simpleAWBarrier.cu.hip
+@@ -31,14 +31,14 @@
+ 
+ // Includes CUDA
+ #include <hip/hip_runtime.h>
+-#include <cuda/barrier>
++#include "cuda/barrier"
+ #include <hip/hip_cooperative_groups.h>
+ 
+ // Utilities and timing functions
+-#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
++#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+ 
+ // CUDA helper functions
+-#include <helper_cuda.h>  // helper functions for CUDA error check
++#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+ 
+ namespace cg = cooperative_groups;
+ 
+diff --git a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip
+index bd4f9d1..91432f5 100755
+--- a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.cu.hip
+@@ -36,18 +36,16 @@
+ 
+ // Includes, system
+ #include <stdio.h>
+-#include "rocprofiler.h"
+-#include "HIPCHECK.h"
+ #include <cassert>
+ 
+ // Includes CUDA
+ #include <hip/hip_runtime.h>
+ 
+ // Utilities and timing functions
+-#include <helper_functions.h>  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
++#include "helper_functions.h"  // includes hip/hip_runtime.h and hip/hip_runtime_api.h
+ 
+ // CUDA helper functions
+-#include <helper_cuda_hipified.h>  // helper functions for CUDA error check
++#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
+ 
+ const char *sampleName = "simpleAssert";
+ 
+diff --git a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out
+index 479bdeb..850623a 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out and b/src/samples/Samples/0_Introduction/simpleAssert/simpleAssert.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip b/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip
+index 7e8b29a..55f896f 100755
+--- a/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.cu.hip
+@@ -42,21 +42,20 @@
+ 
+ // System includes
+ #include <stdio.h>
+-#include "rocprofiler.h"
+-#include "HIPCHECK.h"
+ 
+ // helper functions and utilities to work with CUDA
+ #include "helper_functions.h"
+ #include "helper_cuda_hipified.h"
+-
++#include <hip/hip_runtime_api.h>
+ #include "multithreading.h"
+-
++#include "HIPCHECK.h"
+ const int N_workloads = 8;
+ const int N_elements_per_workload = 100000;
+ 
+ CUTBarrier thread_barrier;
+ 
+-void myStreamCallback(hipStream_t event, hipError_t status, void *data);
++void myStreamCallback(hipStream_t event, hipError_t status,
++                                void *data);
+ 
+ struct heterogeneous_workload {
+   int id;
+@@ -142,7 +141,8 @@ CUT_THREADPROC postprocess(void *void_arg) {
+   CUT_THREADEND;
+ }
+ 
+-void  myStreamCallback(hipStream_t stream, hipError_t status, void *data) {
++void myStreamCallback(hipStream_t stream, hipError_t status,
++                                void *data) {
+   // Check status of GPU after stream operations are done
+   HIPCHECK(status);
+ 
+diff --git a/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out b/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out
+index cb32124..be7231f 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out and b/src/samples/Samples/0_Introduction/simpleCallback/simpleCallback.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out b/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out
+index 01aeecc..2ffcfd1 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out and b/src/samples/Samples/0_Introduction/simpleCooperativeGroups/simpleCooperativeGroups.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out b/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out
+index 7bd8164..c2c862c 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out and b/src/samples/Samples/0_Introduction/simpleCubemapTexture/simpleCubemapTexture.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out b/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out
+index b2c63dc..c98a8c6 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out and b/src/samples/Samples/0_Introduction/simpleHyperQ/simpleHyperQ.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleIPC/simpleIPC.cu.hip b/src/samples/Samples/0_Introduction/simpleIPC/simpleIPC.cu.hip
+old mode 100644
+new mode 100755
+index 106b6f2..cb3b205
+--- a/src/samples/Samples/0_Introduction/simpleIPC/simpleIPC.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleIPC/simpleIPC.cu.hip
+@@ -1,4 +1,3 @@
+-#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+@@ -30,12 +29,15 @@
+  * This sample demonstrates Inter Process Communication
+  * using one process per GPU for computation.
+  */
++
++#include <hip/hip_runtime.h>
+ #include <stdio.h>
++#include "rocprofiler.h"
++#include "HIPCHECK.h"
+ #include <stdlib.h>
+ #include <vector>
+-#include "helper_cuda_hipified.h"
++#include "helper_cuda.h"
+ #include "helper_multiprocess.cpp"
+-#include "HIPCHECK.h"
+ static const char shmName[] = "simpleIPCshm";
+ // For direct NVLINK and PCI-E peers, at max 8 simultaneous peers are allowed
+ // For NVSWITCH connected peers like DGX-2, simultaneous peers are not limited
+@@ -43,6 +45,7 @@ static const char shmName[] = "simpleIPCshm";
+ #define MAX_DEVICES (32)
+ #define DATA_SIZE (64ULL << 20ULL)  // 64MB
+ 
++/*
+ #if defined(__linux__)
+ #define cpu_atomic_add32(a, x) __sync_add_and_fetch(a, x)
+ #elif defined(WIN32) || defined(_WIN32) || defined(WIN64) || defined(_WIN64)
+@@ -50,6 +53,9 @@ static const char shmName[] = "simpleIPCshm";
+ #else
+ #error Unsupported system
+ #endif
++*/
++#define cpu_atomic_add32(a, x) __sync_add_and_fetch(a, x)
++
+ 
+ typedef struct shmStruct_st {
+   size_t nprocesses;
+@@ -333,4 +339,3 @@ int main(int argc, char **argv) {
+   return EXIT_SUCCESS;
+ #endif
+ }
+-
+diff --git a/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out b/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out
+index 2af1633..c45b027 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out and b/src/samples/Samples/0_Introduction/simpleLayeredTexture/simpleLayeredTexture.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleMultiCopy/simpleMultiCopy.out b/src/samples/Samples/0_Introduction/simpleMultiCopy/simpleMultiCopy.out
+index 80b6b25..ee9ac91 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleMultiCopy/simpleMultiCopy.out and b/src/samples/Samples/0_Introduction/simpleMultiCopy/simpleMultiCopy.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip
+index 3eb406b..cc5376e 100755
+--- a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.cu.hip
+@@ -1,3 +1,4 @@
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+diff --git a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out
+index 2c25f98..4060df3 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out and b/src/samples/Samples/0_Introduction/simpleMultiGPU/simpleMultiGPU.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip
+index a89d2bf..21df772 100755
+--- a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip
++++ b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.cu.hip
+@@ -26,7 +26,8 @@
+  */
+ 
+ #include <iostream>
+-#include <helper_cuda_hipified.h>  // helper functions for CUDA error check
++#include "helper_cuda_hipified.h"  // helper functions for CUDA error check
++#include <hip/hip_cooperative_groups.h>
+ #include "HIPCHECK.h"
+ const int manualBlockSize = 32;
+ 
+diff --git a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out
+index 78e51c8..ac3c40e 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out and b/src/samples/Samples/0_Introduction/simpleOccupancy/simpleOccupancy.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out b/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out
+index 4049f82..9ed390f 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out and b/src/samples/Samples/0_Introduction/simpleP2P/simpleP2P.out differ
+diff --git a/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out b/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out
+index 1614b09..8f0441c 100755
+Binary files a/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out and b/src/samples/Samples/0_Introduction/simplePrintf/simplePrintf.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out b/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out
+index 20950de..6b8d8ec 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out and b/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out b/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out
+index ca109ca..4c1962b 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out and b/src/samples/Samples/0_Introduction/simpleStreams/simpleStreams.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out b/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out
+index 0a44b2d..6db1c1f 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out and b/src/samples/Samples/0_Introduction/simpleTemplates/simpleTemplates.out differ
+diff --git a/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out b/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out
+index 33fcd54..64cde3d 100755
+Binary files a/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out and b/src/samples/Samples/0_Introduction/simpleZeroCopy/simpleZeroCopy.out differ
+diff --git a/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip b/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
+index 824e287..c74a770 100755
+--- a/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
++++ b/src/samples/Samples/0_Introduction/systemWideAtomics/systemWideAtomics.cu.hip
+@@ -36,7 +36,7 @@
+ #include <stdint.h>
+ #include <cstdio>
+ #include <ctime>
+-
++#include "HIPCHECK.h"
+ #define min(a, b) (a) < (b) ? (a) : (b)
+ #define max(a, b) (a) > (b) ? (a) : (b)
+ 
+@@ -59,13 +59,11 @@ __global__ void atomicKernel(int *atom_arr) {
+     atomicMin_system(&atom_arr[3], tid);
+ 
+     // Atomic increment (modulo 17+1)
+-    //atomicInc_system((unsigned int *)&atom_arr[4], 17);
+-    atomicInc((unsigned int *)&atom_arr[4], 17);
+-
++    // atomicInc_system((unsigned int *)&atom_arr[4], 17);
++       atomicAnd_system((unsigned int *)&atom_arr[4], 17);
+ 
+     // Atomic decrement
+-    //atomicDec_system((unsigned int *)&atom_arr[5], 137);
+-    atomicDec((unsigned int *)&atom_arr[4], 17);
++    atomicDec_system((unsigned int *)&atom_arr[5], 137);
+ 
+     // Atomic compare-and-swap
+     atomicCAS_system(&atom_arr[6], tid - 1, tid);
+@@ -283,7 +281,7 @@ int main(int argc, char **argv) {
+   // set device
+   hipDeviceProp_t device_prop;
+   int dev_id = findCudaDevice(argc, (const char **)argv);
+-  checkCudaErrors(hipGetDeviceProperties(&device_prop, dev_id));
++  HIPCHECK(hipGetDeviceProperties(&device_prop, dev_id));
+ 
+   if (!device_prop.managedMemory) {
+     // This samples requires being run on a device that supports Unified Memory
+@@ -318,7 +316,7 @@ int main(int argc, char **argv) {
+     atom_arr = (int *)malloc(sizeof(int) * numData);
+   } else {
+     printf("CANNOT access pageable memory\n");
+-    checkCudaErrors(hipMallocManaged(&atom_arr, sizeof(int) * numData));
++    HIPCHECK(hipMallocManaged(&atom_arr, sizeof(int) * numData));
+   }
+ 
+   for (unsigned int i = 0; i < numData; i++) atom_arr[i] = 0;
+@@ -329,7 +327,7 @@ int main(int argc, char **argv) {
+   atomicKernel<<<numBlocks, numThreads>>>(atom_arr);
+   atomicKernel_CPU(atom_arr, numBlocks * numThreads);
+ 
+-  checkCudaErrors(hipDeviceSynchronize());
++  HIPCHECK(hipDeviceSynchronize());
+ 
+   // Compute & verify reference solution
+   int testResult = verify(atom_arr, 2 * numThreads * numBlocks);
+diff --git a/src/samples/Samples/0_Introduction/template/template.out b/src/samples/Samples/0_Introduction/template/template.out
+index 8901094..8fb140b 100755
+Binary files a/src/samples/Samples/0_Introduction/template/template.out and b/src/samples/Samples/0_Introduction/template/template.out differ
+diff --git a/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out b/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out
+index a20d5ba..73bc44f 100755
+Binary files a/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out and b/src/samples/Samples/0_Introduction/vectorAdd/vectorAdd.out differ
+diff --git a/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out b/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out
+index cf38a24..b88529a 100755
+Binary files a/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out and b/src/samples/Samples/1_Utilities/bandwidthTest/bandwidthTest.out differ
+diff --git a/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out b/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out
+index 0561caa..e82cee5 100755
+Binary files a/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out and b/src/samples/Samples/1_Utilities/topologyQuery/topologyQuery.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/FunctionPointers/FunctionPointers_kernels.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/FunctionPointers/FunctionPointers_kernels.cu.hip
+index eb0288c..2ea1cc0 100755
+--- a/src/samples/Samples/2_Concepts_and_Techniques/FunctionPointers/FunctionPointers_kernels.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/FunctionPointers/FunctionPointers_kernels.cu.hip
+@@ -412,4 +412,12 @@ extern "C" void sobelFilter(Pixel *odata, int iw, int ih,
+    iw, ih, fScale, blockOperation, pPointOp, tex);
+     } break;
+   }
++}
++   iw, ih, fScale, blockOperation, pPointOp, tex);
++    } break;
++  }
++}
++   iw, ih, fScale, blockOperation, pPointOp, tex);
++    } break;
++  }
+ }
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/pricingengine.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/pricingengine.cu.hip
+index e5857fd..ba594cb 100755
+--- a/src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/pricingengine.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/MC_SingleAsianOptionP/src/pricingengine.cu.hip
+@@ -1,3 +1,4 @@
++#include "hip/hip_runtime.h"
+ /* Copyright (c) 2022, NVIDIA CORPORATION. All rights reserved.
+  *
+  * Redistribution and use in source and binary forms, with or without
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/convolutionSeparable.out b/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/convolutionSeparable.out
+index 483a2b2..8e5d8cd 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/convolutionSeparable.out and b/src/samples/Samples/2_Concepts_and_Techniques/convolutionSeparable/convolutionSeparable.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/eigenvalues/eigenvalues.out b/src/samples/Samples/2_Concepts_and_Techniques/eigenvalues/eigenvalues.out
+index 2b8f99e..f3aff86 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/eigenvalues/eigenvalues.out and b/src/samples/Samples/2_Concepts_and_Techniques/eigenvalues/eigenvalues.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram.out b/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram.out
+index dbca0c2..fd356d2 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram.out and b/src/samples/Samples/2_Concepts_and_Techniques/histogram/histogram.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu.hip
+index 9c714f1..18a6fe6 100755
+--- a/src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/inlinePTX_nvrtc/inlinePTX_kernel.cu.hip
+@@ -33,7 +33,7 @@ extern "C" __global__ void sequence_gpu(int *d_ptr, int length) {
+     unsigned int laneid;
+ 
+     // This command gets the lane ID within the current warp
+-    asm("mov.u32 %0, %%laneid;" : "=r"(laneid));
++    asm("mov.u32  %0, %%laneid;" : "=r"(laneid));
+ 
+     d_ptr[elemID] = laneid;
+   }
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/interval/interval.out b/src/samples/Samples/2_Concepts_and_Techniques/interval/interval.out
+index a27e93b..6ca8bdc 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/interval/interval.out and b/src/samples/Samples/2_Concepts_and_Techniques/interval/interval.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu.hip
+index a8c7062..8c6a350 100755
+--- a/src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/reductionMultiBlockCG/reductionMultiBlockCG.cu.hip
+@@ -397,3 +397,9 @@ ta);
+ 
+   return bTestPassed;
+ }
++ta);
++  hipFree(d_idata);
++  hipFree(d_odata);
++
++  return bTestPassed;
++}
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.out b/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.out
+index 8430260..ac35910 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.out and b/src/samples/Samples/2_Concepts_and_Techniques/scalarProd/scalarProd.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.cu.hip
+index 07204ea..8f93f34 100755
+--- a/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.cu.hip
+@@ -33,6 +33,7 @@
+ namespace cg = cooperative_groups;
+ #include "helper_cuda_hipified.h"
+ #include "scan_common.h"
++
+ #include "HIPCHECK.h"
+ // All three kernels run 512 threads per workgroup
+ // Must be a power of two
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.out b/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.out
+index 738abf3..762ffb4 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.out and b/src/samples/Samples/2_Concepts_and_Techniques/scan/scan.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu.hip
+index 83b26fa..c9455a3 100755
+--- a/src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/shfl_scan/shfl_scan.cu.hip
+@@ -477,3 +477,51 @@ ing test.\n");
+ 
+   exit((bTestResult) ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
++ing test.\n");
++    exit(EXIT_WAIVED);
++  }
++
++  bool bTestResult = true;
++  bool simpleTest = shuffle_simple_test(argc, argv);
++  bool intTest = shuffle_integral_image_test();
++
++  bTestResult = simpleTest & intTest;
++
++  exit((bTestResult) ? EXIT_SUCCESS : EXIT_FAILURE);
++}
++ing test.\n");
++    exit(EXIT_WAIVED);
++  }
++
++  bool bTestResult = true;
++  bool simpleTest = shuffle_simple_test(argc, argv);
++  bool intTest = shuffle_integral_image_test();
++
++  bTestResult = simpleTest & intTest;
++
++  exit((bTestResult) ? EXIT_SUCCESS : EXIT_FAILURE);
++}
++ing test.\n");
++    exit(EXIT_WAIVED);
++  }
++
++  bool bTestResult = true;
++  bool simpleTest = shuffle_simple_test(argc, argv);
++  bool intTest = shuffle_integral_image_test();
++
++  bTestResult = simpleTest & intTest;
++
++  exit((bTestResult) ? EXIT_SUCCESS : EXIT_FAILURE);
++}
++ing test.\n");
++    exit(EXIT_WAIVED);
++  }
++
++  bool bTestResult = true;
++  bool simpleTest = shuffle_simple_test(argc, argv);
++  bool intTest = shuffle_integral_image_test();
++
++  bTestResult = simpleTest & intTest;
++
++  exit((bTestResult) ? EXIT_SUCCESS : EXIT_FAILURE);
++}
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/sortingNetworks/sortingNetworks.out b/src/samples/Samples/2_Concepts_and_Techniques/sortingNetworks/sortingNetworks.out
+index 7eff0a2..4c558df 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/sortingNetworks/sortingNetworks.out and b/src/samples/Samples/2_Concepts_and_Techniques/sortingNetworks/sortingNetworks.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out
+index b9bcfb8..fe296aa 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out and b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocation/streamOrderedAllocation.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu.hip b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu.hip
+index f549e15..416a5c5 100755
+--- a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu.hip
++++ b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationIPC/streamOrderedAllocationIPC.cu.hip
+@@ -475,3 +475,27 @@ d(_WIN32) || defined(WIN64) || defined(_WIN64)
+   return EXIT_SUCCESS;
+ #endif
+ }
++d(_WIN32) || defined(WIN64) || defined(_WIN64)
++  printf("Not supported on ARM\n");
++  return EXIT_WAIVED;
++#else
++  if (argc == 1) {
++    parentProcess(argv[0]);
++  } else {
++    childProcess(atoi(argv[1]));
++  }
++  return EXIT_SUCCESS;
++#endif
++}
++d(_WIN32) || defined(WIN64) || defined(_WIN64)
++  printf("Not supported on ARM\n");
++  return EXIT_WAIVED;
++#else
++  if (argc == 1) {
++    parentProcess(argv[0]);
++  } else {
++    childProcess(atoi(argv[1]));
++  }
++  return EXIT_SUCCESS;
++#endif
++}
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out
+index 7ff0c6d..3672df7 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out and b/src/samples/Samples/2_Concepts_and_Techniques/streamOrderedAllocationP2P/streamOrderedAllocationP2P.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/threadFenceReduction/threadFenceReduction.out b/src/samples/Samples/2_Concepts_and_Techniques/threadFenceReduction/threadFenceReduction.out
+index 1d902b7..8222c24 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/threadFenceReduction/threadFenceReduction.out and b/src/samples/Samples/2_Concepts_and_Techniques/threadFenceReduction/threadFenceReduction.out differ
+diff --git a/src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration.out b/src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration.out
+index 6e20d01..b6b88c5 100755
+Binary files a/src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration.out and b/src/samples/Samples/2_Concepts_and_Techniques/threadMigration/threadMigration.out differ
+diff --git a/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out b/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out
+index 1fc02fa..3b5c361 100755
+Binary files a/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out and b/src/samples/Samples/3_CUDA_Features/StreamPriorities/StreamPriorities.out differ
+diff --git a/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip
+index a7cd214..e573fb1 100755
+--- a/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/bf16TensorCoreGemm/bf16TensorCoreGemm.cu.hip
+@@ -816,4 +816,11 @@ int main(int argc, char **argv)
+ 
+     return 0;
+ }
++ors(hipFree((void*)A));
++    checkCudaErrors(hipFree((void*)B));
++    checkCudaErrors(hipFree((void*)C));
++    checkCudaErrors(hipFree((void*)D));
++
++    return 0;
++}
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu.hip b/src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu.hip
+index e2a43a4..d151f86 100755
+--- a/src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cdpQuadtree/cdpQuadtree.cu.hip
+@@ -753,3 +753,11 @@ ops.warpSize);
+ 
+   return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
++ops.warpSize);
++
++  return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
++}
++ops.warpSize);
++
++  return (ok ? EXIT_SUCCESS : EXIT_FAILURE);
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/cdpSimplePrint/cdpSimplePrint.cu.hip b/src/samples/Samples/3_CUDA_Features/cdpSimplePrint/cdpSimplePrint.cu.hip
+index c027139..b0e6e0f 100755
+--- a/src/samples/Samples/3_CUDA_Features/cdpSimplePrint/cdpSimplePrint.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cdpSimplePrint/cdpSimplePrint.cu.hip
+@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
+   int device = -1;
+   hipDeviceProp_t deviceProp;
+   device = findCudaDevice(argc, (const char **)argv);
+-  checkCudaErrors(hipGetDeviceProperties(&deviceProp, device));
++  HIPCHECK(hipGetDeviceProperties(&deviceProp, device));
+ 
+   if (!(deviceProp.major > 3 ||
+         (deviceProp.major == 3 && deviceProp.minor >= 5))) {
+diff --git a/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/cudaCompressibleMemory.out b/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/cudaCompressibleMemory.out
+index 826c5c1..809e06c 100755
+Binary files a/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/cudaCompressibleMemory.out and b/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/cudaCompressibleMemory.out differ
+diff --git a/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip b/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
+old mode 100755
+new mode 100644
+index f69694c..c4552d9
+--- a/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cudaCompressibleMemory/saxpy.cu.hip
+@@ -197,3 +197,4 @@ int main(int argc, char **argv)
+       "Results may vary when GPU Boost is enabled.\n");
+     return EXIT_SUCCESS;
+ }
++
+diff --git a/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip
+index c6be4d7..7e89667 100755
+--- a/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/cudaTensorCoreGemm/cudaTensorCoreGemm.cu.hip
+@@ -176,8 +176,8 @@
+     }                                                       \
+   } while (0)
+ 
+-using namespace nvcuda;
+-
++//using namespace nvcuda;
++using namespace rocwmma;
+ __host__ void init_host_matrices(half *a, half *b, float *c) {
+   for (int i = 0; i < M_GLOBAL; i++) {
+     for (int j = 0; j < K_GLOBAL; j++) {
+@@ -660,3 +660,15 @@ rpret_cast<void *>(B)));
+ 
+   return 0;
+ }
++rpret_cast<void *>(B)));
++  checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
++  checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
++
++  return 0;
++}
++rpret_cast<void *>(B)));
++  checkCudaErrors(hipFree(reinterpret_cast<void *>(C)));
++  checkCudaErrors(hipFree(reinterpret_cast<void *>(D)));
++
++  return 0;
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip b/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip
+index 5895df3..2cb5cc2 100755
+--- a/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/dmmaTensorCoreGemm/dmmaTensorCoreGemm.cu.hip
+@@ -70,8 +70,8 @@
+ #include <cuda/pipeline>
+ 
+ // helper functions and utilities to work with CUDA
+-#include <helper_functions.h>
+-#include <helper_cuda.h>
++#include "helper_functions.h"
++#include "helper_cuda_hipified.h"
+ 
+ // Externally configurable parameters.
+ 
+diff --git a/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip b/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
+index 810e854..e50044a 100755
+--- a/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/globalToShmemAsyncCopy/globalToShmemAsyncCopy.cu.hip
+@@ -1077,3 +1077,10 @@ rintf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y, dimsB.x,
+ 
+   exit(matrix_result);
+ }
++rintf("MatrixA(%d,%d), MatrixB(%d,%d)\n", dimsA.x, dimsA.y, dimsB.x,
++         dimsB.y);
++
++  int matrix_result = MatrixMultiply(argc, argv, dimsA, dimsB, selected_kernel);
++
++  exit(matrix_result);
++}
+diff --git a/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobi.cu.hip b/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobi.cu.hip
+index 82a17ad..5513e8c 100755
+--- a/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobi.cu.hip
++++ b/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobi.cu.hip
+@@ -30,7 +30,7 @@
+ #include <hip/hip_runtime.h>
+ #include "helper_cuda_hipified.h"
+ #include <vector>
+-#include "jacobi.h"
++#include "jacobi_hipified.h"
+ #include "HIPCHECK.h"
+ #include <hip/hip_cooperative_groups.h>
+ namespace cg = cooperative_groups;
+diff --git a/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobiCudaGraphs.out b/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobiCudaGraphs.out
+index 98dd86d..9eecd81 100755
+Binary files a/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobiCudaGraphs.out and b/src/samples/Samples/3_CUDA_Features/jacobiCudaGraphs/jacobiCudaGraphs.out differ
+diff --git a/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out b/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out
+index dd92ca4..88d5885 100755
+Binary files a/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out and b/src/samples/Samples/3_CUDA_Features/newdelete/newdelete.out differ
+diff --git a/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out b/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out
+index 1ab8486..9c384a9 100755
+Binary files a/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out and b/src/samples/Samples/3_CUDA_Features/simpleCudaGraphs/simpleCudaGraphs.out differ
+diff --git a/src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG.cu.hip b/src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG.cu.hip
+index c71e1b8..36080e3 100755
+--- a/src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG.cu.hip
++++ b/src/samples/Samples/4_CUDA_Libraries/conjugateGradientMultiDeviceCG/conjugateGradientMultiDeviceCG.cu.hip
+@@ -816,3 +816,15 @@ G_CODE
+           (sqrt(r1) < tol) ? "PASSED" : "FAILED");
+   exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
++G_CODE
++  free(Ax_cpu);
++  free(r_cpu);
++  free(p_cpu);
++  free(x_cpu);
++#endif
++
++  printf("Test Summary:  Error amount = %f \n", err);
++  fprintf(stdout, "&&&& conjugateGradientMultiDeviceCG %s\n",
++          (sqrt(r1) < tol) ? "PASSED" : "FAILED");
++  exit((sqrt(r1) < tol) ? EXIT_SUCCESS : EXIT_FAILURE);
++}
+diff --git a/src/samples/Samples/5_Domain_Specific/BlackScholes/BlackScholes.out b/src/samples/Samples/5_Domain_Specific/BlackScholes/BlackScholes.out
+index 7ba9742..0d0e031 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/BlackScholes/BlackScholes.out and b/src/samples/Samples/5_Domain_Specific/BlackScholes/BlackScholes.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out
+index 84ef648..10c73ae 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out and b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/HSOpticalFlow.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/downscaleKernel.cuh b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/downscaleKernel.cuh
+index 3e15c6b..e21036a 100755
+--- a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/downscaleKernel.cuh
++++ b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/downscaleKernel.cuh
+@@ -25,7 +25,7 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
+-#include "common.h"
++#include "common_hipified.h"
+ 
+ ///////////////////////////////////////////////////////////////////////////////
+ /// \brief downscale image
+diff --git a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/flowCUDA.cu.hip b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/flowCUDA.cu.hip
+index e0e1f31..76c1a2b 100755
+--- a/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/flowCUDA.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/HSOpticalFlow/flowCUDA.cu.hip
+@@ -25,10 +25,8 @@
+  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+  */
+ 
++#include "common_hipified.h"
+ 
+-#include <hip/hip_runtime.h>
+-#include "common.h"
+-#include "helper_cuda_hipified.h"
+ // include kernels
+ #include "downscaleKernel_hipified.cuh"
+ #include "upscaleKernel_hipified.cuh"
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/NV12toBGRandResize.out b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/NV12toBGRandResize.out
+index ce9a9fa..b366c8a 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/NV12toBGRandResize.out and b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/NV12toBGRandResize.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip
+index 2761dab..426ae26 100755
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/bgr_resize.cu.hip
+@@ -28,10 +28,10 @@
+ 
+ // Implements BGR 3 progressive planars frames batch resize
+ 
+-#include <hip/hip_runtime.h>
+ #include <hip/hip_runtime.h>
+ #include "resize_convert_hipified.h"
+ #include "HIPCHECK.h"
++
+ __global__ void resizeBGRplanarBatchKernel(hipTextureObject_t texSrc,
+     float *pDst, int nDstPitch, int nDstHeight, int nSrcHeight,
+     int batch, float scaleX, float scaleY,
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip
+index 2036053..f8a5cca 100755
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/nv12_resize.cu.hip
+@@ -27,7 +27,6 @@
+ 
+ // Implements interlace NV12 frames batch resize
+ 
+-#include <hip/hip_runtime.h>
+ #include <hip/hip_runtime.h>
+ #include "resize_convert_hipified.h"
+ #include "HIPCHECK.h"
+diff --git a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip
+index e764867..ef26f98 100755
+--- a/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/NV12toBGRandResize/utils.cu.hip
+@@ -31,7 +31,6 @@
+ #include <fstream>
+ #include <iostream>
+ 
+-#include <hip/hip_runtime.h>
+ #include <hip/hip_runtime.h>
+ 
+ #include "resize_convert_hipified.h"
+diff --git a/src/samples/Samples/5_Domain_Specific/SobelFilter/SobelFilter_kernels.cu.hip b/src/samples/Samples/5_Domain_Specific/SobelFilter/SobelFilter_kernels.cu.hip
+index 91e7544..b0fcd54 100755
+--- a/src/samples/Samples/5_Domain_Specific/SobelFilter/SobelFilter_kernels.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/SobelFilter/SobelFilter_kernels.cu.hip
+@@ -290,4 +290,8 @@ extern "C" void sobelFilter(Pixel *odata, int iw, int ih,
+                                                   iw, ih, fScale, texObject);
+     } break;
+   }
++}
++         iw, ih, fScale, texObject);
++    } break;
++  }
+ }
+diff --git a/src/samples/Samples/5_Domain_Specific/SobolQRNG/SobolQRNG.out b/src/samples/Samples/5_Domain_Specific/SobolQRNG/SobolQRNG.out
+index b1bbdce..ed4fc7f 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/SobolQRNG/SobolQRNG.out and b/src/samples/Samples/5_Domain_Specific/SobolQRNG/SobolQRNG.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions.out b/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions.out
+index 045f136..674e891 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions.out and b/src/samples/Samples/5_Domain_Specific/binomialOptions/binomialOptions.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/convolutionFFT2D/convolutionFFT2D.cu.hip b/src/samples/Samples/5_Domain_Specific/convolutionFFT2D/convolutionFFT2D.cu.hip
+index 25f8f07..62c8fe6 100755
+--- a/src/samples/Samples/5_Domain_Specific/convolutionFFT2D/convolutionFFT2D.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/convolutionFFT2D/convolutionFFT2D.cu.hip
+@@ -27,13 +27,11 @@
+ 
+ #include <assert.h>
+ #include <stdio.h>
+-#include "rocprofiler.h"
+-#include "HIPCHECK.h"
+ #include <stdlib.h>
+ #include <string.h>
+-#include "helper_cuda_hipified.h"
+-#include "convolutionFFT2D_common.h"
+-#include "convolutionFFT2D.cuh"
++#include <helper_cuda.h>
++#include "convolutionFFT2D_common_hipified.h"
++#include "convolutionFFT2D_hipified.cuh"
+ 
+ ////////////////////////////////////////////////////////////////////////////////
+ /// Position convolution kernel center at (0, 0) in the image
+diff --git a/src/samples/Samples/5_Domain_Specific/convolutionFFT2D/convolutionFFT2D_common_hipified.h b/src/samples/Samples/5_Domain_Specific/convolutionFFT2D/convolutionFFT2D_common_hipified.h
+old mode 100755
+new mode 100644
+diff --git a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip
+index 0c9302d..79d9421 100755
+--- a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.cu.hip
+@@ -84,8 +84,6 @@ decomposition.
+ #endif
+ 
+ // includes, system
+-
+-#include <hip/hip_runtime.h>
+ #include <stdlib.h>
+ #include <stdio.h>
+ #include "rocprofiler.h"
+diff --git a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out
+index b252d83..f05080d 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out and b/src/samples/Samples/5_Domain_Specific/dwtHaar1D/dwtHaar1D.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu.hip b/src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu.hip
+index ffc0b68..e119514 100755
+--- a/src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/dxtc/dxtc.cu.hip
+@@ -797,3 +797,11 @@ int main(int argc, char **argv) {
+   /* Return zero if test passed, one otherwise */
+   return rms > ERROR_THRESHOLD;
+ }
++!\n");
++  /* Return zero if test passed, one otherwise */
++  return rms > ERROR_THRESHOLD;
++}
++!\n");
++  /* Return zero if test passed, one otherwise */
++  return rms > ERROR_THRESHOLD;
++}
+diff --git a/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.out b/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.out
+index b2ec645..ae36bf7 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.out and b/src/samples/Samples/5_Domain_Specific/fastWalshTransform/fastWalshTransform.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out b/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out
+index af55ac4..4054616 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out and b/src/samples/Samples/5_Domain_Specific/p2pBandwidthLatencyTest/p2pBandwidthLatencyTest.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/quasirandomGenerator/quasirandomGenerator.out b/src/samples/Samples/5_Domain_Specific/quasirandomGenerator/quasirandomGenerator.out
+index a0bd9e3..9e8b24a 100755
+Binary files a/src/samples/Samples/5_Domain_Specific/quasirandomGenerator/quasirandomGenerator.out and b/src/samples/Samples/5_Domain_Specific/quasirandomGenerator/quasirandomGenerator.out differ
+diff --git a/src/samples/Samples/5_Domain_Specific/simpleVulkanMMAP/MonteCarloPi.cu.hip b/src/samples/Samples/5_Domain_Specific/simpleVulkanMMAP/MonteCarloPi.cu.hip
+index 9f5a330..97c1700 100755
+--- a/src/samples/Samples/5_Domain_Specific/simpleVulkanMMAP/MonteCarloPi.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/simpleVulkanMMAP/MonteCarloPi.cu.hip
+@@ -300,3 +300,10 @@ void MonteCarloPiSimulation::cleanupSimulationAllocations() {
+     m_pointsInsideCircle = nullptr;
+   }
+ }
++   checkCudaErrors(
++        hipMemAddressFree((hipDeviceptr_t)m_xyVector, m_totalAllocationSize));
++
++    m_xyVector = nullptr;
++    m_pointsInsideCircle = nullptr;
++  }
++}
+diff --git a/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity.cu.hip b/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity.cu.hip
+index dd46277..ad85581 100755
+--- a/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity.cu.hip
++++ b/src/samples/Samples/5_Domain_Specific/stereoDisparity/stereoDisparity.cu.hip
+@@ -292,3 +292,15 @@ void runTest(int argc, char **argv) {
+ 
+   exit((checkSum == cpuCheckSum) ? EXIT_SUCCESS : EXIT_FAILURE);
+ }
++  if (dispOut != NULL) free(dispOut);
++
++  sdkDeleteTimer(&timer);
++
++  exit((checkSum == cpuCheckSum) ? EXIT_SUCCESS : EXIT_FAILURE);
++}
++  if (dispOut != NULL) free(dispOut);
++
++  sdkDeleteTimer(&timer);
++
++  exit((checkSum == cpuCheckSum) ? EXIT_SUCCESS : EXIT_FAILURE);
++}
+diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/UnifiedMemoryPerf.out b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/UnifiedMemoryPerf.out
+index 6ae256a..ad052cb 100755
+Binary files a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/UnifiedMemoryPerf.out and b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/UnifiedMemoryPerf.out differ
+diff --git a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+index 5964a15..7a9b53f 100644
+--- a/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
++++ b/src/samples/Samples/6_Performance/UnifiedMemoryPerf/matrixMultiplyPerf.cu.hip
+@@ -697,3 +697,4 @@ int main(int argc, char **argv) {
+   exit(EXIT_SUCCESS);
+ }
+ 
++
+diff --git a/src/samples/Samples/6_Performance/alignedTypes/alignedTypes.out b/src/samples/Samples/6_Performance/alignedTypes/alignedTypes.out
+index 542e097..84cf7ab 100755
+Binary files a/src/samples/Samples/6_Performance/alignedTypes/alignedTypes.out and b/src/samples/Samples/6_Performance/alignedTypes/alignedTypes.out differ
+diff --git a/src/samples/Samples/6_Performance/transpose/transpose.out b/src/samples/Samples/6_Performance/transpose/transpose.out
+index 8c5ac4a..601436a 100755
+Binary files a/src/samples/Samples/6_Performance/transpose/transpose.out and b/src/samples/Samples/6_Performance/transpose/transpose.out differ
