@@ -6,12 +6,12 @@ from sys import platform
 import patch_gen
 import patch_gen2
 import patch_gen3
-cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
-user_platform=''
 try:
-	with open('user_platform.txt','r') as f:
-			user_platform=f.read()
-	f.close()				
+	with open('config.txt','r') as f:
+			config_variables={variable.split("=")[0]:variable.split("=")[1].strip() for variable in f.readlines()}
+	f.close()
+	user_platform=config_variables["user_platform"]	
+	cuda_path=config_variables["cuda_path"]				
 except FileNotFoundError:
 	pass	
 def getListOfFiles(dirName):
@@ -92,19 +92,22 @@ def check_for_word(file_name,word):
 def setup():
 	global cuda_path
 	global user_platform
+	global config_variables
 	#cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
 	print("Enter Nvidia or AMD as per your system specifications.")
-	user_platform=input()
-	with open('user_platform.txt','w') as f:
-		f.write(str(user_platform))
-	f.close()	
+	config_variables['user_platform']=input()	
 	print ('Confirm the following CUDA Installation path for compilation:')
 	print('CUDA Path:'+cuda_path)
 	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
 	user_input=input()
 	if user_input.lower() == 'cuda':
 		print('Enter path of your CUDA installation')
-		cuda_path=input()  
+		config_variables['cuda_path']=input() 
+	with open('config.txt','w') as f:
+		#f.write(str(user_platform))
+		for variable, value in config_variables.items():
+			f.write(f"{variable}={value}\n")
+	f.close()	
 	os.system('gcc --version')
 	print('Enter gcc to install gcc compiler, or any other button to continue.')
 	user_input=input()
