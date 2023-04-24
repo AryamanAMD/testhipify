@@ -873,8 +873,8 @@ def nvidia_compilation():
 			file4.close()	
 			print(command)	
 			os.system(command)
-			print('Processing Sample:'+x)
-			command='./'+os.path.dirname(x)+'/'+'a.out'
+			print('Processing Sample:'+elem)
+			command='./'+os.path.dirname(elem)+'/'+'a.out'
 			print(command)
 			os.system(command)
 
