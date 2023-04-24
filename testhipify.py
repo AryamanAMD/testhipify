@@ -837,13 +837,20 @@ def rem(z):
 			
 def nvidia_compilation():
 	nvidia_samples_dir='src/samples/Samples'
+	'''
 	sample_dirs=os.listdir(nvidia_samples_dir)
+	print(sample_dirs)
 	for sample_dir in sample_dirs:
 		os.chdir(os.path.join(nvidia_samples_dir,sample_dir))
 		os.system("make")
 		os.system("./a.out")
-    					
-
+	'''	
+	for root,dirs,files in os.walk(nvidia_samples_dir):
+		if "Makefile" in files:
+			os.chdir(root)
+			os.system("make")
+			os.system("./a.out")
+							
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
 parser.add_argument("-b", "--generate", help='Generate .hip files')
