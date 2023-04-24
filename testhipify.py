@@ -847,6 +847,7 @@ def nvidia_compilation():
 	'''	
 	for root,dirs,files in os.walk(nvidia_samples_dir):
 		if "Makefile" in files:
+			print('cd '+root)
 			os.chdir(root)
 			os.system("make")
 			os.system("./"+os.path.basename(root)+'.o')
