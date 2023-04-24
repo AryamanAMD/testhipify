@@ -6,7 +6,7 @@ from sys import platform
 import patch_gen
 import patch_gen2
 import patch_gen3
-cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
+cuda_path = '/usr/local/cuda-11.8/targets/x86_64-linux/include'
 user_platform=''
 try:
 	with open('user_platform.txt','r') as f:
