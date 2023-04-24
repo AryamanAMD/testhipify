@@ -835,7 +835,13 @@ def rem(z):
 	os.rename("final_ignored_samples1.txt","final_ignored_samples.txt")	
 	'''				
 			
-
+def nvidia_compilation():
+	nvidia_samples_dir='src/samples/Samples'
+	sample_dirs=os.listdir(nvidia_samples_dir)
+	for sample_dir in sample_dirs:
+		os.chdir(os.path.join(nvidia_samples_dir,sample_dir))
+		os.system("make")
+		os.system("./a.out")
     					
 
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
@@ -850,6 +856,7 @@ parser.add_argument("-i", "--compile2_all", help='Compile all .hip files with st
 parser.add_argument("-j", "--execute_all", help='Execute all .out files')
 parser.add_argument("-k", "--parenthesis_check", help='Remove last parts from cu.hip files which are out of bounds.')
 parser.add_argument("-l", "--parenthesis_check_all", help='Remove all last parts from cu.hip files which are out of bounds.')
+parser.add_argument("-n", "--nvidia_compile", help='Compile and execute via nvcc.',action='store_true')
 parser.add_argument("-p", "--patch", help='Apply all patches in src/patches',action='store_true')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
@@ -872,6 +879,8 @@ if args.generate:
 	generate(a)
 if args.patch:
 	apply_patches()	
+if args.nvidia_compile:
+	nvidia_compilation()
 if args.compile1:
 	b=args.compile1
 	compilation_1(b)
