@@ -95,8 +95,10 @@ def setup():
 	global config_variables
 	#cuda_path = '/usr/local/cuda-12.0/targets/x86_64-linux/include'
 	print("Enter Nvidia or AMD as per your system specifications.")
-	config_variables['user_platform']=input()	
-	print ('Confirm the following CUDA Installation path for compilation:')
+	user_input=input()
+	if user_input != '':
+		config_variables['user_platform']=input()
+	print('Confirm the following CUDA Installation path for compilation:')
 	print('CUDA Path:'+cuda_path)
 	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
 	user_input=input()
