@@ -97,7 +97,7 @@ def setup():
 	print("Enter Nvidia or AMD as per your system specifications.")
 	user_input=input()
 	if user_input != '':
-		config_variables['user_platform']=input()
+		config_variables['user_platform']=user_input
 	print('Confirm the following CUDA Installation path for compilation:')
 	print('CUDA Path:'+cuda_path)
 	print('If Path is incorrect,please provide current path by typing CUDA or press any key to continue')
