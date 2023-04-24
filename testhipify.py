@@ -849,7 +849,7 @@ def nvidia_compilation():
 		if "Makefile" in files:
 			os.chdir(root)
 			os.system("make")
-			os.system("./a.out")
+			os.system("./"+os.path.basename(root))
 							
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
