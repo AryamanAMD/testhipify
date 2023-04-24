@@ -866,7 +866,7 @@ def nvidia_compilation():
 			file4=open('multithreaded_samples.txt', 'r')
 			threaded_samples=file4.read()
 			#print(threaded_samples)
-			if x in threaded_samples:
+			if elem in threaded_samples:
 				command='nvcc -fopenmp -fgpu-rdc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/a.out'
 			else:
 				command='nvcc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/a.out'
