@@ -860,7 +860,7 @@ def nvidia_compilation():
 			p=os.path.dirname(elem)
 			p=p.replace("\\","/")
 			for file in os.listdir(p):
-					if (file.endswith(".cpp") or file.endswith(".cu")) and not file.endswith(".cu.cpp"):
+					if (file.endswith(".cpp") or file.endswith(".cu")) and not (file.endswith(".cu.cpp") or file.endswith("_hipified.cpp")):
 						cpp.append(file)	
 			cpp = [p+'/'+y for y in cpp]
 			file4=open('multithreaded_samples.txt', 'r')
