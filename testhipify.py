@@ -837,6 +837,7 @@ def rem(z):
 			
 def nvidia_compilation():
 	nvidia_samples_dir='src/samples/Samples'
+	global cuda_path
 	'''
 	sample_dirs=os.listdir(nvidia_samples_dir)
 	print(sample_dirs)
@@ -844,13 +845,41 @@ def nvidia_compilation():
 		os.chdir(os.path.join(nvidia_samples_dir,sample_dir))
 		os.system("make")
 		os.system("./a.out")
-	'''	
 	for root,dirs,files in os.walk(nvidia_samples_dir):
 		if "Makefile" in files:
 			print('cd '+root)
 			os.chdir(root)
 			os.system("make")
 			os.system("./"+os.path.basename(root)+'.o')
+	'''
+	listOfFiles=getListOfFiles(nvidia_samples_dir)
+	for elem in listOfFiles:
+		if elem.endswith('.cu'):  ##or elem.endswith('.cpp') 
+			cpp=[]
+			elem=elem.replace('"', '')
+			p=os.path.dirname(elem)
+			p=p.replace("\\","/")
+			for file in os.listdir(p):
+					if file.endswith(".cpp") or file.endswith(".cu"):
+						cpp.append(file)	
+			cpp = [p+'/'+y for y in cpp]
+			file4=open('multithreaded_samples.txt', 'r')
+			threaded_samples=file4.read()
+			#print(threaded_samples)
+			if x in threaded_samples:
+				command='nvcc -fopenmp -fgpu-rdc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/a.out'
+			else:
+				command='nvcc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/a.out'
+			file4.close()	
+			print(command)	
+			os.system(command)
+			print('Processing Sample:'+x)
+			command='./'+os.path.dirname(x)+'/'+'a.out'
+			print(command)
+			os.system(command)
+
+				
+
 							
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
