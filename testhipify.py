@@ -1041,7 +1041,7 @@ def nvidia_compilation():
 
 							
 parser=argparse.ArgumentParser(description ='HIPIFY Cuda Samples.Please avoid and ignore samples with graphical operations')
-group = parser.add_mutually_exclusive_group()
+#group = parser.add_mutually_exclusive_group()
 parser.add_argument("-a", "--all", help='To run hipify-perl for all sample:python testhipify.py --all "[PATH TO SAMPLE FOLDER]"')
 parser.add_argument("-b", "--generate", help='Generate .hip files')
 parser.add_argument("-c", "--compile1", help='Compile .hip files')
@@ -1057,8 +1057,8 @@ parser.add_argument("-n", "--nvidia_compile", help='Compile and execute via nvcc
 parser.add_argument("-p", "--patch", help='Apply all patches in src/patches',action='store_true')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
-group.add_argument("-s", "--setup1", help='Configure dependencies automatically.',action='store_true')
-group.add_argument("-t", "--setup2", help='Configure dependencies manually.',action='store_true')
+parser.add_argument("-s", "--setup1", help='Configure dependencies automatically.',action='store_true')
+parser.add_argument("-v", "--setup2", help='Configure dependencies manually.',action='store_true')
 parser.add_argument("-u", "--new_samples", help='Download latest samples from Repository.',action='store_true')
 
 args=parser.parse_args()
