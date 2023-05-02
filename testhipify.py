@@ -7,7 +7,6 @@ import patch_gen
 import patch_gen2
 import patch_gen3
 import subprocess
-import pynvml
 try:
 	with open('config.txt','r') as f:
 			config_variables={variable.split("=")[0]:variable.split("=")[1].strip() for variable in f.readlines()}
@@ -111,55 +110,61 @@ def setup1():
 		config_variables['user_platform']='Nvidia'
 	elif has_amd_gpu():
 		config_variables['user_platform']='AMD'
-	try:
-		pynvml.nvmlInit()
-		driver_version = pynvml.nvmlSystemGetDriverVersion()
-		cuda_version = float(driver_version.decode().split(".")[0].split(" ")[-1])
-		cuda_path = "/usr/local/cuda-{}/targets/x86_64-linux/include".format(cuda_version)
-		pynvml.nvmlShutdown()
-		print("CUDA detected (version {} found).".format(cuda_version))
-	except:
-		try:
-			subprocess.check_output(['pip', 'install', 'torch'])
-			pynvml.nvmlInit()
-			driver_version = pynvml.nvmlSystemGetDriverVersion()
-			cuda_version = float(driver_version.decode().split(".")[0].split(" ")[-1])
-			cuda_path = "/usr/local/cuda-{}/targets/x86_64-linux/include".format(cuda_version)
-			pynvml.nvmlShutdown()
-			print("CUDA installed (version {} found).".format(cuda_version))
-		except:
-			print("Unable to install CUDA.")
-			return False
-	try:
-		subprocess.check_output(['gcc', '--version'])
-		print("gcc is already installed.")
-		return True
-	except:
-		try:
-			package_manager=None
-			if subprocess.call(['which', 'apt-get']):
-				package_manager = 'apt-get'
-			elif subprocess.call(['which', 'yum']):
-				package_manager = 'apt-get'
-			elif subprocess.call(['which', 'pacman']):
-				package_manager = 'pacman'	
-			if package_manager:
-				subprocess.check_call([package_manager, '-y', 'install', 'gcc'])
-				print("gcc installed successfully.")
-				return True
-			else:
-				print("Unable to detect package manager.")
-				return False
-		except:
-			print('Unable to install gcc')
-			return False
-	os.system('pip install -r requirements.txt')
-	install_openmp()
-	install_openmpi()
-
-			
-
-
+	print('CUDA Path:'+cuda_path)
+	with open('config.txt', 'w') as f:
+		# f.write(str(user_platform))
+		for variable, value in config_variables.items():
+			f.write(f"{variable}={value}\n")
+	f.close()    
+	os.system('gcc --version')
+	user_input = 'gcc' # set to 'gcc' to install gcc compiler
+	if user_input.lower() == 'gcc':
+		os.system('sudo apt install gcc')
+	user_input = 'requirements' 
+	if user_input.lower() == 'requirements':
+		os.system('pip install -r requirements.txt')   
+	user_input = 'omp'
+	if user_input.lower() == 'omp':
+		os.system('sudo apt install libomp-dev')
+		os.system('echo |cpp -fopenmp -dM |grep -i open')
+		print('Enter number of threads ')
+		x = 4 
+		os.system(f'export OMP_NUM_THREADS={x}')
+		print("Always add -fopenmp flag on compilation.")
+	user_input = 'mpi' 
+	if user_input.lower() == 'mpi':
+		print('cd ~')
+		os.chdir(os.path.expanduser("~"))
+		print('wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.3.tar.gz')
+		os.system('wget https://download.open-mpi.org/release/open-mpi/v3.1/openmpi-3.1.3.tar.gz')
+		print('tar -xzvf openmpi-3.1.3.tar.gz')
+		os.system('tar -xzvf openmpi-3.1.3.tar.gz')
+		os.system('mv -r ')
+		print('cd openmpi-3.1.3')
+		os.system('cd openmpi-3.1.3')
+		os.chdir('openmpi-3.1.3')
+		print('pwd')
+		os.system('pwd')
+		print('./configure --prefix=/usr/local/')
+		os.system('./configure --prefix=/usr/local/')
+		print('./configure --prefix=/usr/local/openmpi-3.1.3/')
+		os.system('./configure --prefix=/usr/local/openmpi-3.1.3/')
+		print('sudo make all install')
+		os.system('sudo make all install')
+		print('After make install is completed, mpirun or orterun executable should be at /usr/local/bin/.')
+		print('echo "export PATH=$PATH:/usr/local/bin" >> $HOME/.bashrc')
+		os.system('echo "export PATH=$PATH:/usr/local/bin" >> $HOME/.bashrc')
+		print('echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" > $HOME/.bashrc')
+		os.system('echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" > $HOME/.bashrc')
+		print('export PATH=$PATH:/usr/local/bin')
+		os.system('export PATH=$PATH:/usr/local/bin')
+		print('export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib')
+		os.system('export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib')
+		print('source $HOME/.bashrc')
+		os.system('source $HOME/.bashrc')
+		print('mpirun --version')
+		os.system('mpirun --version')
+'''
 def install_openmp():
     try:
         # check if OpenMP is installed
@@ -221,7 +226,7 @@ def install_openmpi():
         except:
             print('Unable to install OpenMPI')
             return False
-		
+'''		
 def new_samples():
 		os.system('cp -r src-original/patches src/')
 		os.system('cp -r src-original/samples src/')
