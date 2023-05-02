@@ -110,6 +110,7 @@ def setup1():
 		config_variables['user_platform']='Nvidia'
 	elif has_amd_gpu():
 		config_variables['user_platform']='AMD'
+	print('If CUDA is not installed,refer to this link and follow the steps:https://developer.nvidia.com/cuda-downloads')
 	print('CUDA Path:'+cuda_path)
 	with open('config.txt', 'w') as f:
 		# f.write(str(user_platform))
