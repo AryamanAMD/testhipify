@@ -6,6 +6,8 @@ from sys import platform
 import patch_gen
 import patch_gen2
 import patch_gen3
+import subprocess
+import pynvml
 try:
 	with open('config.txt','r') as f:
 			config_variables={variable.split("=")[0]:variable.split("=")[1].strip() for variable in f.readlines()}
@@ -87,9 +89,161 @@ def check_for_word(file_name,word):
 	file.close()
 	return index
 		 
+def has_nvidia_gpu():
+	try:
+		subprocess.check_output(['nvidia-smi'])
+		return True
+	except:
+		return False
+	
+def has_amd_gpu():
+	try:
+		subprocess.check_output(['rocminfo'])	
+		return True
+	except:
+		return False
+
+def setup1():
+	global cuda_path
+	global user_platform
+	global config_variables
+	if has_nvidia_gpu():
+		config_variables['user_platform']='Nvidia'
+	elif has_amd_gpu():
+		config_variables['user_platform']='AMD'
+	try:
+		pynvml.nvmlInit()
+		driver_version = pynvml.nvmlSystemGetDriverVersion()
+		cuda_version = float(driver_version.decode().split(".")[0].split(" ")[-1])
+		cuda_path = "/usr/local/cuda-{}/targets/x86_64-linux/include".format(cuda_version)
+		pynvml.nvmlShutdown()
+		print("CUDA detected (version {} found).".format(cuda_version))
+	except:
+		try:
+			subprocess.check_output(['pip', 'install', 'torch'])
+			pynvml.nvmlInit()
+			driver_version = pynvml.nvmlSystemGetDriverVersion()
+			cuda_version = float(driver_version.decode().split(".")[0].split(" ")[-1])
+			cuda_path = "/usr/local/cuda-{}/targets/x86_64-linux/include".format(cuda_version)
+			pynvml.nvmlShutdown()
+			print("CUDA installed (version {} found).".format(cuda_version))
+		except:
+			print("Unable to install CUDA.")
+			return False
+	try:
+		subprocess.check_output(['gcc', '--version'])
+		print("gcc is already installed.")
+		return True
+	except:
+		try:
+			package_manager=None
+			if subprocess.call(['which', 'apt-get']):
+				package_manager = 'apt-get'
+			elif subprocess.call(['which', 'yum']):
+				package_manager = 'apt-get'
+			elif subprocess.call(['which', 'pacman']):
+				package_manager = 'pacman'	
+			if package_manager:
+				subprocess.check_call([package_manager, '-y', 'install', 'gcc'])
+				print("gcc installed successfully.")
+				return True
+			else:
+				print("Unable to detect package manager.")
+				return False
+		except:
+			print('Unable to install gcc')
+			return False
+	os.system('pip install -r requirements.txt')
+	install_openmp()
+	install_openmpi()
+
+			
 
 
-def setup():
+def install_openmp():
+    try:
+        # check if OpenMP is installed
+        subprocess.check_output(['which', 'gcc'])
+        subprocess.check_output(['which', 'g++'])
+        subprocess.check_output(['which', 'omp.h'])
+        print('OpenMP already installed')
+        return True
+    except:
+        # Install OpenMP
+        try:
+            package_manager = None
+            # Detect package manager based on system
+            if subprocess.call(['which', 'apt-get']):
+                package_manager = 'apt-get'
+            elif subprocess.call(['which', 'yum']):
+                package_manager = 'yum'
+            elif subprocess.call(['which', 'pacman']):
+                package_manager = 'pacman'
+
+            if package_manager:
+                subprocess.check_call([package_manager, '-y', 'install', 'gcc', 'g++', 'libomp-dev'])
+                print('OpenMP installed successfully')
+                return True
+            else:
+                print('Unable to detect package manager')
+                return False
+        except:
+            print('Unable to install OpenMP')
+            return False
+
+
+def install_openmpi():
+    try:
+        # check if OpenMPI is installed
+        subprocess.check_output(['which', 'mpicc'])
+        subprocess.check_output(['which', 'mpic++'])
+        print('OpenMPI already installed')
+        return True
+    except:
+        # Install OpenMPI
+        try:
+            package_manager = None
+            # Detect package manager based on system
+            if subprocess.call(['which', 'apt-get']):
+                package_manager = 'apt-get'
+            elif subprocess.call(['which', 'yum']):
+                package_manager = 'yum'
+            elif subprocess.call(['which', 'pacman']):
+                package_manager = 'pacman'
+
+            if package_manager:
+                subprocess.check_call([package_manager, '-y', 'install', 'openmpi', 'libopenmpi-dev'])
+                print('OpenMPI installed successfully')
+                return True
+            else:
+                print('Unable to detect package manager')
+                return False
+        except:
+            print('Unable to install OpenMPI')
+            return False
+		
+def new_samples():
+		os.system('cp -r src-original/patches src/')
+		os.system('cp -r src-original/samples src/')
+		os.system('rm -rf src/samples')
+		os.chdir('src/')
+		os.system('git clone https://github.com/NVIDIA/cuda-samples.git')
+		os.system('mv cuda-samples samples')
+		os.chdir('../')
+		os.system('cp -r src-original/samples/Common/ src/samples/')
+		os.chdir('src/samples')
+		os.system('rm .gitignore')
+		os.system('rm README.md')
+		os.system('rm CHANGELOG.md')
+		os.system('rm -rf .git')	
+		os.system('rm LICENSE')
+		os.chdir('../../')
+		patch_gen.generate_all('src/samples/Samples')
+		patch_gen2.generate_all('src/samples/Samples')
+		patch_gen3.generate_all('src/samples/Samples')
+
+
+def setup2():
 	global cuda_path
 	global user_platform
 	global config_variables
@@ -902,7 +1056,9 @@ parser.add_argument("-n", "--nvidia_compile", help='Compile and execute via nvcc
 parser.add_argument("-p", "--patch", help='Apply all patches in src/patches',action='store_true')
 parser.add_argument("-t", "--tale", help='To run hipify-perl for single sample:python testhipify.py -t "[PATH TO SAMPLE]"')
 parser.add_argument("-x", "--remove", help='Remove any sample relating to graphical operations e.g.DirectX,Vulcan,OpenGL,OpenCL and so on.')
-parser.add_argument("-s", "--setup", help='Configure dependencies.',action='store_true')
+parser.add_argument("-s", "--setup1", help='Configure dependencies automatically.',action='store_true')
+parser.add_argument("-t", "--setup2", help='Configure dependencies manually.',action='store_true')
+parser.add_argument("-u", "--new_samples", help='Download latest samples from Repository.',action='store_true')
 
 args=parser.parse_args()
 if args.tale:
@@ -950,6 +1106,10 @@ if args.parenthesis_check:
 if args.parenthesis_check_all:
 	f=args.parenthesis_check_all
 	parenthesis_check_all(f)
-if args.setup:
-	setup()	
+if args.setup1:
+	setup1()	
+if args.setup2:
+	setup2()	
+if args.new_samples:
+	new_samples()	
 					
