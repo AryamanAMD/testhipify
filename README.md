@@ -42,5 +42,6 @@ This command would ensure installation of CUDA,GCC,OpenMP and OpenMPI[Installati
 
 -s or --setup: Configure dependencies.
 
-###Screenshots
+### Screenshots
+
 ![image](https://user-images.githubusercontent.com/115460120/215019805-efe0a5eb-5520-4b90-8bb5-81636a79afd1.png)
