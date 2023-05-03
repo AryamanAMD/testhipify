@@ -11,6 +11,19 @@ cd testhipify
 python testhipify.py -s
 ```
 This command would ensure installation of CUDA,GCC,OpenMP and OpenMPI[Installation may take upto 10 minutes].
+### How to Process Samples
+For a single sample:
+```bash
+python testhipify.py -t '[Path to that Sample]'
+```
+Example:
+```bash
+python testhipify.py -t 'src/samples/Samples/0_Introduction/Clock/clock.cu'
+```
+For all samples:
+```bash
+python testhipify.py -a 'src/samples/Samples'
+```
 ### Usage
 -a or --all: To run HIPIFY-perl for all samples
 
