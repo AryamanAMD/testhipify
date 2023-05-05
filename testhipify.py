@@ -625,14 +625,15 @@ def compilation_1(x):
 	for file in os.listdir(p):
 		if file.endswith(".out") or file.endswith(".o"):
 			os.remove(os.path.join(p,file))
-	for file in os.listdir(p):		
-		if os.path.getsize(os.path.join(p,file))==0 and file in os.listdir(p.replace("src/","src-original/")):
-			x_original=x.replace("src/","src-original/")
-			alternate_file=x_original
-			os.remove(os.path.join(p,file))
-			os.rename(alternate_file,os.path.join(p,file))
-		else:
-			print(f"Alternate file to replace empty file not found.")				
+	try:		
+		for file in os.listdir(p):		
+			if os.path.getsize(os.path.join(p,file))==0 and file in os.listdir(p.replace("src/","src-original/")):
+				x_original=x.replace("src/","src-original/")
+				alternate_file=x_original
+				os.remove(os.path.join(p,file))
+				os.rename(alternate_file,os.path.join(p,file))
+	except FileNotFoundError as e:
+		print(f'Error:{e}.Skipping replacement of empty files.')						
 	if user_platform.lower()=='nvidia':
 		for file in os.listdir(p):
 			if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
