@@ -625,6 +625,7 @@ def compilation_1(x):
 	for file in os.listdir(p):
 		if file.endswith(".out") or file.endswith(".o"):
 			os.remove(os.path.join(p,file))
+	for file in os.listdir(p):		
 		if os.path.getsize(os.path.join(p,file))==0 and file in os.listdir(p.replace("src/","src-original/")):
 			x_original=x.replace("src/","src-original/")
 			alternate_file=x_original
