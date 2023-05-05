@@ -622,6 +622,14 @@ def compilation_1(x):
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
 	p=p.replace("\\","/")
+	for file in os.listdir(p):
+		if file.endswith(".out") or file.endswith(".o"):
+			os.remove(os.path.join(p,file))
+		if os.path.getsize(os.path.join(p,file))==0 and file in os.listdir(p.replace("src/","src-original/")):
+			x_original=x.replace("src/","src-original/")
+			alternate_file=x_original
+			os.remove(os.path.join(p,file))
+			os.rename(alternate_file,os.path.join(p,file))			
 	if user_platform.lower()=='nvidia':
 		for file in os.listdir(p):
 			if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
@@ -635,9 +643,9 @@ def compilation_1(x):
 	threaded_samples=file4.read()
 	#print(threaded_samples)
 	if x in threaded_samples:
-		command='hipcc -fopenmp -fgpu-rdc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+		command='hipcc -I /opt/rocm/include -fopenmp -fgpu-rdc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -lamdhip64 -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out '
 	else:
-		command='hipcc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+		command='hipcc -I /opt/rocm/include -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -lamdhip64 -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	file4.close()	
 	print(command)
 	os.system(command)			
@@ -735,9 +743,9 @@ def compilation_2(x):
 	threaded_samples=file4.read()
 	#print(threaded_samples)
 	if x in threaded_samples:
-		command='hipcc -use-staticlib -fopenmp -fgpu-rdc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+		command='hipcc -I /opt/rocm/include -use-staticlib -fopenmp -fgpu-rdc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -lamdhip64 -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	else:
-		command='hipcc -use-staticlib -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+		command='hipcc -I /opt/rocm/include -use-staticlib -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -lamdhip64 -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	file4.close()	
 	print(command)	
 	os.system(command)		
