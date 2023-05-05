@@ -540,8 +540,8 @@ def generate(x):
 		print("GL Headers found")	
 		"""
 	#$ sed 's/checkCudaErrors/HIPCHECK/g' asyncAPI.cu.hip
-	#command="hipify-clang -Isrc/samples/Common "+x+" > "+x+".hip"
-	command="hipify-perl "+x+" > "+x+".hip"
+	command="hipify-clang -Isrc/samples/Common -I /opt/rocm/include "+x+" > "+x+".hip"
+	#command="hipify-perl "+x+" > "+x+".hip"
 	print(command)
 	os.system(command)
 	prepend_line(x+".hip",'#include "HIPCHECK.h"\n')
@@ -647,7 +647,7 @@ def compilation_1(x):
 	threaded_samples=file4.read()
 	#print(threaded_samples)
 	if x in threaded_samples:
-		command='hipcc -I /opt/rocm/include -fopenmp -fgpu-rdc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -lamdhip64 -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+		command='hipcc -I /opt/rocm/include -fopenmp -fgpu-rdc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -lamdhip64 -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out '
 	else:
 		command='hipcc -I /opt/rocm/include -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -lamdhip64 -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
 	file4.close()	

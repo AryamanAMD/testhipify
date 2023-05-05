@@ -41,39 +41,44 @@ def apply_patches():
 
 	
 def compilation_1(x):
+	global cuda_path
+	global user_platform
 	cpp=[]
+	print(user_platform)
 	x=x.replace('"', '')
 	p=os.path.dirname(x)
-	q=os.path.basename(x)
 	p=p.replace("\\","/")
-	if x=='src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu':
-		command='hipcc -I src/samples/Common src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.cu.hip src/samples/Samples/0_Introduction/simpleMPI/simpleMPI_hipified.cpp -lmpi -o src/samples/Samples/0_Introduction/simpleMPI/simpleMPI.out'
-		print(command)
-		os.system(command)
-	elif x=='src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleDeviceLibrary.cu' or x=='/src/samples/Samples/0_Introduction/simpleSeparateCompilation/simpleSeparateCompilation.cu':
-		command='hipcc -I src/samples/Common -fgpu-rdc simpleDeviceLibrary.cu.hip simpleSeparateCompilation.cu.hip -o simpleSeparateCompilation.out'
-		print(command)
-		os.system(command)	
-	elif x=='src/samples/Samples/0_Introduction/cudaOpenMP/cudaOpenMP.cu':
-		command=' hipcc -I src/samples/Common -fopenmp cudaOpenMP.cu.hip -o cudaOpenMP.out'
-		print(command)
-		os.system(command)
-	elif x=='src/samples/Samples/0_Introduction/UnifiedMemoryStreams/UnifiedMemoryStreams.cu':
-		command='hipcc -I src/samples/Common -fopenmp UnifiedMemoryStreams.cu.hip -o UnifiedMemoryStreams.out'
-		print(command)
-		os.system(command)		
-	else:
+	for file in os.listdir(p):
+		if file.endswith(".out") or file.endswith(".o"):
+			os.remove(os.path.join(p,file))
+	try:		
+		for file in os.listdir(p):		
+			if os.path.getsize(os.path.join(p,file))==0 and file in os.listdir(p.replace("src/","src-original/")):
+				x_original=x.replace("src/","src-original/")
+				alternate_file=x_original
+				os.remove(os.path.join(p,file))
+				os.rename(alternate_file,os.path.join(p,file))
+	except FileNotFoundError as e:
+		print(f'Error:{e}.Skipping replacement of empty files.')						
+	if user_platform.lower()=='nvidia':
+		for file in os.listdir(p):
+			if file.endswith("_hipified.cpp") or file.endswith(".cu.cpp"):
+				cpp.append(file)	
+	elif user_platform.lower()=='amd':	
 		for file in os.listdir(p):
 			if file.endswith("_hipified.cpp") or file.endswith(".cu.hip"):
 				cpp.append(file)
-			
-		
-
-		cpp = [p+'/'+y for y in cpp]
-		command='hipcc -I src/samples/Common -I /usr/local/cuda-12.0/targets/x86_64-linux/include '+' '.join(cpp)+' -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
-		print(command)
-
-		os.system(command)	
+	cpp = [p+'/'+y for y in cpp]
+	file4=open('multithreaded_samples.txt', 'r')
+	threaded_samples=file4.read()
+	#print(threaded_samples)
+	if x in threaded_samples:
+		command='hipcc -I /opt/rocm/include -fopenmp -fgpu-rdc -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -lamdhip64 -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out '
+	else:
+		command='hipcc -I /opt/rocm/include -I src/samples/Common -I '+cuda_path+' '+' '.join(cpp)+' -lamdhip64 -o '+p+'/'+os.path.basename(os.path.dirname(x))+'.out'
+	file4.close()	
+	print(command)
+	os.system(command)
 
 def runsample(x):	
 	print('Processing Sample:'+x)
