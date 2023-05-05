@@ -1,4 +1,5 @@
 # TestHIPIFY
+Refer to Documentation [HERE](https://github.com/AryamanAMD/testhipify/blob/main/Testhipify%20Report-PDF.pdf)
 ## Installation
 ### Setting up dependancies
 ```bash
